@@ -35,25 +35,50 @@ Runs on Paper 1.21.x and 26.1 through 26.3 (one jar).
 * **Growing** a tree only needs the configured `bone-meal-consumed` amount in your inventory,
   not exactly 64 in hand. Grown and `/gt` trees no longer all share one shape per world.
 * `tree-create <species> <world> <x> <z>` works from the console.
-* **Small trees.** Every tree type has a small variant, `tree.<NAME>_SMALL.xml` (about 25 to 37
-  blocks tall, trunk radius 2 to 3), e.g. `tree.OAK_SMALL` or `tree.BIRCH-2_SMALL`. They spawn
-  naturally next to the giants (`biome.<BIOME>-<NAME>_SMALL.xml`), grow from a **3x3** sapling
-  ring around the core block (the 5x5 rings still grow giants, and win when both fit), cost
-  `bone-meal-consumed-small` bone meal (16) and work with `tree-create`.
+* **Three tree sizes.** Every tree type comes as a giant, a huge and a big tree, all of which
+  work with `tree-create`; trees with biome files spawn naturally in all three sizes
+  (`biome.<BIOME>-<NAME>.xml`, `..._HUGE.xml`, `..._BIG.xml`):
+
+  | Size  | Tree file              | Height      | Trunk radius | Sapling pattern                  | Bone meal                      |
+  |-------|------------------------|-------------|--------------|----------------------------------|--------------------------------|
+  | giant | `tree.<NAME>.xml`      | 40 to 60    | up to 6      | 5x5 ring                         | `bone-meal-consumed` (64)      |
+  | huge  | `tree.<NAME>_HUGE.xml` | 25 to 40    | up to 4      | full 3x3 ring                    | `bone-meal-consumed-huge` (32) |
+  | big   | `tree.<NAME>_BIG.xml`  | about 14-24 | 2 to 3       | 3x3 plus: saplings N, E, S and W | `bone-meal-consumed-big` (16)  |
+
+  The plus shape's corners don't matter: a `-` in a pattern matches any block (and is left
+  alone when the tree grows). The most specific pattern that fits wins: a 5x5 ring before the
+  3x3 ring inside it, a full 3x3 ring before a plus. Mixed patterns (mesapuzzle, cottonwood,
+  swamp oak, azalea) have mixed 3x3 rings and pluses too; see `config.yml`.
 * **Weighted natural spawning.** `natural-tree-weights` sets how often each biome tree is
-  picked, keyed by the `<name>` part of `biome.<BIOME>-<name>.xml`; `"*_SMALL": 3` makes small
-  trees three times as likely as a giant of the same biome. Unlisted trees weigh `default` (1),
-  so custom biome files keep spawning as before.
+  picked, keyed by the `<name>` part of `biome.<BIOME>-<name>.xml`; the defaults, `"*_HUGE": 2`
+  and `"*_BIG": 4`, make a biome grow 4 big and 2 huge trees for every giant. Unlisted trees
+  weigh `default` (1), so custom biome files keep spawning as before.
+* **Azalea trees grow above lush caves**, like vanilla: `biome.LUSH_CAVES-*.xml` trees spawn on
+  soil in any biome, but only where there is a lush cave somewhere below. An azalea tree (natural,
+  grown or `tree-create`) gets vanilla's root system: a column of rooted dirt under its trunk,
+  down toward the cave (at most 20 blocks, through stone and soil only), with hanging roots where
+  it comes out of the cave ceiling.
 * **New trees.** Pale oak with hanging pale moss (pale garden), a weeping swamp oak hung with
   vines (swamp), red and brown giant mushrooms (mushroom fields), autumn-coloured poplars with
-  a mix of yellow, orange and red leaves (dappled forest, Minecraft 26.3+), azalea (meadow), and
-  huge crimson and warped fungi (planting and `tree-create` only). Each has a planting pattern;
+  a mix of yellow, orange and red leaves (dappled forest, Minecraft 26.3+), azalea (over lush
+  caves), and huge crimson and warped fungi (planting and `tree-create` only). Each has a planting pattern;
   see `config.yml` for the sapling letters. On servers older than 26.3 poplar patterns are
   skipped and a poplar tree file grows as a birch.
+* **Organic leaf clusters.** Leaf clusters have lumpy, uneven outsides with small gaps and
+  protrusions instead of smooth spheres and discs (mushroom and fungus caps keep their smooth
+  domes). Huge crimson fungi grow weeping vines hanging from under the cap.
 
 Existing configs keep working: missing settings fall back to the defaults above. An older
 `planting-patterns` section has neither the 3x3 patterns nor the new trees' patterns; copy them
 from the bundled `config.yml` to grow those from saplings.
+
+Upgrading from an earlier 4.0 build with small trees: the `*_SMALL` trees are now `*_HUGE`, and the
+`-2` variants (`ACACIA-2`, `BIRCH-2`, `DARK_OAK-2`) and `biome.MEADOW-AZALEA` are gone. The plugin
+never deletes tree files, so remove the old `*_SMALL` and `*-2*` files from the plugin folder (or
+they keep spawning next to the new ones; `biome.MEADOW-*` files are simply ignored now), and
+rename `*_small` planting patterns and the `"*_SMALL"` weight to `*_huge` / `"*_HUGE"`. An old
+`bone-meal-consumed-small` still sets the huge cost; an old `"*_SMALL"` weight just matches
+nothing once those files are gone.
 
 ### Development
 `make server` builds the plugin and runs a local Paper test server in `test-server/` (gitignored;
@@ -72,7 +97,7 @@ Custom trees can be added to a biome by naming the tree and root files as such:
 biome.&lt;biome&gt;-&lt;name&gt;.xml<br>
 biome.&lt;biome&gt;-&lt;name&gt;.root.xml
 
-Where &lt;biome&gt; is the biome in question - FOREST, BIRCH_FOREST, CHERRY_GROVE, DARK_FOREST, PALE_GARDEN, SWAMP, MANGROVE_SWAMP, JUNGLE, BADLANDS, SAVANNA, TAIGA, MUSHROOM_FIELDS, MEADOW and DAPPLED_FOREST (26.3+),<br>
+Where &lt;biome&gt; is the biome in question - FOREST, BIRCH_FOREST, CHERRY_GROVE, DARK_FOREST, PALE_GARDEN, SWAMP, MANGROVE_SWAMP, JUNGLE, BADLANDS, SAVANNA, TAIGA, MUSHROOM_FIELDS, DAPPLED_FOREST (26.3+) and LUSH_CAVES (azalea trees: these spawn above lush caves, whatever the surface biome),<br>
 hyphen separator between biome and tree name is required,<br>
 and &lt;name&gt; is anything you want to call the tree using lowercase and uppercase letters, numbers, underscore or hyphen.
 
@@ -119,7 +144,9 @@ To plant a giant tree in creative/survival mode, perform the following steps:
 1. Flatten a 5x5 area of dirt or grass
 1. Place the core block as defined in the config (default EMERALD_BLOCK) in the center
 1. Surround the core block with two rings of saplings according to the pattern for the tree you want
-1. Right click the core block with a stack of 64 bone meal
+   (one full ring for a huge tree, or just the four saplings north, east, south and west of it for a
+   big one)
+1. Right click the core block with bone meal (64 for a giant tree, 32 for a huge one, 16 for a big one)
 1. Stand back (default of 3 seconds to get out of the way)
 
 

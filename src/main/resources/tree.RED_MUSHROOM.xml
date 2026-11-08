@@ -6,12 +6,12 @@
     <param name='WoodType' value='Red Mushroom' />
     <param name='Shape' value='0' />
     <param name='Levels' value='2' />
-    <param name='Scale' value='34.0' />
+    <param name='Scale' value='44.0' />
     <param name='ScaleV' value='5.0' />
     <param name='BaseSize' value='0.86' />
-    <param name='Ratio' value='0.13' />
+    <param name='Ratio' value='0.11' />
     <param name='RatioPower' value='1.0' />
-    <param name='Flare' value='0.4' />
+    <param name='Flare' value='0.25' />
     <param name='Lobes' value='0' />
     <param name='LobeDepth' value='0.0' />
     <param name='Smooth' value='0.05' />

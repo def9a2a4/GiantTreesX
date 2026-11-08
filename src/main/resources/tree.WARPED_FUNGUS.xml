@@ -6,7 +6,7 @@
     <param name='WoodType' value='Warped' />
     <param name='Shape' value='0' />
     <param name='Levels' value='2' />
-    <param name='Scale' value='32.0' />
+    <param name='Scale' value='42.0' />
     <param name='ScaleV' value='5.0' />
     <param name='BaseSize' value='0.7' />
     <param name='Ratio' value='0.07' />

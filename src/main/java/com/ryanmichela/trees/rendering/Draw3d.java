@@ -304,6 +304,8 @@ public class Draw3d {
     final int py = pos.getBlockY();
     final int pz = pos.getBlockZ();
     final int seed = refPoint.hashCode();
+    // calculateNoiseOffset(.., 1, 0) <= 2 * Smooth (simplex noise stays within [-1, 1])
+    final double tMax = 1 + (2.5 * noiseIntensity);
     for (int x = -halfSize; x <= halfSize; x++) {
       for (int y = -halfSize; y <= halfSize; y++) {
         for (int z = -halfSize; z <= halfSize; z++) {
@@ -311,12 +313,17 @@ public class Draw3d {
           final int by = y + py;
           final int bz = z + pz;
           final double left = ((x * x) / (a * a)) + ((y * y) / (b * b)) + ((z * z) / (c * c));
+          final int r2 = (x * x) + (y * y) + (z * z);
+          // far outside even for the largest Smooth offset: skip the noise lookups
+          if ((left > 0) && ((Math.sqrt(r2) * (1 - Math.sqrt(tMax / left))) > LEAF_REACH)) {
+            continue;
+          }
           final double q = left / (1 + calculateNoiseOffset(bx, by, bz, 1, 0));
           final boolean inside;
           if (q == 0) {
             inside = true;
           } else {
-            final double r = Math.sqrt((x * x) + (y * y) + (z * z));
+            final double r = Math.sqrt(r2);
             final double rDir = r / Math.sqrt(q); // centre to surface along this ray
             final double out = r - rDir; // blocks outside the surface (negative inside)
             if (out <= -LEAF_REACH) {
@@ -325,15 +332,22 @@ public class Draw3d {
               inside = false;
             } else {
               final double amp = Math.min(1, rDir / LEAF_FULL_RADIUS);
-              final double lump = noise.noise((bx * LEAF_LUMP_FREQ) + 31.5,
-                                              (by * LEAF_LUMP_FREQ) + 47.25,
-                                              (bz * LEAF_LUMP_FREQ) + 13.75);
-              final double fine = noise.noise((bx * LEAF_FINE_FREQ) + 71.5,
-                                              (by * LEAF_FINE_FREQ) + 5.25,
-                                              (bz * LEAF_FINE_FREQ) + 89.75);
-              final double u = (LeafDecorator.hash(seed, bx, by, bz, 7) >>> 8) / 16777216.0;
-              inside = out <= (amp * ((LEAF_LUMP * lump) + (LEAF_FINE * fine)))
-                              + (LEAF_JITTER * (u - 0.5));
+              final double reach = (amp * (LEAF_LUMP + LEAF_FINE)) + (LEAF_JITTER / 2);
+              if (out <= -reach) {
+                inside = true;
+              } else if (out > reach) {
+                inside = false;
+              } else {
+                final double lump = noise.noise((bx * LEAF_LUMP_FREQ) + 31.5,
+                                                (by * LEAF_LUMP_FREQ) + 47.25,
+                                                (bz * LEAF_LUMP_FREQ) + 13.75);
+                final double fine = noise.noise((bx * LEAF_FINE_FREQ) + 71.5,
+                                                (by * LEAF_FINE_FREQ) + 5.25,
+                                                (bz * LEAF_FINE_FREQ) + 89.75);
+                final double u = (LeafDecorator.hash(seed, bx, by, bz, 7) >>> 8) / 16777216.0;
+                inside = out <= (amp * ((LEAF_LUMP * lump) + (LEAF_FINE * fine)))
+                                + (LEAF_JITTER * (u - 0.5));
+              }
             }
           }
           if (inside) {
