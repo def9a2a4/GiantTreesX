@@ -8,13 +8,29 @@ treeGrowthPercentChance: 0.5
 worlds:
   - world
 
+# How often each biome tree is picked when a tree grows naturally. Every biome.<BIOME>-<name>.xml
+# file in the plugin folder is a candidate for its biome; <name> is the key here. A key starting
+# with * matches every name ending in the rest, so "*_SMALL" covers OAK_SMALL, SPRUCE_SMALL, ...
+# An exact name beats a * key. Trees not listed weigh "default". 0 stops a tree spawning.
+# With the weights below a forest gets 3 small oaks for every giant oak. treeGrowthPercentChance
+# still decides how often a tree grows at all.
+natural-tree-weights:
+  default: 1
+  "*_SMALL": 3
+
 # The planting pattern is used to grow giant trees in survival mode using collected resources.
 planting-patterns:
-  # A 5 x 5 matrix is used for the pattern with the core block in the center
+  # A 5 x 5 pattern grows a giant tree, a 3 x 3 pattern a small one (it costs
+  # bone-meal-consumed-small instead of bone-meal-consumed). The core block is in the center.
+  # When both a 5 x 5 and a 3 x 3 pattern fit around the core block, the 5 x 5 one wins.
+  # The name of a pattern is the tree file it grows: oak_small grows tree.OAK_SMALL.xml.
   # Each row in the pattern represents one row of blocks placed horizontally on the ground.
-  # All rows must be the same length (5x5 matrix)
+  # All rows must be as long as there are rows (a square).
   # Each character in the pattern represents one of the following saplings:
-  # A=Acacia, O=Oak, D=Dark Oak, B=Birch, C=Cherry, M=Mangrove Propaglue, S=Spruce, J=Jungle, and X for core.
+  # A=Acacia, O=Oak, D=Dark Oak, B=Birch, C=Cherry, M=Mangrove Propaglue, S=Spruce, J=Jungle,
+  # P=Pale Oak, L=Poplar (Minecraft 26.3+), R=Red Mushroom, N=Brown Mushroom, F=Crimson Fungus,
+  # W=Warped Fungus, Z=Azalea, Y=Flowering Azalea, H=Blue Orchid, and X for core.
+  # Patterns using a sapling the server doesn't have (e.g. poplar before 26.3) are skipped.
   acacia:
     - AAAAA
     - AAAAA
@@ -75,12 +91,103 @@ planting-patterns:
     - OOXOO
     - OBOBO
     - BOOOB
+  pale_oak:
+    - PPPPP
+    - PPPPP
+    - PPXPP
+    - PPPPP
+    - PPPPP
+  swamp_oak:
+    - HOOOH
+    - OOOOO
+    - OOXOO
+    - OOOOO
+    - HOOOH
+  poplar:
+    - LLLLL
+    - LLLLL
+    - LLXLL
+    - LLLLL
+    - LLLLL
+  red_mushroom:
+    - RRRRR
+    - RRRRR
+    - RRXRR
+    - RRRRR
+    - RRRRR
+  brown_mushroom:
+    - NNNNN
+    - NNNNN
+    - NNXNN
+    - NNNNN
+    - NNNNN
+  crimson_fungus:
+    - FFFFF
+    - FFFFF
+    - FFXFF
+    - FFFFF
+    - FFFFF
+  warped_fungus:
+    - WWWWW
+    - WWWWW
+    - WWXWW
+    - WWWWW
+    - WWWWW
+  azalea:
+    - ZYZYZ
+    - YZZZY
+    - ZZXZZ
+    - YZZZY
+    - ZYZYZ
+  # 3 x 3 patterns: small trees
+  acacia_small:
+    - AAA
+    - AXA
+    - AAA
+  oak_small:
+    - OOO
+    - OXO
+    - OOO
+  birch_small:
+    - BBB
+    - BXB
+    - BBB
+  cherry_small:
+    - CCC
+    - CXC
+    - CCC
+  dark_oak_small:
+    - DDD
+    - DXD
+    - DDD
+  spruce_small:
+    - SSS
+    - SXS
+    - SSS
+  jungle_small:
+    - JJJ
+    - JXJ
+    - JJJ
+  mangrove_small:
+    - MMM
+    - MXM
+    - MMM
+  mesapuzzle_small:
+    - AOA
+    - OXO
+    - AOA
+  cottonwood_small:
+    - OBO
+    - BXB
+    - OBO
 
 # core block (marked by X in patterns)
 core: EMERALD_BLOCK
 
-# Fertilizing the tree consumes some number of bone meal.
+# Fertilizing the tree consumes some number of bone meal: bone-meal-consumed for a giant tree
+# (5 x 5 pattern), bone-meal-consumed-small for a small one (3 x 3 pattern).
 bone-meal-consumed: 64
+bone-meal-consumed-small: 16
   
 # Giant trees can possibly smother players if they don't get out of the way.
 # How many seconds should Giant Trees wait before adding a tree to the world?
@@ -100,9 +207,11 @@ wood:
   hollow_wall_thickness: 2
 
 # Per wood type overrides, keyed by the WoodType of the tree file:
-# Oak, Spruce, Birch, Cherry, Jungle, Acacia, Dark Oak, Mangrove, Mangrove_roots.
+# Oak, Spruce, Birch, Cherry, Jungle, Acacia, Dark Oak, Mangrove, Mangrove_roots, Pale Oak,
+# Swamp Oak, Poplar, Azalea, Red Mushroom, Brown Mushroom, Crimson, Warped.
 # Any key from the wood section can be overridden, and "leaves" sets a weighted mix of
-# leaf blocks (default: the wood type's own leaves).
+# leaf blocks (default: the wood type's own leaves; Poplar mixes yellow, orange and red poplar
+# leaves, Azalea plain and flowering azalea leaves, Crimson and Warped add some shroomlights).
 wood_types: {}
   # Oak:
   #   hollow_chance: 10

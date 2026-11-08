@@ -104,9 +104,10 @@ gallery: docs-trees
 	cd $(VIEWER) && npx playwright install chromium
 	node $(VIEWER)/scripts/gallery.mjs
 
-# The viewer's JS port must match the plugin's Java tree generation, and docs/trees/ must match
-# the plugin's tree files (what CI runs).
+# The viewer's JS port must match the plugin's Java tree generation, docs/trees/ must match the
+# plugin's tree files, and docs/gallery/ must have an up-to-date entry per tree (what CI runs).
 .PHONY: preview-check
 preview-check:
 	node $(VIEWER)/scripts/sync-trees.mjs --check
 	$(VIEWER)/scripts/check.sh
+	node $(VIEWER)/scripts/gallery-check.mjs

@@ -18,13 +18,20 @@
 package com.ryanmichela.trees;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.logging.Level;
+import java.util.regex.Pattern;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import com.google.common.collect.ImmutableList;
 
 public class TreePlugin extends JavaPlugin {
 
@@ -66,30 +73,40 @@ public class TreePlugin extends JavaPlugin {
 
   @Override
   public void onLoad() {
-    if (!this.getDataFolder().exists()) {
-      this.saveDefaultConfig();
+    // writes config.yml only when it is missing (also when just the file was deleted)
+    this.saveDefaultConfig();
+    this.unpackTreeFiles();
+  }
+
+  /**
+   * Writes every tree and biome file bundled in the plugin jar ({@code tree.*.xml},
+   * {@code biome.*.xml}, roots included) that the data folder does not have yet. Existing files
+   * are never overwritten, so edited trees survive upgrades; deleted ones come back.
+   */
+  private void unpackTreeFiles() {
+    final List<String> bundled = new ArrayList<>();
+    try (JarFile jar = new JarFile(this.getFile())) {
+      final Enumeration<JarEntry> entries = jar.entries();
+      while (entries.hasMoreElements()) {
+        final JarEntry entry = entries.nextElement();
+        if (!entry.isDirectory() && TREE_FILE.matcher(entry.getName()).matches()) {
+          bundled.add(entry.getName());
+        }
+      }
+    } catch (final IOException e) {
+      this.getLogger().log(Level.SEVERE, "Could not list the tree files in the plugin jar", e);
+      return;
     }
-    // unpack basic trees
-    for (final String biome : ImmutableList.of("BIRCH_FOREST-BIRCH", "FOREST-OAK", "FOREST-COTTONWOOD", "CHERRY_GROVE-CHERRY", "JUNGLE-JUNGLE", "DARK_FOREST-DARK_OAK",
-                                               "SAVANNA-ACACIA", "TAIGA-SPRUCE", "MANGROVE_SWAMP-MANGROVE", "BADLANDS-MESAPUZZLE")) {
-    	ensureTreeFileExists("biome." + biome);
-    }
-    for (final String tree : ImmutableList.of("ACACIA", "BIRCH", "DARK_OAK", "JUNGLE", "OAK", "CHERRY",
-    		                                  "SPRUCE", "MANGROVE", "MESAPUZZLE", "COTTONWOOD")) {
-    	ensureTreeFileExists("tree." + tree);
+    Collections.sort(bundled);
+    for (final String name : bundled) {
+      // check first: saveResource warns when the file exists and replace is false
+      if (!new File(this.getDataFolder(), name).exists()) {
+        this.saveResource(name, false);
+      }
     }
   }
 
-  private void ensureTreeFileExists(String filePrefix) {
-    String treeFile = filePrefix + ".xml";
-    String treeRootFile = filePrefix + ".root.xml";
-    // Check before creation, to silence meaningless warnings
-    if (!new File(this.getDataFolder(), treeFile).exists()) {
-      this.saveResource(treeFile, true);
-    }
-    if (!new File(this.getDataFolder(), treeRootFile).exists()) {
-      this.saveResource(treeRootFile, true);
-    }
-  }
+  /** Tree files at the root of the jar: tree.X.xml, biome.X.xml and their .root.xml files. */
+  private static final Pattern TREE_FILE = Pattern.compile("(tree|biome)\\.[^/]+\\.xml");
 
 }

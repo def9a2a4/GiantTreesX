@@ -27,7 +27,9 @@ class WorldChange {
 
   /** What part of the tree a change belongs to; decides how {@link WoodStyler} treats it. */
   enum Kind {
-    WOOD, LEAVES, VINE
+    WOOD, LEAVES, VINE,
+    /** A block hanging straight down from leaves, e.g. pale hanging moss (LeafDecorator). */
+    HANGING
   }
 
   public Material material;

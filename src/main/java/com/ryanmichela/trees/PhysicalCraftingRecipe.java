@@ -27,103 +27,94 @@ import org.bukkit.Material;
 public class PhysicalCraftingRecipe {
 
   private String treename = null;
-  private Material[][] pattern = new Material[5][5];
-  private Material coreblock = null;
-  private boolean domatchrotations = false;
+  private final int size;
+  private final Material coreblock;
+  private final int boneMealCost;
+  /** the pattern in all distinct orientations (1 when every rotation looks the same, else 4) */
+  private final Material[][][] orientations;
 
   /**
    * Creates a PhysicalCraftingRecipe from a 2D pattern of materials.
-   * The pattern must be a 5x5 square.
+   * The pattern must be an odd-sized square (3x3 or 5x5) with the core block in the centre.
    *
    * @param treename - Name of the tree - matches tree filename
    * @param coreblock - The material of the central core block
-   * @param pattern - The rectangle of Materials to match.
+   * @param pattern - The square of Materials to match.
+   * @param boneMealCost - bone meal consumed when this recipe grows a tree
    */
-  public PhysicalCraftingRecipe(String treename, Material coreblock, final Material[][] pattern) {
-
+  public PhysicalCraftingRecipe(String treename, Material coreblock, final Material[][] pattern, int boneMealCost) {
     this.treename = treename;
     this.coreblock = coreblock;
-    
-    // create a copy of the pattern for this recipe and determine if materials are all the same
-    // so we don't have to waste time rotating the matrix when trying to match the pattern
-    Material prevmaterial = pattern[0][0];
-    for (int x = 0; x < 5; x++) {
-    	for (int z = 0; z < 5; z++) {
-    		this.pattern[x][z] = pattern[x][z];
-    		if (!pattern[x][z].equals(prevmaterial)) {
-    			if (!pattern[x][z].equals(this.coreblock)) {
-    				this.domatchrotations = true;
-    			}
-    		}
-    		if (!pattern[x][z].equals(this.coreblock)) {
-    			prevmaterial = pattern[x][z];
-    		}
-    	}
+    this.size = pattern.length;
+    this.boneMealCost = boneMealCost;
+
+    final Material[][] r0 = copy(pattern);
+    final Material[][] r1 = rotateCW(r0);
+    final Material[][] r2 = rotateCW(r1);
+    final Material[][] r3 = rotateCW(r2);
+    if (Arrays.deepEquals(r0, r1)) {
+      this.orientations = new Material[][][] { r0 };
+    } else {
+      this.orientations = new Material[][][] { r0, r1, r2, r3 };
     }
   }
 
-  /**
-   * Sets the name of the tree for this recipe
-   * 
-   * @param treename
-   * 
-   * @return void
-   */
   public void setTreeName(String treename) {
 	  this.treename = treename;
   }
-  
-  /*
-   * Returns the name of the tree for this recipe
-   * 
-   * @param none
-   * 
-   * @return treename
-   */
+
+  /** Name of the tree for this recipe (the planting-patterns key) */
   public String getTreeName() {
 	  return this.treename;
   }
 
+  /** Width of the square pattern (3 or 5) */
+  public int getSize() {
+    return this.size;
+  }
+
+  /** Bone meal consumed when this recipe grows a tree */
+  public int getBoneMealCost() {
+    return this.boneMealCost;
+  }
+
+  public Material getCoreBlock() {
+    return this.coreblock;
+  }
+
   /**
-   * Determines if this PhysicalCraftingRecipe matches the blocks in the world.
+   * Determines if this PhysicalCraftingRecipe matches the blocks in the world, in any of the
+   * four 90 degree orientations.
    *
-   * @param coreblock - the core block clicked
+   * @param worldblocks - size x size blocks around the clicked core block
    * @return true or false if a match was found
    */
   public boolean matches(Material[][] worldblocks) {
-    boolean patternmatch = false;
-    int rotations = 0;
-
-	if (Arrays.deepEquals(worldblocks, this.pattern)) {
-		patternmatch = true;
-	}
-	// rotate through 270 degrees (3 x 90 degree rotations) as we've already compared one orientation
-	if (domatchrotations) {
-		while (rotations < 3 && !patternmatch) {
-			this.pattern = this.rotateCW(this.pattern);
-			rotations++;
-			if (Arrays.deepEquals(worldblocks, this.pattern)) {
-				patternmatch = true;
-			}
-		}
+    for (final Material[][] orientation : this.orientations) {
+      if (Arrays.deepEquals(worldblocks, orientation)) {
+        return true;
+      }
     }
-
-    return patternmatch;
+    return false;
   }
-  
-  /*
-   * Transposes an array 90 degrees clockwise (fixed 5x5 matrix)
-   * 
-   * @param matrix
-   * @return matrix rotated 90 degrees clockwise
-   */
-  private Material[][] rotateCW(Material[][] matrix) {
-	    Material[][] ret = new Material[5][5];
-	    for (int r = 0; r < 5; r++) {
-	        for (int c = 0; c < 5; c++) {
-	            ret[c][5-1-r] = matrix[r][c];
-	        }
-	    }
-	    return ret;
-	}
+
+  private static Material[][] copy(Material[][] matrix) {
+    final Material[][] ret = new Material[matrix.length][];
+    for (int r = 0; r < matrix.length; r++) {
+      ret[r] = matrix[r].clone();
+    }
+    return ret;
+  }
+
+  /** Returns a copy of a square matrix rotated 90 degrees clockwise */
+  private static Material[][] rotateCW(Material[][] matrix) {
+    final int n = matrix.length;
+    final Material[][] ret = new Material[n][n];
+    for (int r = 0; r < n; r++) {
+      for (int c = 0; c < n; c++) {
+        ret[c][n - 1 - r] = matrix[r][c];
+      }
+    }
+    return ret;
+  }
 }

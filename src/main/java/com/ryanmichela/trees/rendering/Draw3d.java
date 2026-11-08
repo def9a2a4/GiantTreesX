@@ -93,14 +93,12 @@ public class Draw3d {
                                      centerPoint.getBlockZ(),
                                      centerPoint.getBlockX(), r, level);
           for (final Point2D p : circle2d) {
-            changeTracker.addChange(new Vector(
+            addWood(new Vector(
                                       centerPoint.getBlockX(),
                                       (l1.getBlockY() - centerPoint.getBlockY())
                                           + p.p,
                                       (l1.getBlockZ() - centerPoint.getBlockZ())
-                                          + p.q),
-                           treeType.woodMaterial,
-                    orient(orientation), WorldChange.Kind.WOOD, level, true);
+                                          + p.q), orientation, level);
           }
           break;
         case yMajor:
@@ -108,14 +106,12 @@ public class Draw3d {
                                      centerPoint.getBlockZ(),
                                      centerPoint.getBlockY(), r, level);
           for (final Point2D p : circle2d) {
-            changeTracker.addChange(new Vector(
+            addWood(new Vector(
                                                     (l1.getBlockX() - centerPoint.getBlockX())
                                                         + p.p,
                                                     centerPoint.getBlockY(),
                                                     (l1.getBlockZ() - centerPoint.getBlockZ())
-                                                        + p.q),
-                                         treeType.woodMaterial,
-                    orient(orientation), WorldChange.Kind.WOOD, level, true);
+                                                        + p.q), orientation, level);
           }
           break;
         case zMajor:
@@ -123,14 +119,12 @@ public class Draw3d {
                                      centerPoint.getBlockY(),
                                      centerPoint.getBlockZ(), r, level);
           for (final Point2D p : circle2d) {
-            changeTracker.addChange(new Vector(
+            addWood(new Vector(
                                                     (l1.getBlockX() - centerPoint.getBlockX())
                                                         + p.p,
                                                     (l1.getBlockY() - centerPoint.getBlockY())
                                                         + p.q,
-                                                    centerPoint.getBlockZ()),
-                                         treeType.woodMaterial,
-                    orient(orientation), WorldChange.Kind.WOOD, level, true);
+                                                    centerPoint.getBlockZ()), orientation, level);
           }
           break;
       }
@@ -155,8 +149,20 @@ public class Draw3d {
   public void drawWoodSphere(final Vector pos, final double r,
                              final Orientation orientation, final int level) {
     for (final Vector loc : plotSphere(pos, r, level)) {
-      changeTracker.addChange(loc, treeType.woodMaterial,
-              orient(orientation), WorldChange.Kind.WOOD, level, true);
+      addWood(loc, orientation, level);
+    }
+  }
+
+  /**
+   * Stem blocks; from {@link TreeType#capLevel} on they are leaf (cap) blocks instead, which never
+   * replace what is already there (mushroom caps, so no stem pokes out of the cap).
+   */
+  private void addWood(final Vector loc, final Orientation orientation, final int level) {
+    if (level >= treeType.capLevel) {
+      changeTracker.addChange(loc, treeType.leafMaterial, persist(), WorldChange.Kind.LEAVES, -1, false);
+    } else {
+      changeTracker.addChange(loc, treeType.woodMaterial, orient(orientation), WorldChange.Kind.WOOD,
+                              level, true);
     }
   }
 

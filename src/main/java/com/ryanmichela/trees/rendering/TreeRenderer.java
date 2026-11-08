@@ -20,6 +20,7 @@ package com.ryanmichela.trees.rendering;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Random;
+import java.util.logging.Level;
 
 import net.sourceforge.arbaro.params.AbstractParam;
 import net.sourceforge.arbaro.tree.Segment;
@@ -57,7 +58,9 @@ public class TreeRenderer {
 
     final Tree tree = new Tree();
     tree.setOutputType(Tree.CONES);
-    tree.readFromXML(new FileInputStream(treeFile));
+    try (FileInputStream in = new FileInputStream(treeFile)) {
+      tree.readFromXML(in);
+    }
     tree.params.Seed = seed;
     tree.params.stopLevel = -1; // -1 for everything
     tree.params.verbose = false;
@@ -70,13 +73,20 @@ public class TreeRenderer {
     }
   }
 
-  private void renderTree(final Location refPoint, final File treeFile,
+  private void renderTree(final Location requestedRefPoint, final File treeFile,
                           final File rootFile, final int seed,
                           final boolean recordHistory, final Player forPlayer,
                           final boolean withDelay) {
     AbstractParam.loading = true;
 
     final WorldChangeTracker changeTracker = new WorldChangeTracker();
+    // our own copy: the async task must not read a Location the caller may still change, nor
+    // change the caller's (the mangrove offset below used to move it)
+    final Location refPoint = requestedRefPoint.clone();
+    // mangrove tree needs roots exposed so raise up refpoint by 18 blocks (purely experimental)
+    if (treeFile.getName().contains("MANGROVE")) {
+      refPoint.add(0, 18, 0);
+    }
 
     if (plugin.isEnabled()) {
         this.plugin.getServer().getScheduler()
@@ -84,14 +94,10 @@ public class TreeRenderer {
                     try {
                         TreeRenderer.this.logVerbose("Rendering tree " + treeFile.getName());
                         final Tree tree = TreeRenderer.this.loadTree(treeFile, seed);
-                        
-                        // mangrove tree needs roots exposed so raise up refpoint by 18 blocks (purely experimental)
-                        if (treeFile.getName().contains("MANGROVE")) {
-                        	refPoint.add(0,18,0);
-                        }
-                        
+
                         tree.make();
-                        final TreeType treeType = new TreeType(tree.params.WoodType);
+                        final TreeType treeType = new TreeType(tree.params.WoodType,
+                                TreeRenderer.this.plugin.getLogger());
                         final Draw3d d3d = new Draw3d(refPoint,
                                 tree.params.Smooth,
                                 treeType,
@@ -101,7 +107,7 @@ public class TreeRenderer {
                         final MinecraftExporter treeExporter = new MinecraftExporter(tree, d3d);
                         treeExporter.write();
 
-                        if (tree.params.WoodType.equals("Jungle") || tree.params.WoodType.equals("Mangrove")) {
+                        if (treeType.decoration == TreeType.Decoration.TRUNK_VINES) {
                             JungleVinePopulator.populate(changeTracker, new Random(seed));
                         }
 
@@ -118,7 +124,8 @@ public class TreeRenderer {
                             root.params.Leaves = -1;
                             root.params.scale_tree = tree.params.scale_tree;
                             root.make();
-                            final TreeType rootType = new TreeType(root.params.WoodType);
+                            final TreeType rootType = new TreeType(root.params.WoodType,
+                                    TreeRenderer.this.plugin.getLogger());
                             final Draw3d d3dInverted = new Draw3d(refPoint,
                                     root.params.Smooth,
                                     rootType,
@@ -129,6 +136,8 @@ public class TreeRenderer {
                             treeExporterInverted.write();
                         }
                         AbstractParam.loading = false;
+
+                        LeafDecorator.populate(changeTracker, treeType, seed);
 
                         WoodStyler.apply(changeTracker,
                                 WoodStyle.fromConfig(TreeRenderer.this.plugin.getConfig(),
@@ -145,13 +154,13 @@ public class TreeRenderer {
                                                 try {
                                                     d3d.applyChanges(TreeRenderer.this.plugin);
                                                 } catch (final Exception e) {
-                                                    TreeRenderer.this.plugin.getLogger().severe("Error rendering tree: " + e.getMessage());
+                                                    TreeRenderer.this.plugin.getLogger().log(Level.SEVERE, "Error rendering tree " + treeFile.getName(), e);
                                                 }
                                             }, generationDelay);
                         }
 
                     } catch (final Exception e) {
-                        TreeRenderer.this.plugin.getLogger().severe("Error rendering tree: " + e.getMessage());
+                        TreeRenderer.this.plugin.getLogger().log(Level.SEVERE, "Error rendering tree " + treeFile.getName(), e);
                     }
                 });
     }

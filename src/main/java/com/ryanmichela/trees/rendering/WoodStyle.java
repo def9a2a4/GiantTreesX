@@ -3,6 +3,8 @@ package com.ryanmichela.trees.rendering;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import org.bukkit.Material;
@@ -28,7 +30,7 @@ public class WoodStyle {
   public final double hollowChance;
   /** Blocks of wall, bark included, left around a hollow trunk. */
   public final int hollowWallThickness;
-  /** Weighted leaf blocks; empty means "use the wood type's own leaves". */
+  /** Weighted leaf blocks; empty means "use the wood type's own (single) leaf block". */
   public final Map<Material, Integer> leaves;
 
   public WoodStyle(final Mode mode, final double hollowChance,
@@ -58,14 +60,14 @@ public class WoodStyle {
     try {
       mode = Mode.valueOf(modeName.toUpperCase(Locale.ROOT));
     } catch (final IllegalArgumentException e) {
-      logger.warning("Unknown wood style '" + modeName + "', using mixed");
+      warnOnce(logger, "Unknown wood style '" + modeName + "', using mixed");
       mode = Mode.MIXED;
     }
 
     final double hollowChance = Math.max(0, Math.min(100,
-        Double.parseDouble(pick(override, base, "hollow_chance", "0"))));
-    final int wallThickness = Math.max(1,
-        Integer.parseInt(pick(override, base, "hollow_wall_thickness", "2")));
+        number(override, base, "hollow_chance", "0", woodType, logger)));
+    final int wallThickness = Math.max(1, (int)
+        number(override, base, "hollow_wall_thickness", "2", woodType, logger));
 
     final Map<Material, Integer> leaves = new LinkedHashMap<>();
     final ConfigurationSection leafSection = override != null && override.isConfigurationSection("leaves")
@@ -76,14 +78,47 @@ public class WoodStyle {
         final Material material = Material.matchMaterial(key);
         final int weight = leafSection.getInt(key);
         if (material == null || !material.isBlock()) {
-          logger.warning("Ignoring unknown leaf block '" + key + "' for wood type " + woodType);
+          warnOnce(logger, "Ignoring unknown leaf block '" + key + "' for wood type " + woodType);
         } else if (weight > 0) {
           leaves.put(material, weight);
         }
       }
     }
 
+    if (leaves.isEmpty()) {
+      // the wood type's own leaves, which for some (e.g. Poplar) are a mix
+      leaves.putAll(new TreeType(woodType).leafMix);
+    }
     return new WoodStyle(mode, hollowChance, wallThickness, leaves);
+  }
+
+  /**
+   * A numeric config value, or {@code fallback} with a warning when it is not a number, so one
+   * typo does not stop every tree from rendering. Fractions are truncated for whole-number keys.
+   */
+  private static double number(final ConfigurationSection override, final ConfigurationSection base,
+                               final String key, final String fallback, final String woodType,
+                               final Logger logger) {
+    final String value = pick(override, base, key, fallback);
+    try {
+      final double parsed = Double.parseDouble(value.trim());
+      if (Double.isFinite(parsed)) {
+        return parsed;
+      }
+    } catch (final NumberFormatException e) {
+      // fall through to the warning
+    }
+    warnOnce(logger, "Invalid " + key + " '" + value + "' for wood type " + woodType + ", using " + fallback);
+    return Double.parseDouble(fallback);
+  }
+
+  /** Styles are resolved for every tree, so each config problem is logged only the first time. */
+  private static final Set<String> WARNED = ConcurrentHashMap.newKeySet();
+
+  private static void warnOnce(final Logger logger, final String message) {
+    if (WARNED.add(message)) {
+      logger.warning(message);
+    }
   }
 
   private static String pick(final ConfigurationSection override, final ConfigurationSection base,

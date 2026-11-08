@@ -18,20 +18,20 @@
 package com.ryanmichela.trees;
 
 import java.io.File;
-import java.io.FilenameFilter;
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Random;
+import java.util.Set;
 import java.util.logging.Level;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.bukkit.Chunk;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
+import org.bukkit.configuration.Configuration;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.plugin.Plugin;
 
@@ -54,68 +54,118 @@ public class TreePopulator extends BlockPopulator {
     		  64,
               (chunk.getZ() * 16) + random.nextInt(16)
       );
-      refPoint.setY(this.getHighestSoil(world.getHighestBlockAt(refPoint)));
+      final TreeGround ground = TreeGround.at(world, refPoint.getBlockX(), refPoint.getBlockZ());
+      refPoint.setY(ground.block().getY());
       
-      Biome biome = this.simplifyBiome(world.getBiome(refPoint.getBlockX(), refPoint.getBlockY(), refPoint.getBlockZ()));
+      // by key string, so biomes newer than the compile-time API (dappled_forest) work too
+      final String biomeName = this.simplifyBiome(world.getBiome(refPoint.getBlockX(), refPoint.getBlockY(), refPoint.getBlockZ()));
+      // only on soil, never on or in another tree, and in water only in swamps
+      final boolean waterOk = "MANGROVE_SWAMP".equals(biomeName) || "SWAMP".equals(biomeName);
 
-      if (this.isAcceptableBiome(biome) && this.treeCanGrow(random)) {
-        final String biomeName = biome.getKey().value().toUpperCase();
+      if (this.isAcceptableBiome(biomeName) && ground.canGrowNaturally(waterOk) && this.treeCanGrow(random)) {
 
-        // get list of available tree files with biome name in
-        File [] biometreefiles = this.plugin.getDataFolder().listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.startsWith("biome.");
-            }
-        });
-        ArrayList<String> availabletrees = new ArrayList<String>();
-		String regex = "biome." + biomeName + "((-([0-9A-Z-_]*)){0,}).xml";
-		Pattern pattern = Pattern.compile(regex);
-		for ( int idx = 0; idx < biometreefiles.length; idx++ ) {
-			Matcher match = pattern.matcher( biometreefiles[idx].toString() );
-			if ( match.find() ) {
-				availabletrees.add(match.group());
-			}
-		}
-		if (availabletrees.isEmpty()) {
-		  return;
-		}
-
-        // pick a random file from set
-		int randtreeidx = (int) ((Math.random() * (availabletrees.size() - 0)) + 0);
-        
-        //final File treeFile = new File(this.plugin.getDataFolder(), "biome."
-        //        + treeType
-        //        + ".xml");
-        //final File rootFile = new File(this.plugin.getDataFolder(), "biome."
-        //        + treeType
-        //        + ".root.xml");
-		File treeFile = null;
-		File rootFile = null;
-		treeFile = new File( this.plugin.getDataFolder(), availabletrees.get(randtreeidx) );
-		rootFile = new File( this.plugin.getDataFolder(), availabletrees.get(randtreeidx).replace( ".xml", ".root.xml" ) );
-
-        if ( treeFile.exists() && rootFile.exists() ) {
-          final TreeRenderer renderer = new TreeRenderer(this.plugin);
-          renderer.renderTree(refPoint, treeFile, rootFile, random.nextInt(), false);
+        // the biome's tree files: biome.<BIOME>.xml or biome.<BIOME>-<anything>.xml (not roots)
+        final String prefix = "biome." + biomeName;
+        final File[] biometreefiles = this.plugin.getDataFolder().listFiles((dir, name) ->
+            name.endsWith(".xml") && !name.endsWith(".root.xml")
+            && (name.equals(prefix + ".xml") || name.startsWith(prefix + "-")));
+        if (biometreefiles == null || biometreefiles.length == 0) {
+          return;
         }
+        // sorted, and picked with the chunk's random, so a world seed always grows the same trees;
+        // weighted by the natural-tree-weights config section
+        Arrays.sort(biometreefiles);
+        final List<String> names = Arrays.stream(biometreefiles).map(File::getName).toList();
+        final String treeName = this.pickWeighted(names, biomeName, random);
+        final File treeFile = new File(this.plugin.getDataFolder(), treeName);
+        final File rootFile = new File(this.plugin.getDataFolder(),
+                                       treeName.substring(0, treeName.length() - 4) + ".root.xml");
+        // a missing root file just means no roots (TreeRenderer checks)
+        final TreeRenderer renderer = new TreeRenderer(this.plugin);
+        renderer.renderTree(refPoint, treeFile, rootFile, random.nextInt(), false);
       }
     } catch (Exception ex) {
       plugin.getLogger().log(Level.SEVERE, "Exception caught generating giant tree", ex);
     }
   }
 
-  int getHighestSoil(Block highestBlock) {
-    while (highestBlock.getY() > 0
-           && (highestBlock.getType() != Material.GRASS_BLOCK)
-           && (highestBlock.getType() != Material.MUD)
-           && (highestBlock.getType() != Material.MYCELIUM)
-           && (highestBlock.getType().toString().endsWith("DIRT"))
-           && (!highestBlock.getType().toString().endsWith("SAND"))
-           && (!highestBlock.getType().toString().endsWith("TERRACOTTA"))) {
-      highestBlock = highestBlock.getRelative(BlockFace.DOWN);
+  /**
+   * Picks one biome tree file at random, weighted by the {@code natural-tree-weights} config
+   * section. Keys are tree names, the part of the file name after {@code biome.<BIOME>-}
+   * (e.g. {@code OAK_SMALL} for {@code biome.FOREST-OAK_SMALL.xml}); a key starting with
+   * {@code *} matches every name ending in the rest ({@code "*_SMALL"}). An exact key beats a
+   * {@code *} key, the longest {@code *} key wins among those, and unlisted trees weigh
+   * {@code default} (1 if unset). Weights of 0 or less never spawn.
+   */
+  String pickWeighted(final List<String> files, final String biomeName, final Random random) {
+    final ConfigurationSection weights = this.weightsSection();
+    final double[] cumulative = new double[files.size()];
+    double total = 0;
+    for (int i = 0; i < files.size(); i++) {
+      total += Math.max(0.0, weightOf(weights, treeName(files.get(i), biomeName)));
+      cumulative[i] = total;
     }
-    return highestBlock.getY();
+    if (total <= 0) {
+      return files.get(random.nextInt(files.size()));
+    }
+    final double roll = random.nextDouble() * total;
+    for (int i = 0; i < cumulative.length; i++) {
+      if (roll < cumulative[i]) {
+        return files.get(i);
+      }
+    }
+    return files.get(files.size() - 1);
+  }
+
+  /**
+   * The natural-tree-weights section of config.yml, or the bundled one when an older config
+   * has none (getConfigurationSection would return an empty section there).
+   */
+  private ConfigurationSection weightsSection() {
+    final String path = "natural-tree-weights";
+    final Configuration config = this.plugin.getConfig();
+    final Object own = config.get(path, null);
+    if (own instanceof ConfigurationSection) {
+      return (ConfigurationSection) own;
+    }
+    final Configuration defaults = config.getDefaults();
+    return defaults == null ? null : defaults.getConfigurationSection(path);
+  }
+
+  /** biome.FOREST-OAK_SMALL.xml -> OAK_SMALL */
+  static String treeName(final String file, final String biomeName) {
+    String name = file;
+    final String prefix = "biome." + biomeName;
+    if (name.startsWith(prefix)) {
+      name = name.substring(prefix.length());
+    }
+    if (name.startsWith("-")) {
+      name = name.substring(1);
+    }
+    if (name.endsWith(".xml")) {
+      name = name.substring(0, name.length() - 4);
+    }
+    return name;
+  }
+
+  static double weightOf(final ConfigurationSection weights, final String name) {
+    if (weights == null) {
+      return 1.0;
+    }
+    String best = null;
+    for (final String key : weights.getKeys(false)) {
+      if (key.equals(name)) {
+        return weights.getDouble(key);
+      }
+      if (key.startsWith("*") && name.endsWith(key.substring(1))
+          && (best == null || key.length() > best.length())) {
+        best = key;
+      }
+    }
+    if (best != null) {
+      return weights.getDouble(best);
+    }
+    return weights.getDouble("default", 1.0);
   }
 
   // complete list of biomes for reference
@@ -186,52 +236,62 @@ public class TreePopulator extends BlockPopulator {
   Biome CHERRY_GROVE = getBiome("cherry_grove");
   */
 
-  private boolean isAcceptableBiome(final Biome biome) {
-	    return (biome == Biome.FOREST)
-	        || (biome == Biome.BIRCH_FOREST)
-	        || (biome == Biome.CHERRY_GROVE)
-	        || (biome == Biome.SWAMP)
-	        || (biome == Biome.MANGROVE_SWAMP)
-	        || (biome == Biome.JUNGLE)
-	        || (biome == Biome.BADLANDS)
-	        || (biome == Biome.DARK_FOREST)
-	        || (biome == Biome.TAIGA)
-	        || (biome == Biome.SAVANNA);
+  /**
+   * Biomes that grow giant trees, by the name simplifyBiome returns (biome.NAME-*.xml files).
+   * Matched by key rather than Biome constants so biomes that only exist on newer servers (e.g.
+   * dappled_forest, 26.3) can be listed without breaking older ones.
+   */
+  private static final Set<String> TREE_BIOMES = new HashSet<>(Arrays.asList(
+      "FOREST", "BIRCH_FOREST", "CHERRY_GROVE", "SWAMP", "MANGROVE_SWAMP", "JUNGLE", "BADLANDS",
+      "DARK_FOREST", "TAIGA", "SAVANNA", "PALE_GARDEN", "MUSHROOM_FIELDS", "DAPPLED_FOREST",
+      "MEADOW"));
+
+  private boolean isAcceptableBiome(final String biome) {
+    return biome != null && TREE_BIOMES.contains(biome);
   }
 
-  private Biome simplifyBiome(final Biome biome) {
+  /** Groups biome variants under the name used by the biome.NAME-*.xml files, or null. */
+  private String simplifyBiome(final Biome biome) {
 
-	  switch (biome.getKey().value().toUpperCase()) {
+	  switch (biome.getKey().value().toUpperCase(Locale.ROOT)) {
 
       case "FOREST":
       case "WINDSWEPT_FOREST":
       case "FLOWER_FOREST":
-        return Biome.FOREST;
+        return "FOREST";
       case "BIRCH_FOREST":
       case "OLD_GROWTH_BIRCH_FOREST":
-        return Biome.BIRCH_FOREST;
+        return "BIRCH_FOREST";
       case "CHERRY_GROVE":
-        return Biome.CHERRY_GROVE;
+        return "CHERRY_GROVE";
       case "SWAMP":
-        return Biome.SWAMP;
+        return "SWAMP";
       case "MANGROVE_SWAMP":
-    	return Biome.MANGROVE_SWAMP;
+        return "MANGROVE_SWAMP";
       case "JUNGLE":
       case "SPARSE_JUNGLE":
-        return Biome.JUNGLE;
+        return "JUNGLE";
       case "DARK_FOREST":
-        return Biome.DARK_FOREST;
+        return "DARK_FOREST";
+      case "PALE_GARDEN":
+        return "PALE_GARDEN";
       case "TAIGA":
       case "SNOWY_TAIGA":
-        return Biome.TAIGA;
+        return "TAIGA";
       case "SAVANNA":
       case "WINDSWEPT_SAVANNA":
       case "SAVANNA_PLATEAU":
-        return Biome.SAVANNA;
+        return "SAVANNA";
       case "BADLANDS":
       case "ERODED_BADLANDS":
       case "WOODED_BADLANDS":
-    	return Biome.BADLANDS;
+        return "BADLANDS";
+      case "MUSHROOM_FIELDS":
+        return "MUSHROOM_FIELDS";
+      case "DAPPLED_FOREST": // 26.3+
+        return "DAPPLED_FOREST";
+      case "MEADOW":
+        return "MEADOW";
       default:
         return null;
 	  }

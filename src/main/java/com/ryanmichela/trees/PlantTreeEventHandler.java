@@ -18,12 +18,11 @@
 package com.ryanmichela.trees;
 
 import java.io.File;
-import java.text.CharacterIterator;
-import java.text.StringCharacterIterator;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
+import java.util.Locale;
 import java.util.Random;
 import com.ryanmichela.trees.cost.ItemCost;
 
@@ -42,13 +41,23 @@ import com.ryanmichela.trees.rendering.TreeRenderer;
 
 public class PlantTreeEventHandler implements Listener {
 
-  private int boneMealConsumed;
+  /** default bone meal cost of a 5x5 (giant) pattern */
+  private static final int DEFAULT_BONE_MEAL = 64;
+  /** default bone meal cost of a 3x3 (small) pattern */
+  private static final int DEFAULT_BONE_MEAL_SMALL = 16;
+  /** widest pattern accepted; patterns are 3x3 or 5x5 squares with the core in the centre */
+  private static final int MAX_PATTERN_SIZE = 5;
+
   private Material coreblock;
   private boolean enabled;
   private final Plugin plugin;
   private final PopupHandler popup;
-  private List<PhysicalCraftingRecipe> recipes = new ArrayList<>();
+  /** sorted widest first, so a 5x5 pattern wins over a 3x3 one that also fits */
+  private final List<PhysicalCraftingRecipe> recipes = new ArrayList<>();
   private final TreeRenderer renderer;
+  /** Sapling codes whose block this server doesn't have; patterns using them are skipped. */
+  private static final java.util.Set<Character> unavailableCodes = new java.util.HashSet<>();
+
   private static final HashMap<Character, Material> patternMaterialMap;
   static {
 	  patternMaterialMap = new HashMap<Character, Material>() {
@@ -61,25 +70,29 @@ public class PlantTreeEventHandler implements Listener {
 			  put('S', Material.SPRUCE_SAPLING);
 			  put('J', Material.JUNGLE_SAPLING);
 			  put('C', Material.CHERRY_SAPLING);
+			  put('R', Material.RED_MUSHROOM);
+			  put('N', Material.BROWN_MUSHROOM);
+			  put('F', Material.CRIMSON_FUNGUS);
+			  put('W', Material.WARPED_FUNGUS);
+			  put('Z', Material.AZALEA);
+			  put('Y', Material.FLOWERING_AZALEA);
+			  put('H', Material.BLUE_ORCHID);
 		  }
 	  };
+	  // looked up by name: these blocks don't exist on every supported server version
+	  putIfAvailable('P', "PALE_OAK_SAPLING");
+	  putIfAvailable('L', "POPLAR_SAPLING"); // 26.3+
   }
 
-	public void drawPattern(Material[][] p) {
-		for (int i = 0; i < 5; i++) {
-			String row = "";
-			for (int j = 0; j < 5; j++) {
-				if (p[i][j].equals(coreblock)) {
-					row += "X";
-				} else if (p[i][j].equals(Material.AIR)) {
-					row += "-";
-				} else {
-					row += p[i][j].toString().charAt(0);
-				}
-			}
-		}
-	}
-  
+  private static void putIfAvailable(final char code, final String material) {
+	  final Material m = Material.getMaterial(material);
+	  if (m != null) {
+		  patternMaterialMap.put(code, m);
+	  } else {
+		  unavailableCodes.add(code);
+	  }
+  }
+
   	/*
   	 * Load up tree recipes and validate
   	 */
@@ -90,87 +103,90 @@ public class PlantTreeEventHandler implements Listener {
 
 		try {
 			// Read config and create tree recipes
+			int boneMealConsumed = DEFAULT_BONE_MEAL;
 			if (!plugin.getConfig().contains("bone-meal-consumed")) {
 				plugin.getLogger().warning("Warning: Please include a bone-meal-consumed config setting");
-				boneMealConsumed = 64;
 			} else {
 				boneMealConsumed = plugin.getConfig().getInt("bone-meal-consumed");
 			}
+			// 3x3 patterns grow small trees and cost less; falls back to the bundled default
+			final int boneMealSmall = plugin.getConfig().getInt("bone-meal-consumed-small", DEFAULT_BONE_MEAL_SMALL);
 
 			if (!plugin.getConfig().contains("core")) {
 				plugin.getLogger().warning("Warning: Please include a core block config setting");
 				coreblock = Material.EMERALD_BLOCK;
 			} else {
-				try {
-					coreblock = Material.valueOf(plugin.getConfig().getString("core"));
-				} catch (Exception e) {
+				// matchMaterial ignores case and accepts "minecraft:emerald_block"
+				final String core = plugin.getConfig().getString("core");
+				coreblock = core == null ? null : Material.matchMaterial(core);
+				if (coreblock == null || !coreblock.isBlock()) {
 					plugin.getLogger().warning("Warning: Invalid core block provided. Default to EMERALD_BLOCK");
 					coreblock = Material.EMERALD_BLOCK;
 				}
 			}
-			patternMaterialMap.put('X', coreblock);
 
 			final ConfigurationSection patternSection = plugin.getConfig().getConfigurationSection("planting-patterns");
+			if (patternSection == null) {
+				plugin.getLogger().warning("Warning: no planting-patterns config section; survival planting of trees is off");
+				enabled = false;
+				return;
+			}
 			for (final String pattern : patternSection.getKeys(false)) {
-
-				boolean validpattern = true;
-
-				List<String> patternrows = patternSection.getStringList(pattern);
-				Material[][] patternmaterials = new Material[patternrows.size()][patternrows.size()];
-
-				int row = 0;
-				int rowlength = 0;
-				int prevrowlength = -1;
-				if (patternrows.size() != 5) {
-					plugin.getLogger().severe("Error: Invalid dimensions for pattern " + pattern + ". Needs to be a 5x5 matrix.");
-					validpattern = false;
-				} else {
-					for (String patternrow : patternrows) {
-
-						int col = 0;
-
-						// check our row is consistent with previous rows and the number of rows
-						rowlength = patternrow.length();
-						if (patternrows.size() != rowlength && rowlength != 5) {
-							plugin.getLogger().severe("Error: Dimensions for pattern " + pattern + " do not match. Needs to be a 5x5 matrix.");
-							validpattern = false;
-							break;
-						}
-						if (rowlength != prevrowlength && prevrowlength != -1) {
-							plugin.getLogger().severe("Error: row lengths do not match for pattern " + pattern);
-							validpattern = false;
-							break;
-						}
-						prevrowlength = rowlength;
-
-						CharacterIterator rcit = new StringCharacterIterator(patternrow);
-						while (rcit.current() != CharacterIterator.DONE && validpattern) {
-							if (!patternMaterialMap.keySet().contains(rcit.current()) && rcit.current() != 'X') {
-								plugin.getLogger().severe("Error: " + rcit.current() + " is not a valid sapling code in pattern " + pattern);
-								validpattern = false;
-							}
-							patternmaterials[row][col] = patternMaterialMap.get(rcit.current());
-							rcit.next();
-							col++;
-						}
-						if (!validpattern) {
-							break;
-						}
-						row++;
-					}
-				}
-				if (validpattern) {
-					PhysicalCraftingRecipe recipe = new PhysicalCraftingRecipe(pattern, coreblock, patternmaterials);
-					drawPattern(patternmaterials);
-					recipes.add(recipe);
+				final Material[][] patternmaterials = parsePattern(pattern, patternSection.getStringList(pattern));
+				if (patternmaterials != null) {
+					final int cost = patternmaterials.length == MAX_PATTERN_SIZE ? boneMealConsumed : boneMealSmall;
+					recipes.add(new PhysicalCraftingRecipe(pattern, coreblock, patternmaterials, cost));
 				}
 			}
+			recipes.sort(Comparator.comparingInt(PhysicalCraftingRecipe::getSize).reversed());
 			enabled = true;
 		} catch (final Exception e) {
 			plugin.getLogger().severe(
 					"The planting-pattern config section is invalid! Disabling survival planting of giant trees. " + e.toString());
 			enabled = false;
 		}
+	}
+
+	/**
+	 * Parses one planting pattern: a 3x3 or 5x5 square of sapling codes with X (the core block)
+	 * in the centre. Logs the problem and returns null when the pattern is invalid.
+	 */
+	private Material[][] parsePattern(final String pattern, final List<String> patternrows) {
+		final int size = patternrows.size();
+		if (size != 3 && size != 5) {
+			plugin.getLogger().severe("Error: Invalid dimensions for pattern " + pattern + ". Needs to be a 3x3 or 5x5 matrix.");
+			return null;
+		}
+		final Material[][] patternmaterials = new Material[size][size];
+		for (int row = 0; row < size; row++) {
+			final String patternrow = patternrows.get(row);
+			if (patternrow.length() != size) {
+				plugin.getLogger().severe("Error: Dimensions for pattern " + pattern + " do not match. Needs to be a "
+						+ size + "x" + size + " matrix.");
+				return null;
+			}
+			for (int col = 0; col < size; col++) {
+				final char code = patternrow.charAt(col);
+				final boolean centre = row == size / 2 && col == size / 2;
+				if (centre != (code == 'X')) {
+					plugin.getLogger().severe("Error: pattern " + pattern + " needs exactly one X (the core block), in the centre");
+					return null;
+				}
+				if (code == 'X') {
+					patternmaterials[row][col] = coreblock;
+				} else if (unavailableCodes.contains(code)) {
+					plugin.getLogger().info("Skipping planting pattern " + pattern + ": its sapling ("
+							+ code + ") does not exist on this server version");
+					return null;
+				} else if (patternMaterialMap.containsKey(code)) {
+					patternmaterials[row][col] = patternMaterialMap.get(code);
+				} else {
+					plugin.getLogger().severe("Error: " + code + " is not a valid sapling code in pattern " + pattern);
+					return null;
+				}
+			}
+		}
+		return patternmaterials;
 	}
 
     @EventHandler
@@ -184,12 +200,12 @@ public class PlantTreeEventHandler implements Listener {
 			return;
 		}
 
-		Block clickedBlock = event.getClickedBlock();
-		ItemStack itemInMainHand = event.getPlayer().getInventory().getItemInMainHand();
-
-		boolean goodtogo = event.getAction().equals(Action.RIGHT_CLICK_BLOCK)
-				&& clickedBlock.getType().equals(this.coreblock) && itemInMainHand.getType().equals(Material.BONE_MEAL);
-		if (!goodtogo) {
+		final Block clickedBlock = event.getClickedBlock();
+		if (clickedBlock == null || event.getAction() != Action.RIGHT_CLICK_BLOCK) {
+			return;
+		}
+		final ItemStack itemInMainHand = event.getPlayer().getInventory().getItemInMainHand();
+		if (clickedBlock.getType() != this.coreblock || itemInMainHand.getType() != Material.BONE_MEAL) {
 			return;
 		}
 
@@ -197,69 +213,68 @@ public class PlantTreeEventHandler implements Listener {
 			return;
 		}
 
-		final ItemStack itemInHand = event.getItem();
-
-		final ItemCost cost = new ItemCost(Material.BONE_MEAL, boneMealConsumed);
-
-		// build matrix of blocks 5x5 that are around the core
-		Material[][] worldblocks = new Material[5][5];
-		for (int x = 0; x < 5; x++) {
-			for (int z = 0; z < 5; z++) {
-				Block block = clickedBlock.getRelative(z - 2, 0, x - 2);
-				worldblocks[x][z] = block.getType();
+		// recipes are sorted widest first, so a 5x5 ring wins over the 3x3 ring inside it
+		PhysicalCraftingRecipe recipe = null;
+		for (final PhysicalCraftingRecipe candidate : recipes) {
+			if (candidate.matches(blocksAround(clickedBlock, candidate.getSize()))) {
+				recipe = candidate;
+				break;
 			}
 		}
-
-		// pass block matrix to each recipe to see if it matches
-		boolean matched = false;
-		boolean grown = false;
-		ListIterator<PhysicalCraftingRecipe> rit = recipes.listIterator();
-		while (rit.hasNext() && !matched) {
-			PhysicalCraftingRecipe recipe = rit.next();
-			if (recipe.matches(worldblocks)) {
-				matched = true;
-				if (cost.isAffordable(event.getPlayer())) {
-//					if (stackIsCorrect(itemInHand)) {
-						final String treeType = recipe.getTreeName().toUpperCase();
-						// mix in the position so trees grown in the same world don't all share one shape
-						final Random seed = new Random(clickedBlock.getWorld().getSeed()
-								^ ((long) clickedBlock.getX() * 341873128712L)
-								^ ((long) clickedBlock.getZ() * 132897987541L));
-						final File treeFile = new File(plugin.getDataFolder(), "tree." + treeType + ".xml");
-						final File rootFile = new File(plugin.getDataFolder(), "tree." + treeType + ".root.xml");
-						event.setCancelled(true);
-						cost.apply(event.getPlayer());
-						popup.sendPopup(event.getPlayer(), "Stand back! Generating a giant " + treeType + " tree!");
-						clearBlocks(clickedBlock);
-						renderer.renderTree(clickedBlock.getLocation(), treeFile, rootFile, seed.nextInt(), true);
-						grown = true;
-//					}
-				}
-			}
-		}
-		if (!matched) {
+		if (recipe == null) {
 			popup.sendPopup(event.getPlayer(), "Unable to match this pattern");
-		} else if (!grown) {
-			popup.sendPopup(event.getPlayer(), "You need " + boneMealConsumed + " bone meal to grow this tree");
+			return;
 		}
+
+		final ItemCost cost = new ItemCost(Material.BONE_MEAL, recipe.getBoneMealCost());
+		if (!cost.isAffordable(event.getPlayer())) {
+			popup.sendPopup(event.getPlayer(), "You need " + recipe.getBoneMealCost() + " bone meal to grow this tree");
+			return;
+		}
+
+		final String treeType = recipe.getTreeName().toUpperCase(Locale.ROOT);
+		// mix in the position so trees grown in the same world don't all share one shape
+		final Random seed = new Random(clickedBlock.getWorld().getSeed()
+				^ ((long) clickedBlock.getX() * 341873128712L)
+				^ ((long) clickedBlock.getZ() * 132897987541L));
+		final File treeFile = new File(plugin.getDataFolder(), "tree." + treeType + ".xml");
+		final File rootFile = new File(plugin.getDataFolder(), "tree." + treeType + ".root.xml");
+		event.setCancelled(true);
+		cost.apply(event.getPlayer());
+		final String what = recipe.getSize() == MAX_PATTERN_SIZE ? "a giant " + treeType : "a " + treeType;
+		popup.sendPopup(event.getPlayer(), "Stand back! Generating " + what + " tree!");
+		clearBlocks(clickedBlock, recipe.getSize());
+		renderer.renderTree(clickedBlock.getLocation(), treeFile, rootFile, seed.nextInt(), true);
 	}
 
     /*
-     * Clear the core blocka and surrounding saplings
-     * Need to do this as some trees do not overwrite/eliminate these
-     * 
-     * @param - location of core block
+     * The size x size blocks around (and including) the core block, indexed [z][x] like the
+     * patterns: rows run along z, columns along x.
      */
-    private void clearBlocks(Block coreblock) {
-    	for (int x = 0; x < 5; x++) {
-			for (int z = 0; z < 5; z++) {
-				Block block = coreblock.getRelative(z - 2, 0, x - 2);
-				block.setType(Material.AIR);
+    private static Material[][] blocksAround(Block core, int size) {
+		final int half = size / 2;
+		final Material[][] worldblocks = new Material[size][size];
+		for (int x = 0; x < size; x++) {
+			for (int z = 0; z < size; z++) {
+				worldblocks[x][z] = core.getRelative(z - half, 0, x - half).getType();
+			}
+		}
+		return worldblocks;
+    }
+
+    /*
+     * Clear the core block and the saplings of the matched pattern.
+     * Need to do this as some trees do not overwrite/eliminate these
+     *
+     * @param - location of core block
+     * @param - width of the matched pattern
+     */
+    private void clearBlocks(Block coreblock, int size) {
+		final int half = size / 2;
+		for (int x = 0; x < size; x++) {
+			for (int z = 0; z < size; z++) {
+				coreblock.getRelative(z - half, 0, x - half).setType(Material.AIR);
 			}
 		}
     }
-
-  private boolean stackIsCorrect(final ItemStack inHand) {
-    return (inHand != null) && (inHand.getType() == Material.BONE_MEAL);
-  }
 }

@@ -18,23 +18,17 @@
 package com.ryanmichela.trees;
 
 import java.io.File;
+import java.util.Locale;
 import java.util.Random;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.block.Biome;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.plugin.Plugin;
 
 import com.ryanmichela.trees.rendering.TreeRenderer;
@@ -97,9 +91,16 @@ public class CreateTreeCommand implements CommandExecutor {
     }
 
     final World world = target.getWorld();
-    final Block highestSoil = this.getHighestSoil(world.getHighestBlockAt(target));
+    final TreeGround ground = TreeGround.at(world, target.getBlockX(), target.getBlockZ());
+    // asked for explicitly, so the tree grows anyway, on the ground below any water
+    final String groundName = ground.block().getType().name().toLowerCase(Locale.ROOT);
+    if (ground.underFluid()) {
+      sender.sendMessage(ChatColor.YELLOW + "Growing under water, on " + groundName);
+    } else if (!ground.soil()) {
+      sender.sendMessage(ChatColor.YELLOW + "No soil here: growing on " + groundName);
+    }
 
-    final Location base = highestSoil.getLocation();
+    final Location base = ground.block().getLocation();
     // mix in the position so trees created in the same world don't all share one shape
     final Random seed = new Random(world.getSeed()
                                    ^ ((long) base.getBlockX() * 341873128712L)
@@ -112,25 +113,5 @@ public class CreateTreeCommand implements CommandExecutor {
     this.renderer.renderTreeWithHistory(base, treeFile, rootFile,
                                         seed.nextInt(), player, true);
     return true;
-  }
-
-  @EventHandler
-  public void onPlayerInteract(final PlayerInteractEvent event) {
-
-  }
-
-  Block getHighestSoil(Block highestBlock) {
-	Biome biome = highestBlock.getBiome();
-    while (highestBlock.getY() > 0
-      && (highestBlock.getType() != Material.GRASS_BLOCK)
-      && (highestBlock.getType() != Material.MUD)
-      && (highestBlock.getType() != Material.MYCELIUM)
-      && (highestBlock.getType() != Material.PODZOL)
-      && (highestBlock.getType().toString().endsWith("DIRT"))
-      && (!highestBlock.getType().toString().endsWith("SAND"))
-      && (!highestBlock.getType().toString().endsWith("TERRACOTTA"))) {
-    	highestBlock = highestBlock.getRelative(BlockFace.DOWN);
-    }
-    return highestBlock;
   }
 }

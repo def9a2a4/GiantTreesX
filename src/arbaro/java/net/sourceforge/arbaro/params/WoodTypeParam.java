@@ -18,7 +18,8 @@ package net.sourceforge.arbaro.params;
 
 public final class WoodTypeParam extends StringParam {
 
-    final static String[] items = {"Oak","Spruce","Birch","Cherry","Jungle","Acacia","Dark Oak","Mangrove","Mangrove_roots"};
+    final static String[] items = {"Oak","Spruce","Birch","Cherry","Jungle","Acacia","Dark Oak","Mangrove","Mangrove_roots",
+                                  "Pale Oak","Swamp Oak","Poplar","Azalea","Red Mushroom","Brown Mushroom","Crimson","Warped"};
 
     /**
      * @param nam

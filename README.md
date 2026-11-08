@@ -35,8 +35,25 @@ Runs on Paper 1.21.x and 26.1 through 26.3 (one jar).
 * **Growing** a tree only needs the configured `bone-meal-consumed` amount in your inventory,
   not exactly 64 in hand. Grown and `/gt` trees no longer all share one shape per world.
 * `tree-create <species> <world> <x> <z>` works from the console.
+* **Small trees.** Every tree type has a small variant, `tree.<NAME>_SMALL.xml` (about 25 to 37
+  blocks tall, trunk radius 2 to 3), e.g. `tree.OAK_SMALL` or `tree.BIRCH-2_SMALL`. They spawn
+  naturally next to the giants (`biome.<BIOME>-<NAME>_SMALL.xml`), grow from a **3x3** sapling
+  ring around the core block (the 5x5 rings still grow giants, and win when both fit), cost
+  `bone-meal-consumed-small` bone meal (16) and work with `tree-create`.
+* **Weighted natural spawning.** `natural-tree-weights` sets how often each biome tree is
+  picked, keyed by the `<name>` part of `biome.<BIOME>-<name>.xml`; `"*_SMALL": 3` makes small
+  trees three times as likely as a giant of the same biome. Unlisted trees weigh `default` (1),
+  so custom biome files keep spawning as before.
+* **New trees.** Pale oak with hanging pale moss (pale garden), a weeping swamp oak hung with
+  vines (swamp), red and brown giant mushrooms (mushroom fields), autumn-coloured poplars with
+  a mix of yellow, orange and red leaves (dappled forest, Minecraft 26.3+), azalea (meadow), and
+  huge crimson and warped fungi (planting and `tree-create` only). Each has a planting pattern;
+  see `config.yml` for the sapling letters. On servers older than 26.3 poplar patterns are
+  skipped and a poplar tree file grows as a birch.
 
-Existing configs keep working: missing settings fall back to the defaults above.
+Existing configs keep working: missing settings fall back to the defaults above. An older
+`planting-patterns` section has neither the 3x3 patterns nor the new trees' patterns; copy them
+from the bundled `config.yml` to grow those from saplings.
 
 ### Development
 `make server` builds the plugin and runs a local Paper test server in `test-server/` (gitignored;
@@ -52,7 +69,7 @@ Custom trees can be added to a biome by naming the tree and root files as such:
 biome.&lt;biome&gt;-&lt;name&gt;.xml<br>
 biome.&lt;biome&gt;-&lt;name&gt;.root.xml
 
-Where &lt;biome&gt; is the biome in question - FOREST, BIRCH_FOREST, DARK_FOREST, SWAMP, MANGROVE_SWAMP, JUNGLE, BADLANDS, SAVANNA and TAIGA,<br>
+Where &lt;biome&gt; is the biome in question - FOREST, BIRCH_FOREST, CHERRY_GROVE, DARK_FOREST, PALE_GARDEN, SWAMP, MANGROVE_SWAMP, JUNGLE, BADLANDS, SAVANNA, TAIGA, MUSHROOM_FIELDS, MEADOW and DAPPLED_FOREST (26.3+),<br>
 hyphen separator between biome and tree name is required,<br>
 and &lt;name&gt; is anything you want to call the tree using lowercase and uppercase letters, numbers, underscore or hyphen.
 
@@ -114,7 +131,8 @@ are found in the plugin's data directory. For example, to summon a giant acacia 
 ```
 
 To edit the model for an existing tree, or create a new tree model, use the /tree-edit command. This command can only 
-be used from the server console.
+be used from the server console, and opens the editor as a desktop window, so the server needs a graphical display.
+On a headless server, copy the plugin jar and the tree file to a desktop and run `java -jar GiantTrees-<version>.jar tree.ACACIA.xml`.
 
 ```
 /tree-edit tree.ACACIA

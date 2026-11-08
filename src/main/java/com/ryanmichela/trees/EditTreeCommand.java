@@ -18,9 +18,13 @@
 package com.ryanmichela.trees;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.Arrays;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -28,6 +32,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
+/**
+ * {@code tree-edit <species>}: opens the bundled Arbaro editor (the plugin jar's main class) on a
+ * tree file, as a separate desktop process. Only useful on a server with a display.
+ */
 public class EditTreeCommand implements CommandExecutor {
 
   private final Plugin plugin;
@@ -46,57 +54,97 @@ public class EditTreeCommand implements CommandExecutor {
 
     if (arg.length != 1) {
       final File[] treeFiles = this.plugin.getDataFolder()
-                                          .listFiles(new FilenameFilter() {
-
-                                            @Override
-                                            public boolean
-                                                accept(final File dir,
-                                                       final String name) {
-                                              return name.endsWith(".xml");
-                                            }
-                                          });
-
-      final String[] treeNames = new String[treeFiles.length];
-      for (int i = 0; i < treeFiles.length; i++) {
-        treeNames[i] = treeFiles[i].getName()
-                                   .substring(0,
-                                              treeFiles[i].getName()
-                                                          .lastIndexOf('.'));
+                                          .listFiles((dir, name) -> name.endsWith(".xml")
+                                                                    && !name.endsWith(".root.xml"));
+      final List<String> treeNames = new ArrayList<>();
+      if (treeFiles != null) {
+        for (final File treeFile : treeFiles) {
+          treeNames.add(treeFile.getName().substring(0, treeFile.getName().length() - 4));
+        }
       }
-
-      Arrays.sort(treeNames);
-
-      sender.sendMessage("Available trees:");
-      for (final File treeFile : treeFiles) {
-        String treeName = treeFile.getName();
-        treeName = treeName.substring(0, treeName.lastIndexOf('.'));
+      treeNames.sort(null);
+      sender.sendMessage("Usage: tree-edit <species>. Available trees:");
+      for (final String treeName : treeNames) {
         sender.sendMessage(treeName);
       }
-      return false;
+      return true;
     }
 
+    final File jar = this.pluginJar();
+    if (jar == null || !jar.isFile()) {
+      sender.sendMessage("Cannot start the tree editor: the GiantTrees plugin jar was not found"
+                         + (jar == null ? "." : " at " + jar + "."));
+      return true;
+    }
+    if (!hasDisplay()) {
+      sender.sendMessage("Cannot start the tree editor: this server has no graphical display. "
+                         + "Run it on a desktop instead: java -jar " + jar.getName()
+                         + " <tree file>");
+      return true;
+    }
+
+    final File java = new File(System.getProperty("java.home"),
+                               "bin" + File.separator + (isWindows() ? "java.exe" : "java"));
+    final File toOpen = new File(this.plugin.getDataFolder(), arg[0] + ".xml");
+    final File log = new File(this.plugin.getDataFolder(), "arbaro.log");
+    final ProcessBuilder pb = new ProcessBuilder(java.getAbsolutePath(), "-jar",
+                                                 jar.getAbsolutePath(), toOpen.getAbsolutePath());
+    pb.redirectErrorStream(true);
+    pb.redirectOutput(log);
+    final Process process;
     try {
-      final File pluginsDir = this.plugin.getDataFolder().getParentFile();
-      final File gtPlugin[] = pluginsDir.listFiles(new FilenameFilter() {
-
-        @Override
-        public boolean accept(final File dir, final String name) {
-          return name.startsWith("GiantTrees") && name.endsWith(".jar");
-        }
-      });
-
-      final String gtPluginName = gtPlugin[0].getAbsolutePath();
-      final String toOpen = new File(this.plugin.getDataFolder(), arg[0]
-                                                                  + ".xml").getAbsolutePath();
-      final ProcessBuilder pb = new ProcessBuilder("javaw", "-jar",
-                                                   gtPluginName, toOpen);
-      pb.start();
-      sender.sendMessage("Loading " + arg[0] + "...");
+      process = pb.start();
     } catch (final IOException e) {
-      this.plugin.getLogger().severe("Error starting Arbario: "
-                                         + e.getMessage());
+      this.plugin.getLogger().log(Level.SEVERE, "Error starting the Arbaro tree editor", e);
+      sender.sendMessage("Could not start the tree editor: " + e.getMessage());
+      return true;
     }
+    sender.sendMessage("Loading " + arg[0] + " in the tree editor...");
 
+    // the editor runs until its window is closed; an early failure (no usable display after all,
+    // ...) shows up as a quick non-zero exit, reported here instead of failing silently
+    this.plugin.getServer().getScheduler().runTaskAsynchronously(this.plugin, () -> {
+      try {
+        if (process.waitFor(15, TimeUnit.SECONDS) && process.exitValue() != 0) {
+          this.plugin.getLogger().warning("The tree editor exited with status "
+                                          + process.exitValue() + "; see " + log.getPath());
+        }
+      } catch (final InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    });
     return true;
+  }
+
+  /** The jar this plugin was loaded from, or null if it cannot be determined. */
+  private File pluginJar() {
+    try {
+      return new File(this.plugin.getClass().getProtectionDomain().getCodeSource()
+                                 .getLocation().toURI());
+    } catch (final URISyntaxException | SecurityException | NullPointerException
+        | IllegalArgumentException e) {
+      return null;
+    }
+  }
+
+  private static boolean isWindows() {
+    return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).startsWith("windows");
+  }
+
+  /**
+   * Whether a desktop window can be opened. The server's own JVM is often headless whatever the
+   * machine has, so this looks at the environment instead: Windows and macOS have a desktop
+   * session for a logged-in user; elsewhere an X11 or Wayland display must be set.
+   */
+  private static boolean hasDisplay() {
+    final String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+    if (os.startsWith("windows") || os.contains("mac")) {
+      return true;
+    }
+    return notBlank(System.getenv("DISPLAY")) || notBlank(System.getenv("WAYLAND_DISPLAY"));
+  }
+
+  private static boolean notBlank(final String s) {
+    return s != null && !s.isBlank();
   }
 }
