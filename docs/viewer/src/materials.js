@@ -24,7 +24,7 @@ const TREE_TYPES = {
   'Jungle': ['JUNGLE_LOG', [['JUNGLE_LEAVES', 1]], DECORATION_TRUNK_VINES, null, 'Oak'],
   'Acacia': ['ACACIA_LOG', [['ACACIA_LEAVES', 1]], DECORATION_NONE, null, 'Oak'],
   'Dark Oak': ['DARK_OAK_LOG', [['DARK_OAK_LEAVES', 1]], DECORATION_NONE, null, 'Oak'],
-  'Mangrove': ['MANGROVE_LOG', [['MANGROVE_LEAVES', 1]], DECORATION_TRUNK_VINES, null, 'Oak'],
+  'Mangrove': ['MANGROVE_LOG', [['MANGROVE_LEAVES', 1]], DECORATION_LEAF_VINES, null, 'Oak'],
   'Mangrove_roots': ['MANGROVE_ROOTS', [['MANGROVE_LEAVES', 1]], DECORATION_NONE, null, 'Oak'],
   'Pale Oak': ['PALE_OAK_LOG', [['PALE_OAK_LEAVES', 1]], DECORATION_HANGING, 'PALE_HANGING_MOSS', 'Dark Oak'],
   'Swamp Oak': ['OAK_LOG', [['OAK_LEAVES', 1]], DECORATION_LEAF_VINES, null, 'Oak'],

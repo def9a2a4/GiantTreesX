@@ -181,7 +181,12 @@ public class PlantTreeEventHandler implements Listener {
 						case HUGE -> boneMealHuge;
 						case BIG -> boneMealBig;
 					};
-					recipes.add(new PhysicalCraftingRecipe(pattern, coreblock, patternmaterials, cost));
+					final PhysicalCraftingRecipe costed = new PhysicalCraftingRecipe(pattern, coreblock, patternmaterials, cost);
+					if (!treeFile(costed).exists()) {
+						plugin.getLogger().warning("Planting pattern " + pattern + " has no tree file ("
+								+ treeFile(costed).getName() + "); it grows nothing");
+					}
+					recipes.add(costed);
 				}
 			}
 			recipes.sort(Comparator.comparingInt(PhysicalCraftingRecipe::getSize).reversed()
@@ -281,17 +286,29 @@ public class PlantTreeEventHandler implements Listener {
 
 		// recipes are sorted most specific first: a 5x5 ring wins over the 3x3 ring inside it,
 		// and a full 3x3 ring over the plus shape inside that
+		// a pattern whose tree file is missing (e.g. jungle_big or spruce_big from an older
+		// config: those types have no big tree) is skipped, so a less specific one can still win
 		PhysicalCraftingRecipe recipe = null;
 		Material[][] matched = null;
+		String missingTree = null;
 		for (final PhysicalCraftingRecipe candidate : recipes) {
-			matched = candidate.matchingOrientation(blocksAround(clickedBlock, candidate.getSize()));
-			if (matched != null) {
-				recipe = candidate;
-				break;
+			final Material[][] orientation = candidate.matchingOrientation(blocksAround(clickedBlock, candidate.getSize()));
+			if (orientation == null) {
+				continue;
 			}
+			if (!treeFile(candidate).exists()) {
+				if (missingTree == null) {
+					missingTree = treeFile(candidate).getName();
+				}
+				continue;
+			}
+			recipe = candidate;
+			matched = orientation;
+			break;
 		}
 		if (recipe == null) {
-			popup.sendPopup(event.getPlayer(), "Unable to match this pattern");
+			popup.sendPopup(event.getPlayer(), missingTree == null ? "Unable to match this pattern"
+					: "There is no tree for this pattern (" + missingTree + " is missing)");
 			return;
 		}
 
@@ -306,7 +323,7 @@ public class PlantTreeEventHandler implements Listener {
 		final Random seed = new Random(clickedBlock.getWorld().getSeed()
 				^ ((long) clickedBlock.getX() * 341873128712L)
 				^ ((long) clickedBlock.getZ() * 132897987541L));
-		final File treeFile = new File(plugin.getDataFolder(), "tree." + treeType + ".xml");
+		final File treeFile = treeFile(recipe);
 		final File rootFile = new File(plugin.getDataFolder(), "tree." + treeType + ".root.xml");
 		event.setCancelled(true);
 		cost.apply(event.getPlayer());
@@ -315,6 +332,11 @@ public class PlantTreeEventHandler implements Listener {
 		clearBlocks(clickedBlock, matched);
 		renderer.renderTree(clickedBlock.getLocation(), treeFile, rootFile, seed.nextInt(), true);
 	}
+
+    /** The tree file a pattern grows: oak_big grows tree.OAK_BIG.xml in the data folder. */
+    private File treeFile(final PhysicalCraftingRecipe recipe) {
+		return new File(plugin.getDataFolder(), "tree." + recipe.getTreeName().toUpperCase(Locale.ROOT) + ".xml");
+    }
 
     /*
      * The size x size blocks around (and including) the core block, indexed [z][x] like the

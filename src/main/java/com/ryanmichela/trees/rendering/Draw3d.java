@@ -37,15 +37,22 @@ public class Draw3d {
   // Leaf noise for TreeType.noisyLeaves (plotNoisyEllipsoid); kept in sync with
   // docs/viewer/src/draw3d.js
   /** Amplitude (blocks) and frequency of the simplex octave making lumps and dents. */
-  static final double LEAF_LUMP = 2.2;
+  static final double LEAF_LUMP = 1.1;
   static final double LEAF_LUMP_FREQ = 0.22;
   /** Amplitude (blocks) and frequency of the finer octave roughening the outline. */
-  static final double LEAF_FINE = 0.6;
+  static final double LEAF_FINE = 0.3;
   static final double LEAF_FINE_FREQ = 0.6;
   /** Range (blocks) of the per-block hash jitter: single-block gaps and protrusions. */
-  static final double LEAF_JITTER = 0.6;
+  static final double LEAF_JITTER = 0.4;
   /** Clusters thinner than this (blocks, centre to surface) get proportionally weaker noise. */
   static final double LEAF_FULL_RADIUS = 2.0;
+  /**
+   * Cluster size scaling: a cluster of length (LeafScale / 2) up to LEAF_CLEAN_SIZE has no noise
+   * at all (a plain ellipsoid), from LEAF_FULL_SIZE on the full amplitudes above, linear between.
+   * So _BIG trees (LeafScale 4-6.5) are nearly clean, _HUGE ones lightly noised.
+   */
+  static final double LEAF_CLEAN_SIZE = 2.5;
+  static final double LEAF_FULL_SIZE = 8.0;
   private static final double LEAF_REACH = LEAF_LUMP + LEAF_FINE + LEAF_JITTER / 2;
 
   public class Point2D {
@@ -304,8 +311,9 @@ public class Draw3d {
    * The ellipsoid of {@link #plotEllipsoid} (level 0) with an uneven surface. A block's distance
    * outside the ellipsoid, in blocks along the ray from the centre, is compared with a displacement
    * made of two simplex octaves (lumps and dents) and a per-block hash jitter (single-block gaps
-   * and protrusions). The displacement shrinks where the cluster is thinner than
-   * {@link #LEAF_FULL_RADIUS}, so small clusters don't vanish. Only exactly rounded double
+   * and protrusions). The displacement scales with the cluster's length (none up to
+   * {@link #LEAF_CLEAN_SIZE}, full from {@link #LEAF_FULL_SIZE}) and shrinks where the cluster is
+   * thinner than {@link #LEAF_FULL_RADIUS}, so small clusters stay clean and don't vanish. Only exactly rounded double
    * operations, so the viewer's port gives the same blocks.
    */
   private List<Vector> plotNoisyEllipsoid(final Vector pos, final double a, final double b,
@@ -318,6 +326,8 @@ public class Draw3d {
     final int seed = refPoint.hashCode();
     // calculateNoiseOffset(.., 1, 0) <= 2 * Smooth (simplex noise stays within [-1, 1])
     final double tMax = 1 + (2.5 * noiseIntensity);
+    final double clusterAmp = Math.min(1, Math.max(0, (a - LEAF_CLEAN_SIZE)
+                                                      / (LEAF_FULL_SIZE - LEAF_CLEAN_SIZE)));
     for (int x = -halfSize; x <= halfSize; x++) {
       for (int y = -halfSize; y <= halfSize; y++) {
         for (int z = -halfSize; z <= halfSize; z++) {
@@ -343,8 +353,9 @@ public class Draw3d {
             } else if (out > LEAF_REACH) {
               inside = false;
             } else {
-              final double amp = Math.min(1, rDir / LEAF_FULL_RADIUS);
-              final double reach = (amp * (LEAF_LUMP + LEAF_FINE)) + (LEAF_JITTER / 2);
+              final double amp = clusterAmp * Math.min(1, rDir / LEAF_FULL_RADIUS);
+              final double reach = (amp * (LEAF_LUMP + LEAF_FINE))
+                                   + ((clusterAmp * LEAF_JITTER) / 2);
               if (out <= -reach) {
                 inside = true;
               } else if (out > reach) {
@@ -358,7 +369,7 @@ public class Draw3d {
                                                 (bz * LEAF_FINE_FREQ) + 89.75);
                 final double u = (LeafDecorator.hash(seed, bx, by, bz, 7) >>> 8) / 16777216.0;
                 inside = out <= (amp * ((LEAF_LUMP * lump) + (LEAF_FINE * fine)))
-                                + (LEAF_JITTER * (u - 0.5));
+                                + ((clusterAmp * LEAF_JITTER) * (u - 0.5));
               }
             }
           }

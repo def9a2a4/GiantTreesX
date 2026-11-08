@@ -84,7 +84,8 @@ function populateVines(store, seed) {
 }
 
 // ---- LeafDecorator ----
-const VINE_ONE_IN = 5, VINE_MIN = 2, VINE_MAX = 12;
+const VINE_ONE_IN = 10, VINE_MIN = 2, VINE_MAX = 8;
+const HANGING_SPARSER = 2; // LeafDecorator.HANGING_SPARSER: thins the type's hangingOneIn
 const SIDES = [[0, -1], [0, 1], [1, 0], [-1, 0]]; // N, S, E, W; vine face index = side index
 /** LeafDecorator.hash (= Draw3d's leaf jitter hash). */
 export const decoHash = positionHash;
@@ -115,7 +116,8 @@ function decorateLeaves(store, treeType, seed) {
     for (const [vx, vy, vz, s] of cells.values()) store.add(vx, vy, vz, KIND_VINE, -1, s, PART_TREE, 0, false);
   } else if (decoration === DECORATION_HANGING) {
     // TreeType hangingOneIn / hangingMin / hangingMax; orient 1 = tip (TreeType.hangingTipMaterial)
-    const [HANGING_ONE_IN, HANGING_MIN, HANGING_MAX] = treeType.hangingShape;
+    const [typeOneIn, HANGING_MIN, HANGING_MAX] = treeType.hangingShape;
+    const HANGING_ONE_IN = typeOneIn * HANGING_SPARSER;
     const added = [];
     for (let i = 0; i < n; i++) {
       if (store.kind[i] !== KIND_LEAF) continue;
@@ -141,7 +143,7 @@ function decorateLeaves(store, treeType, seed) {
 export function mangroveRaise(fileName) {
   if (!fileName.includes('MANGROVE')) return 0;
   const name = fileName.endsWith('.xml') ? fileName.slice(0, -4) : fileName;
-  if (name.endsWith('_BIG')) return 5;
+  if (name.endsWith('_BIG')) return 7;
   if (name.endsWith('_HUGE')) return 10;
   return 18;
 }

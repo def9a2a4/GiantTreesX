@@ -67,7 +67,7 @@ public class TreeRenderer {
     final String name = fileName.endsWith(".xml")
         ? fileName.substring(0, fileName.length() - 4) : fileName;
     if (name.endsWith("_BIG")) {
-      return 5;
+      return 7;
     }
     if (name.endsWith("_HUGE")) {
       return 10;

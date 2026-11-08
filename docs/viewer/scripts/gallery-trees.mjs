@@ -3,14 +3,31 @@
 // Shared by gallery.mjs (which renders them) and gallery-check.mjs (which checks the gallery
 // still matches them). Same grouping as ui/trees.js.
 //
-// The gallery shows one card per tree type (OAK, BIRCH, ...): the type's giant tree (plain
-// tree.<TYPE>) as the hero, with its huge (<TYPE>_HUGE) and big (<TYPE>_BIG) variants beside it.
-// Each tree has a role: 'lead' (the card's hero; the giant when there is one) or 'variant'.
+// The gallery shows one card per tree file, i.e. per (type, size): tree.OAK (giant),
+// tree.OAK_HUGE (huge) and tree.OAK_BIG (big) are three cards, each with its own pictures
+// (CARD_IMAGES). Not every type has every size. The page filters cards by category (CATEGORIES:
+// trees or fungi) and size tier, and groups them by type or size.
 import { readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 
-const TIERS = ['giant', 'huge', 'big'];
+/** Size tiers, largest first (the order cards are shown in). */
+export const TIERS = ['giant', 'huge', 'big'];
+
+/**
+ * Categories the gallery filters by, and the types in each. The one place that says what is a
+ * fungus: any type not listed under another category is a tree.
+ */
+export const CATEGORIES = {
+  tree: { label: 'Trees', types: [] }, // the default: everything not listed below
+  fungi: { label: 'Fungi', types: ['RED_MUSHROOM', 'BROWN_MUSHROOM', 'CRIMSON_FUNGUS', 'WARPED_FUNGUS'] },
+};
+
+/** Category of a tree type (a key of CATEGORIES). */
+export function categoryOf(type) {
+  for (const [cat, { types }] of Object.entries(CATEGORIES)) if (types.includes(type)) return cat;
+  return 'tree';
+}
 
 /** Size tier from the name: ..._HUGE -> huge, ..._BIG -> big, anything else giant. */
 export function tierOf(name) {
@@ -31,8 +48,8 @@ export function typeOf(name) {
 }
 
 /**
- * [{name, aliases: [name], hash, type, tier, role}] for docs/trees/, ordered by type (as the tree
- * files sort, tree.* first) and within a type giant, huge, big.
+ * [{name, aliases: [name], hash, type, category, tier}] for docs/trees/, ordered by type (as the
+ * tree files sort, tree.* first) and within a type giant, huge, big.
  */
 export function galleryTrees(docsDir) {
   const treesDir = join(docsDir, 'trees');
@@ -52,15 +69,15 @@ export function galleryTrees(docsDir) {
   for (const t of groups.values()) {
     const type = typeOf(t.name);
     if (!byType.has(type)) byType.set(type, []);
-    byType.get(type).push({ ...t, type, tier: tierOf(t.name) });
+    byType.get(type).push({ ...t, type, category: categoryOf(type), tier: tierOf(t.name) });
   }
   const out = [];
   for (const list of byType.values()) {
     list.sort((a, b) => TIERS.indexOf(a.tier) - TIERS.indexOf(b.tier));
-    list.forEach((t, i) => out.push({ ...t, role: i === 0 ? 'lead' : 'variant' }));
+    out.push(...list);
   }
   return out;
 }
 
-/** Image files each role gets (gallery.mjs renders them, gallery-check.mjs expects them). */
-export const ROLE_IMAGES = { lead: ['hero', 'cut'], variant: ['view'] };
+/** Pictures every card gets (gallery.mjs renders them, gallery-check.mjs expects them). */
+export const CARD_IMAGES = ['hero', 'cut', 'top'];

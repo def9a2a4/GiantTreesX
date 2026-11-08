@@ -6,10 +6,12 @@ import { KIND_WOOD, KIND_LEAF, PART_JUNCTION } from './voxels.js';
 export const X_MAJOR = 0, Y_MAJOR = 1, Z_MAJOR = 2;
 
 // Draw3d leaf noise (TreeType.noisyLeaves): see drawNoisyLeafCluster
-export const LEAF_LUMP = 2.2, LEAF_LUMP_FREQ = 0.22;
-export const LEAF_FINE = 0.6, LEAF_FINE_FREQ = 0.6;
-export const LEAF_JITTER = 0.6;
+export const LEAF_LUMP = 1.1, LEAF_LUMP_FREQ = 0.22;
+export const LEAF_FINE = 0.3, LEAF_FINE_FREQ = 0.6;
+export const LEAF_JITTER = 0.4;
 export const LEAF_FULL_RADIUS = 2.0;
+// cluster length (LeafScale / 2): no noise up to LEAF_CLEAN_SIZE, full from LEAF_FULL_SIZE
+export const LEAF_CLEAN_SIZE = 2.5, LEAF_FULL_SIZE = 8.0;
 const LEAF_REACH = LEAF_LUMP + LEAF_FINE + LEAF_JITTER / 2;
 
 /** Orientation.orient(l1, l2) on Bukkit vectors */
@@ -184,8 +186,9 @@ export class Draw3d {
    * Draw3d.plotNoisyEllipsoid: the ellipsoid of drawLeafCluster with an uneven surface. A block's
    * distance outside the (Smooth-noised) ellipsoid, in blocks along the ray from the centre, is
    * compared with a displacement made of two simplex octaves (lumps and dents) and a per-block
-   * hash jitter (single-block gaps and protrusions). The displacement shrinks where the cluster is
-   * thinner than LEAF_FULL_RADIUS, so small clusters don't vanish.
+   * hash jitter (single-block gaps and protrusions). The displacement scales with the cluster's
+   * length (none up to LEAF_CLEAN_SIZE, full from LEAF_FULL_SIZE) and shrinks where the cluster is
+   * thinner than LEAF_FULL_RADIUS, so small clusters stay clean and don't vanish.
    */
   drawNoisyLeafCluster(pos, length, width) {
     const a = length, b = width, c = length;
@@ -195,6 +198,7 @@ export class Draw3d {
     const store = this.store, seed = this.refPoint.hash;
     // calculateNoiseOffset(.., 1, 0) <= 2 * Smooth (simplex noise stays within [-1, 1])
     const tMax = 1 + 2.5 * this.noiseIntensity;
+    const clusterAmp = Math.min(1, Math.max(0, (a - LEAF_CLEAN_SIZE) / (LEAF_FULL_SIZE - LEAF_CLEAN_SIZE)));
     for (let x = -halfSize; x <= halfSize; x++) {
       for (let y = -halfSize; y <= halfSize; y++) {
         for (let z = -halfSize; z <= halfSize; z++) {
@@ -215,12 +219,13 @@ export class Draw3d {
             if (out <= -LEAF_REACH) inside = true;
             else if (out > LEAF_REACH) inside = false;
             else {
-              const amp = Math.min(1, rDir / LEAF_FULL_RADIUS);
-              if (out <= -(amp * (LEAF_LUMP + LEAF_FINE) + LEAF_JITTER / 2)) inside = true;
-              else if (out > amp * (LEAF_LUMP + LEAF_FINE) + LEAF_JITTER / 2) inside = false;
+              const amp = clusterAmp * Math.min(1, rDir / LEAF_FULL_RADIUS);
+              const reach = amp * (LEAF_LUMP + LEAF_FINE) + (clusterAmp * LEAF_JITTER) / 2;
+              if (out <= -reach) inside = true;
+              else if (out > reach) inside = false;
               else {
                 const u = (positionHash(seed, bx, by, bz, 7) >>> 8) / 16777216;
-                inside = out <= amp * this.leafNoise(bx, by, bz) + LEAF_JITTER * (u - 0.5);
+                inside = out <= amp * this.leafNoise(bx, by, bz) + (clusterAmp * LEAF_JITTER) * (u - 0.5);
               }
             }
           }

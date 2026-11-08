@@ -25,9 +25,12 @@ import org.bukkit.util.Vector;
 final class LeafDecorator {
 
   /** A leaf side grows a vine when hash % VINE_ONE_IN == 0. */
-  static final int VINE_ONE_IN = 5;
+  static final int VINE_ONE_IN = 10;
   static final int VINE_MIN = 2;
-  static final int VINE_MAX = 12;
+  static final int VINE_MAX = 8;
+  /** HANGING thinning on top of the type's own odds: a leaf bottom grows a strand when
+   *  hash % (TreeType.hangingOneIn * HANGING_SPARSER) == 0. */
+  static final int HANGING_SPARSER = 2;
 
   /** dx, dz of the vine's cell relative to the leaf, in the order N, S, E, W. */
   private static final int[][] SIDES = {{0, -1}, {0, 1}, {1, 0}, {-1, 0}};
@@ -96,7 +99,7 @@ final class LeafDecorator {
    */
   private static void hanging(final WorldChangeTracker tracker, final TreeType type,
                               final int seed) {
-    final int oneIn = type.hangingOneIn;
+    final int oneIn = type.hangingOneIn * HANGING_SPARSER;
     final int min = type.hangingMin;
     final int max = type.hangingMax;
     final List<WorldChange> added = new ArrayList<>();

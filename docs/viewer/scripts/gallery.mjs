@@ -7,17 +7,17 @@
 //
 // For every distinct tree file in docs/trees/ (byte-identical biome copies are listed as aliases)
 // it writes pictures to docs/gallery/<tree>/, plus docs/gallery/gallery.json, which
-// docs/index.html turns into the gallery page: one card per tree type (OAK, OAK_HUGE, OAK_BIG),
-// with the type's giant as the hero. The giant (the type's 'lead') gets a hero shot and a cut
-// through the trunk; its huge and big variants a square view each.
+// docs/index.html turns into the gallery page: one card per tree file, i.e. per type and size
+// (tree.OAK, tree.OAK_HUGE and tree.OAK_BIG are three cards), each with the pictures in
+// CARD_IMAGES (a hero shot, a cut through the middle, a view from above).
 // --types renders whole types; --out writes somewhere else than docs/gallery/ (for trying it out;
-// image paths in gallery.json still say gallery/...).
+// image paths in gallery.json still say gallery/..., so use e.g. --out <site>/gallery).
 import { createServer } from 'node:http';
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { join, extname, normalize, resolve } from 'node:path';
 import { chromium } from 'playwright';
 import { REPO } from './bundled.mjs';
-import { galleryTrees, ROLE_IMAGES } from './gallery-trees.mjs';
+import { galleryTrees, CARD_IMAGES, CATEGORIES, TIERS } from './gallery-trees.mjs';
 
 const DOCS = join(REPO, 'docs');
 const args = process.argv.slice(2);
@@ -28,14 +28,14 @@ const onlyTrees = opt('trees', null)?.split(',');
 const onlyTypes = opt('types', null)?.split(',');
 const only = onlyTrees || onlyTypes ? { trees: onlyTrees || [], types: onlyTypes || [] } : null;
 
-// Shots by name (ROLE_IMAGES in gallery-trees.mjs says which tree gets which): caption,
-// viewport, view options for the viewer's shot() hook.
+// Shots by name (CARD_IMAGES in gallery-trees.mjs says which a card gets): caption, viewport,
+// view options for the viewer's shot() hook. docs/index.html lays a card out as the 4:5 hero
+// beside the two square shots stacked, so keep those proportions.
 const SHOTS = {
   hero: { caption: 'Tree', size: [720, 900], view: { azimuth: 40, elevation: 14 } },
-  cut: { caption: 'Cut through the trunk', size: [480, 480], view: { azimuth: 40, elevation: 14, viewCut: 0 } },
-  view: { caption: 'Tree', size: [480, 480], view: { azimuth: 40, elevation: 14 } },
+  cut: { caption: 'Cut open', size: [480, 480], view: { azimuth: 40, elevation: 14, viewCut: 0 } },
+  top: { caption: 'From above', size: [480, 480], view: { azimuth: 40, elevation: 70 } },
 };
-const TIER_CAPTION = { giant: 'Giant', huge: 'Huge', big: 'Big' };
 
 // ---- distinct tree files (same grouping as ui/trees.js) ----
 const allTrees = galleryTrees(DOCS);
@@ -76,20 +76,19 @@ for (const t of trees) {
     return { woodType: S.data.treeWoodType, blocks: S.data.n, height: bb.maxY + 1, width: Math.max(bb.maxX - bb.minX, bb.maxZ - bb.minZ) + 1 };
   });
   const dir = join(OUT, t.name);
-  rmSync(dir, { recursive: true, force: true }); // no pictures left over from another role
+  rmSync(dir, { recursive: true, force: true }); // no pictures left over from an older layout
   mkdirSync(dir, { recursive: true });
   const images = {};
-  for (const shot of ROLE_IMAGES[t.role]) {
+  for (const shot of CARD_IMAGES) {
     const s = SHOTS[shot];
     await page.setViewportSize({ width: s.size[0], height: s.size[1] });
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))); // let resize() run
     await page.evaluate((v) => window.__treePreview.shot(v), s.view);
     await page.screenshot({ path: join(dir, `${shot}.jpg`), type: 'jpeg', quality: 85 });
-    const caption = shot === 'view' ? TIER_CAPTION[t.tier] : s.caption;
-    images[shot] = { src: `gallery/${t.name}/${shot}.jpg`, caption };
+    images[shot] = { src: `gallery/${t.name}/${shot}.jpg`, caption: s.caption };
   }
   // hash: the tree files' content, so gallery-check.mjs can tell when an entry is out of date
-  entries.push({ name: t.name, aliases: t.aliases, hash: t.hash, type: t.type, tier: t.tier, role: t.role, seed: SEED, ...info,
+  entries.push({ name: t.name, aliases: t.aliases, hash: t.hash, type: t.type, category: t.category, tier: t.tier, seed: SEED, ...info,
     viewer: `viewer/#tree=${encodeURIComponent(t.name)}&seed=${SEED}`, images });
   console.log(`${info.blocks} blocks`);
 }
@@ -110,7 +109,9 @@ if (only && existsSync(join(OUT, 'gallery.json'))) {
 const order = new Map(allTrees.map((t, i) => [t.name, i]));
 entries.sort((a, b) => (order.get(a.name) ?? Infinity) - (order.get(b.name) ?? Infinity));
 mkdirSync(OUT, { recursive: true });
-writeFileSync(join(OUT, 'gallery.json'), JSON.stringify({ seed: SEED, trees: entries }, null, 2) + '\n');
+// categories and tiers: the filter buttons on the page, in this order
+const categories = Object.fromEntries(Object.entries(CATEGORIES).map(([k, c]) => [k, c.label]));
+writeFileSync(join(OUT, 'gallery.json'), JSON.stringify({ seed: SEED, categories, tiers: TIERS, trees: entries }, null, 2) + '\n');
 console.log(`wrote ${entries.length} trees to ${OUT}`);
 if (problems.length) {
   console.error('problems:\n  ' + problems.join('\n  '));

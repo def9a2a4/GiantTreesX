@@ -96,9 +96,9 @@ preview: docs-trees
 	@echo "Gallery: http://localhost:$(PREVIEW_PORT)/   Viewer: http://localhost:$(PREVIEW_PORT)/viewer/"
 	cd docs && python3 -m http.server $(PREVIEW_PORT)
 
-# Render docs/gallery/ (one card per tree type: the giant's hero shot, plus its huge and big
-# variants and a cut through the giant's trunk) with the viewer
-# in headless Chromium. Installs Playwright into docs/viewer/node_modules on first run.
+# Render docs/gallery/ (one card per tree file, i.e. per type and size: a hero shot, a cut
+# through the middle and a view from above) with the viewer in headless Chromium.
+# Installs Playwright into docs/viewer/node_modules on first run.
 .PHONY: gallery
 gallery: docs-trees
 	[ -d $(VIEWER)/node_modules/playwright ] || npm install --prefix $(VIEWER) --no-audit --no-fund

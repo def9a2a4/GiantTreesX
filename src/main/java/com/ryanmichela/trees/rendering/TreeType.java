@@ -90,7 +90,8 @@ public class TreeType {
     add("Jungle", "JUNGLE_LOG", "JUNGLE_LEAVES", Decoration.TRUNK_VINES, "Oak");
     add("Acacia", "ACACIA_LOG", "ACACIA_LEAVES", Decoration.NONE, "Oak");
     add("Dark Oak", "DARK_OAK_LOG", "DARK_OAK_LEAVES", Decoration.NONE, "Oak");
-    add("Mangrove", "MANGROVE_LOG", "MANGROVE_LEAVES", Decoration.TRUNK_VINES, "Oak");
+    // vines hang from the leaves, like vanilla's leave_vine decorator (no vines on the trunk)
+    add("Mangrove", "MANGROVE_LOG", "MANGROVE_LEAVES", Decoration.LEAF_VINES, "Oak");
     add("Mangrove_roots", "MANGROVE_ROOTS", "MANGROVE_LEAVES", Decoration.NONE, "Oak");
     SPECS.put("Pale Oak", new Spec("PALE_OAK_LOG", new String[] {"PALE_OAK_LEAVES"}, new int[] {1},
         Decoration.HANGING, "PALE_HANGING_MOSS", "Dark Oak"));
