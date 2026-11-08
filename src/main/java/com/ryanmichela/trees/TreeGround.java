@@ -62,13 +62,31 @@ public record TreeGround(Block block, boolean soil, boolean underFluid, boolean 
     return Tag.LOGS.isTagged(type) || type == Material.MUSHROOM_STEM;
   }
 
-  /** Blocks a tree can grow from. {@code #dirt} covers grass, podzol, mycelium, mud, moss, ... */
+  /**
+   * Blocks a tree can grow from. Listed by name as well as by {@code #dirt}: from Minecraft 26.x
+   * on, grass, podzol and mycelium moved out of {@code #dirt} into new tags ({@code #grass_blocks},
+   * {@code #substrate_overworld}) that the 1.21 API this plugin compiles against doesn't have.
+   */
   static boolean isSoil(final Material type) {
-    return Tag.DIRT.isTagged(type)
+    return SOIL.contains(type)
+           || Tag.DIRT.isTagged(type)
            || Tag.SAND.isTagged(type)
-           || Tag.TERRACOTTA.isTagged(type) // badlands
-           || type == Material.FARMLAND
-           || type == Material.DIRT_PATH
-           || type == Material.CLAY;
+           || Tag.TERRACOTTA.isTagged(type); // badlands
+  }
+
+  private static final java.util.Set<Material> SOIL = soil(
+      "GRASS_BLOCK", "DIRT", "COARSE_DIRT", "ROOTED_DIRT", "PODZOL", "MYCELIUM", "MUD",
+      "MUDDY_MANGROVE_ROOTS", "MOSS_BLOCK", "PALE_MOSS_BLOCK", "FARMLAND", "DIRT_PATH", "CLAY");
+
+  /** Looked up by name, so a block missing on this server version is just left out. */
+  private static java.util.Set<Material> soil(final String... names) {
+    final java.util.Set<Material> set = java.util.EnumSet.noneOf(Material.class);
+    for (final String name : names) {
+      final Material m = Material.matchMaterial(name);
+      if (m != null) {
+        set.add(m);
+      }
+    }
+    return set;
   }
 }

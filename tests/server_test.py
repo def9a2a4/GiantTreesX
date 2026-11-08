@@ -85,6 +85,18 @@ class Server:
             except queue.Empty:
                 return
 
+    def wait_loaded(self, x: int, y: int, z: int, timeout: float = 30) -> bool:
+        """Waits until the block's chunk is loaded (forceload completes asynchronously)."""
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            self.drain()
+            self.send(f"execute if loaded {x} {y} {z}")
+            match = self.wait_for(r"Test (passed|failed)", 10)
+            if match and match.group(1) == "passed":
+                return True
+            time.sleep(0.5)
+        return False
+
     def test_block(self, x: int, y: int, z: int, block: str) -> bool:
         self.drain()
         self.send(f"execute if block {x} {y} {z} {block}")
@@ -173,9 +185,27 @@ def trunk_checks(server: Server, x: int, y: int, z: int, wood: str, core: str) -
     return failures
 
 
+# By block name rather than #minecraft:dirt: Minecraft 26.x moved grass, podzol and mycelium out
+# of #dirt (the plugin's TreeGround lists them the same way).
+SOIL = ("minecraft:grass_block", "minecraft:dirt", "minecraft:coarse_dirt", "minecraft:rooted_dirt",
+        "minecraft:podzol", "minecraft:mycelium", "minecraft:mud", "minecraft:moss_block",
+        "#minecraft:sand", "#minecraft:terracotta")
+
+
+PLACEMENT_WORLD = "placement"
+
+
+def set_property(server_dir: Path, key: str, value: str):
+    """Sets (or adds) a server.properties entry."""
+    path = server_dir / "server.properties"
+    lines = path.read_text().splitlines() if path.exists() else []
+    lines = [l for l in lines if not l.startswith(key + "=")] + [f"{key}={value}"]
+    path.write_text("\n".join(lines) + "\n")
+
+
 def soil_check(server: Server, x: int, y: int, z: int) -> bool:
     """Whether the block is soil a tree is planted on (and the one above it is not)."""
-    soil = ("#minecraft:dirt", "#minecraft:sand", "#minecraft:terracotta")
+    soil = SOIL
     return (any(server.test_block(x, y, z, tag) for tag in soil)
             and not any(server.test_block(x, y + 1, z, tag) for tag in soil))
 
@@ -190,6 +220,10 @@ def phase_placement(args) -> list[str]:
         # a malformed number must fall back to the default with a warning, not stop the tree
         "  Oak:\n    hollow_wall_thickness: thick\n",
     )
+    # placement runs in its own superflat world: every spot is grass on dirt (the natural phase
+    # covers real terrain), and flat chunks generate fast enough not to stall the server
+    set_property(args.server_dir, "level-name", PLACEMENT_WORLD)
+    set_property(args.server_dir, "level-type", "minecraft\\:flat")
     server = Server(args.server_dir, args.server_jar, args.java, args.server_dir / "placement.log")
     failures = []
     try:
@@ -209,8 +243,8 @@ def phase_placement(args) -> list[str]:
         ]
         for species, x, z, wood, core, max_height in trees:
             server.drain()
-            server.send(f"tree-create {species} world {x} {z}")
-            grow = server.wait_for(rf"Growing {re.escape(species)} at world (-?\d+) (-?\d+) (-?\d+)", 60)
+            server.send(f"tree-create {species} {PLACEMENT_WORLD} {x} {z}")
+            grow = server.wait_for(rf"Growing {re.escape(species)} at {PLACEMENT_WORLD} (-?\d+) (-?\d+) (-?\d+)", 60)
             if not grow:
                 failures.append(f"placement: tree-create {species} did not start")
                 continue
@@ -218,6 +252,7 @@ def phase_placement(args) -> list[str]:
             # the tree's base must be the soil surface (not leaves, plants, snow or air). Checked
             # before the tree is placed (generation-delay is 3 s) since it then covers the spot.
             server.send(f"forceload add {bx - 32} {bz - 32} {bx + 32} {bz + 32}")
+            server.wait_loaded(bx, by, bz)
             if not soil_check(server, bx, by, bz):
                 failures.append(f"placement: {species}: base {bx} {by} {bz} is not soil")
             placed = server.wait_for(rf"Placed tree at {bx} {by} {bz}:", 180)
