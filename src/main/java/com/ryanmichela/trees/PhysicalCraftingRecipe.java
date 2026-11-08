@@ -22,7 +22,8 @@ import org.bukkit.Material;
 
 /**
  * PhysicalCraftingRecipe represents the Material pattern for a tree and
- * is used to match against the blocks laid out horizontally in the world
+ * is used to match against the blocks laid out horizontally in the world.
+ * A null cell in the pattern is a "don't care" cell: it matches any block.
  */
 public class PhysicalCraftingRecipe {
 
@@ -30,12 +31,15 @@ public class PhysicalCraftingRecipe {
   private final int size;
   private final Material coreblock;
   private final int boneMealCost;
+  /** number of "don't care" (null) cells; fewer means more specific */
+  private final int wildcards;
   /** the pattern in all distinct orientations (1 when every rotation looks the same, else 4) */
   private final Material[][][] orientations;
 
   /**
    * Creates a PhysicalCraftingRecipe from a 2D pattern of materials.
    * The pattern must be an odd-sized square (3x3 or 5x5) with the core block in the centre.
+   * Null cells match any block.
    *
    * @param treename - Name of the tree - matches tree filename
    * @param coreblock - The material of the central core block
@@ -47,6 +51,15 @@ public class PhysicalCraftingRecipe {
     this.coreblock = coreblock;
     this.size = pattern.length;
     this.boneMealCost = boneMealCost;
+    int dontCare = 0;
+    for (final Material[] row : pattern) {
+      for (final Material cell : row) {
+        if (cell == null) {
+          dontCare++;
+        }
+      }
+    }
+    this.wildcards = dontCare;
 
     final Material[][] r0 = copy(pattern);
     final Material[][] r1 = rotateCW(r0);
@@ -78,6 +91,11 @@ public class PhysicalCraftingRecipe {
     return this.boneMealCost;
   }
 
+  /** Number of "don't care" cells; recipes with fewer are more specific and are tried first */
+  public int getWildcards() {
+    return this.wildcards;
+  }
+
   public Material getCoreBlock() {
     return this.coreblock;
   }
@@ -90,12 +108,39 @@ public class PhysicalCraftingRecipe {
    * @return true or false if a match was found
    */
   public boolean matches(Material[][] worldblocks) {
+    return this.matchingOrientation(worldblocks) != null;
+  }
+
+  /**
+   * The orientation of the pattern that matches the blocks in the world (null cells are the
+   * "don't care" cells), or null when none does.
+   *
+   * @param worldblocks - size x size blocks around the clicked core block
+   */
+  public Material[][] matchingOrientation(Material[][] worldblocks) {
     for (final Material[][] orientation : this.orientations) {
-      if (Arrays.deepEquals(worldblocks, orientation)) {
-        return true;
+      if (fits(orientation, worldblocks)) {
+        return orientation;
       }
     }
-    return false;
+    return null;
+  }
+
+  private static boolean fits(Material[][] pattern, Material[][] worldblocks) {
+    if (worldblocks.length != pattern.length) {
+      return false;
+    }
+    for (int r = 0; r < pattern.length; r++) {
+      if (worldblocks[r].length != pattern[r].length) {
+        return false;
+      }
+      for (int c = 0; c < pattern[r].length; c++) {
+        if (pattern[r][c] != null && pattern[r][c] != worldblocks[r][c]) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   private static Material[][] copy(Material[][] matrix) {

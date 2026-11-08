@@ -43,16 +43,53 @@ public class PlantTreeEventHandler implements Listener {
 
   /** default bone meal cost of a 5x5 (giant) pattern */
   private static final int DEFAULT_BONE_MEAL = 64;
-  /** default bone meal cost of a 3x3 (small) pattern */
-  private static final int DEFAULT_BONE_MEAL_SMALL = 16;
+  /** default bone meal cost of a huge tree (full 3x3 ring) */
+  private static final int DEFAULT_BONE_MEAL_HUGE = 32;
+  /** default bone meal cost of a big tree (3x3 plus shape) */
+  private static final int DEFAULT_BONE_MEAL_BIG = 16;
   /** widest pattern accepted; patterns are 3x3 or 5x5 squares with the core in the centre */
   private static final int MAX_PATTERN_SIZE = 5;
+  /** pattern code for a "don't care" cell, which matches any block (e.g. the plus shape's corners) */
+  private static final char ANY_BLOCK = '-';
+
+  /** Tree size tiers: what a pattern grows, and so what it costs. */
+  enum Tier {
+    GIANT("a giant "), HUGE("a huge "), BIG("a big ");
+
+    final String article;
+
+    Tier(final String article) {
+      this.article = article;
+    }
+
+    /**
+     * The tier of the tree a pattern grows: by its name's suffix (_huge, or _small from older
+     * configs, and _big), else by its shape: 5x5 giant, full 3x3 huge, 3x3 with "don't care"
+     * cells big.
+     */
+    static Tier of(final String patternName, final int size, final int wildcards) {
+      final String name = patternName.toLowerCase(Locale.ROOT);
+      if (name.endsWith("_huge") || name.endsWith("_small")) {
+        return HUGE;
+      }
+      if (name.endsWith("_big")) {
+        return BIG;
+      }
+      if (size == MAX_PATTERN_SIZE) {
+        return GIANT;
+      }
+      return wildcards == 0 ? HUGE : BIG;
+    }
+  }
 
   private Material coreblock;
   private boolean enabled;
   private final Plugin plugin;
   private final PopupHandler popup;
-  /** sorted widest first, so a 5x5 pattern wins over a 3x3 one that also fits */
+  /**
+   * sorted most specific first: 5x5 before 3x3, and among patterns of one size those with fewer
+   * "don't care" cells first, so a full 3x3 ring wins over the plus shape inside it
+   */
   private final List<PhysicalCraftingRecipe> recipes = new ArrayList<>();
   private final TreeRenderer renderer;
   /** Sapling codes whose block this server doesn't have; patterns using them are skipped. */
@@ -109,8 +146,12 @@ public class PlantTreeEventHandler implements Listener {
 			} else {
 				boneMealConsumed = plugin.getConfig().getInt("bone-meal-consumed");
 			}
-			// 3x3 patterns grow small trees and cost less; falls back to the bundled default
-			final int boneMealSmall = plugin.getConfig().getInt("bone-meal-consumed-small", DEFAULT_BONE_MEAL_SMALL);
+			// huge and big trees cost less; bone-meal-consumed-small (configs from before the size
+			// tiers) still sets the huge cost when bone-meal-consumed-huge isn't set
+			final int boneMealHuge = configuredInt("bone-meal-consumed-huge",
+					configuredInt("bone-meal-consumed-small",
+							plugin.getConfig().getInt("bone-meal-consumed-huge", DEFAULT_BONE_MEAL_HUGE)));
+			final int boneMealBig = plugin.getConfig().getInt("bone-meal-consumed-big", DEFAULT_BONE_MEAL_BIG);
 
 			if (!plugin.getConfig().contains("core")) {
 				plugin.getLogger().warning("Warning: Please include a core block config setting");
@@ -134,11 +175,17 @@ public class PlantTreeEventHandler implements Listener {
 			for (final String pattern : patternSection.getKeys(false)) {
 				final Material[][] patternmaterials = parsePattern(pattern, patternSection.getStringList(pattern));
 				if (patternmaterials != null) {
-					final int cost = patternmaterials.length == MAX_PATTERN_SIZE ? boneMealConsumed : boneMealSmall;
+					final PhysicalCraftingRecipe recipe = new PhysicalCraftingRecipe(pattern, coreblock, patternmaterials, 0);
+					final int cost = switch (Tier.of(pattern, recipe.getSize(), recipe.getWildcards())) {
+						case GIANT -> boneMealConsumed;
+						case HUGE -> boneMealHuge;
+						case BIG -> boneMealBig;
+					};
 					recipes.add(new PhysicalCraftingRecipe(pattern, coreblock, patternmaterials, cost));
 				}
 			}
-			recipes.sort(Comparator.comparingInt(PhysicalCraftingRecipe::getSize).reversed());
+			recipes.sort(Comparator.comparingInt(PhysicalCraftingRecipe::getSize).reversed()
+					.thenComparingInt(PhysicalCraftingRecipe::getWildcards));
 			enabled = true;
 		} catch (final Exception e) {
 			plugin.getLogger().severe(
@@ -147,9 +194,26 @@ public class PlantTreeEventHandler implements Listener {
 		}
 	}
 
+	/** The int set at {@code path} in the server's own config.yml (not the bundled defaults), else {@code def}. */
+	private int configuredInt(final String path, final int def) {
+		final Object value = plugin.getConfig().get(path, null);
+		if (value instanceof Number) {
+			return ((Number) value).intValue();
+		}
+		if (value != null) {
+			try {
+				return Integer.parseInt(value.toString().trim());
+			} catch (final NumberFormatException e) {
+				plugin.getLogger().warning("Invalid " + path + " '" + value + "', using " + def);
+			}
+		}
+		return def;
+	}
+
 	/**
 	 * Parses one planting pattern: a 3x3 or 5x5 square of sapling codes with X (the core block)
-	 * in the centre. Logs the problem and returns null when the pattern is invalid.
+	 * in the centre and - for "don't care" cells (returned as null). Logs the problem and returns
+	 * null when the pattern is invalid.
 	 */
 	private Material[][] parsePattern(final String pattern, final List<String> patternrows) {
 		final int size = patternrows.size();
@@ -174,6 +238,8 @@ public class PlantTreeEventHandler implements Listener {
 				}
 				if (code == 'X') {
 					patternmaterials[row][col] = coreblock;
+				} else if (code == ANY_BLOCK) {
+					patternmaterials[row][col] = null;
 				} else if (unavailableCodes.contains(code)) {
 					plugin.getLogger().info("Skipping planting pattern " + pattern + ": its sapling ("
 							+ code + ") does not exist on this server version");
@@ -213,10 +279,13 @@ public class PlantTreeEventHandler implements Listener {
 			return;
 		}
 
-		// recipes are sorted widest first, so a 5x5 ring wins over the 3x3 ring inside it
+		// recipes are sorted most specific first: a 5x5 ring wins over the 3x3 ring inside it,
+		// and a full 3x3 ring over the plus shape inside that
 		PhysicalCraftingRecipe recipe = null;
+		Material[][] matched = null;
 		for (final PhysicalCraftingRecipe candidate : recipes) {
-			if (candidate.matches(blocksAround(clickedBlock, candidate.getSize()))) {
+			matched = candidate.matchingOrientation(blocksAround(clickedBlock, candidate.getSize()));
+			if (matched != null) {
 				recipe = candidate;
 				break;
 			}
@@ -241,9 +310,9 @@ public class PlantTreeEventHandler implements Listener {
 		final File rootFile = new File(plugin.getDataFolder(), "tree." + treeType + ".root.xml");
 		event.setCancelled(true);
 		cost.apply(event.getPlayer());
-		final String what = recipe.getSize() == MAX_PATTERN_SIZE ? "a giant " + treeType : "a " + treeType;
-		popup.sendPopup(event.getPlayer(), "Stand back! Generating " + what + " tree!");
-		clearBlocks(clickedBlock, recipe.getSize());
+		final Tier tier = Tier.of(recipe.getTreeName(), recipe.getSize(), recipe.getWildcards());
+		popup.sendPopup(event.getPlayer(), "Stand back! Generating " + tier.article + treeType + " tree!");
+		clearBlocks(clickedBlock, matched);
 		renderer.renderTree(clickedBlock.getLocation(), treeFile, rootFile, seed.nextInt(), true);
 	}
 
@@ -263,17 +332,21 @@ public class PlantTreeEventHandler implements Listener {
     }
 
     /*
-     * Clear the core block and the saplings of the matched pattern.
+     * Clear the core block and the saplings of the matched pattern; "don't care" cells (null in
+     * the matched orientation) are left alone.
      * Need to do this as some trees do not overwrite/eliminate these
      *
      * @param - location of core block
-     * @param - width of the matched pattern
+     * @param - the matched orientation of the pattern, indexed like blocksAround
      */
-    private void clearBlocks(Block coreblock, int size) {
+    private void clearBlocks(Block coreblock, Material[][] matched) {
+		final int size = matched.length;
 		final int half = size / 2;
 		for (int x = 0; x < size; x++) {
 			for (int z = 0; z < size; z++) {
-				coreblock.getRelative(z - half, 0, x - half).setType(Material.AIR);
+				if (matched[x][z] != null) {
+					coreblock.getRelative(z - half, 0, x - half).setType(Material.AIR);
+				}
 			}
 		}
     }

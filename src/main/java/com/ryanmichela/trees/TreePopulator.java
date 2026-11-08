@@ -18,6 +18,7 @@
 package com.ryanmichela.trees;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -62,21 +63,26 @@ public class TreePopulator extends BlockPopulator {
       // only on soil, never on or in another tree, and in water only in swamps
       final boolean waterOk = "MANGROVE_SWAMP".equals(biomeName) || "SWAMP".equals(biomeName);
 
-      if (this.isAcceptableBiome(biomeName) && ground.canGrowNaturally(waterOk) && this.treeCanGrow(random)) {
+      if (ground.canGrowNaturally(waterOk) && this.treeCanGrow(random)) {
 
-        // the biome's tree files: biome.<BIOME>.xml or biome.<BIOME>-<anything>.xml (not roots)
-        final String prefix = "biome." + biomeName;
-        final File[] biometreefiles = this.plugin.getDataFolder().listFiles((dir, name) ->
-            name.endsWith(".xml") && !name.endsWith(".root.xml")
-            && (name.equals(prefix + ".xml") || name.startsWith(prefix + "-")));
-        if (biometreefiles == null || biometreefiles.length == 0) {
+        // the surface biome's tree files, plus the azalea trees (biome.LUSH_CAVES-*.xml) when the
+        // column has a lush cave below: like vanilla, they grow above lush caves in any biome
+        final List<String> names = new ArrayList<>();
+        if (this.isAcceptableBiome(biomeName)) {
+          names.addAll(this.biomeTreeFiles(biomeName));
+        }
+        final List<String> lush = ground.soil() && !ground.underFluid()
+            ? this.biomeTreeFiles(LUSH_CAVES) : List.<String>of();
+        if (!lush.isEmpty() && hasLushCaveBelow(world, refPoint.getBlockX(), refPoint.getBlockY(),
+                                                refPoint.getBlockZ())) {
+          names.addAll(lush);
+        }
+        if (names.isEmpty()) {
           return;
         }
-        // sorted, and picked with the chunk's random, so a world seed always grows the same trees;
-        // weighted by the natural-tree-weights config section
-        Arrays.sort(biometreefiles);
-        final List<String> names = Arrays.stream(biometreefiles).map(File::getName).toList();
-        final String treeName = this.pickWeighted(names, biomeName, random);
+        // picked with the chunk's random from sorted lists, so a world seed always grows the same
+        // trees; weighted by the natural-tree-weights config section
+        final String treeName = this.pickWeighted(names, random);
         final File treeFile = new File(this.plugin.getDataFolder(), treeName);
         final File rootFile = new File(this.plugin.getDataFolder(),
                                        treeName.substring(0, treeName.length() - 4) + ".root.xml");
@@ -89,20 +95,53 @@ public class TreePopulator extends BlockPopulator {
     }
   }
 
+  /** The biome folder for azalea trees: they grow above lush caves, whatever the surface biome. */
+  static final String LUSH_CAVES = "LUSH_CAVES";
+  /** Blocks between biome samples on the way down (biomes are stored per 4 x 4 x 4 cell). */
+  private static final int BIOME_SAMPLE_STEP = 4;
+
+  /**
+   * The tree files of a biome, sorted: biome.<BIOME>.xml or biome.<BIOME>-<anything>.xml (not
+   * roots).
+   */
+  private List<String> biomeTreeFiles(final String biomeName) {
+    final String prefix = "biome." + biomeName;
+    final File[] files = this.plugin.getDataFolder().listFiles((dir, name) ->
+        name.endsWith(".xml") && !name.endsWith(".root.xml")
+        && (name.equals(prefix + ".xml") || name.startsWith(prefix + "-")));
+    if (files == null) {
+      return List.of();
+    }
+    return Arrays.stream(files).map(File::getName).sorted().toList();
+  }
+
+  /**
+   * Whether the column at {@code x}, {@code z} has a lush caves biome somewhere below
+   * {@code surfaceY}, sampled every few blocks down to the bottom of the world.
+   */
+  static boolean hasLushCaveBelow(final World world, final int x, final int surfaceY, final int z) {
+    for (int y = surfaceY - BIOME_SAMPLE_STEP; y >= world.getMinHeight(); y -= BIOME_SAMPLE_STEP) {
+      if ("lush_caves".equals(world.getBiome(x, y, z).getKey().value())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /**
    * Picks one biome tree file at random, weighted by the {@code natural-tree-weights} config
    * section. Keys are tree names, the part of the file name after {@code biome.<BIOME>-}
-   * (e.g. {@code OAK_SMALL} for {@code biome.FOREST-OAK_SMALL.xml}); a key starting with
-   * {@code *} matches every name ending in the rest ({@code "*_SMALL"}). An exact key beats a
+   * (e.g. {@code OAK_HUGE} for {@code biome.FOREST-OAK_HUGE.xml}); a key starting with
+   * {@code *} matches every name ending in the rest ({@code "*_HUGE"}). An exact key beats a
    * {@code *} key, the longest {@code *} key wins among those, and unlisted trees weigh
    * {@code default} (1 if unset). Weights of 0 or less never spawn.
    */
-  String pickWeighted(final List<String> files, final String biomeName, final Random random) {
+  String pickWeighted(final List<String> files, final Random random) {
     final ConfigurationSection weights = this.weightsSection();
     final double[] cumulative = new double[files.size()];
     double total = 0;
     for (int i = 0; i < files.size(); i++) {
-      total += Math.max(0.0, weightOf(weights, treeName(files.get(i), biomeName)));
+      total += Math.max(0.0, weightOf(weights, treeName(files.get(i))));
       cumulative[i] = total;
     }
     if (total <= 0) {
@@ -132,20 +171,20 @@ public class TreePopulator extends BlockPopulator {
     return defaults == null ? null : defaults.getConfigurationSection(path);
   }
 
-  /** biome.FOREST-OAK_SMALL.xml -> OAK_SMALL */
-  static String treeName(final String file, final String biomeName) {
+  /**
+   * biome.FOREST-OAK_HUGE.xml -> OAK_HUGE (everything after the biome and its hyphen; biome
+   * names have no hyphen), biome.FOREST.xml -> "".
+   */
+  static String treeName(final String file) {
     String name = file;
-    final String prefix = "biome." + biomeName;
-    if (name.startsWith(prefix)) {
-      name = name.substring(prefix.length());
-    }
-    if (name.startsWith("-")) {
-      name = name.substring(1);
+    if (name.startsWith("biome.")) {
+      name = name.substring("biome.".length());
     }
     if (name.endsWith(".xml")) {
       name = name.substring(0, name.length() - 4);
     }
-    return name;
+    final int hyphen = name.indexOf('-');
+    return hyphen >= 0 ? name.substring(hyphen + 1) : "";
   }
 
   static double weightOf(final ConfigurationSection weights, final String name) {
@@ -243,8 +282,7 @@ public class TreePopulator extends BlockPopulator {
    */
   private static final Set<String> TREE_BIOMES = new HashSet<>(Arrays.asList(
       "FOREST", "BIRCH_FOREST", "CHERRY_GROVE", "SWAMP", "MANGROVE_SWAMP", "JUNGLE", "BADLANDS",
-      "DARK_FOREST", "TAIGA", "SAVANNA", "PALE_GARDEN", "MUSHROOM_FIELDS", "DAPPLED_FOREST",
-      "MEADOW"));
+      "DARK_FOREST", "TAIGA", "SAVANNA", "PALE_GARDEN", "MUSHROOM_FIELDS", "DAPPLED_FOREST"));
 
   private boolean isAcceptableBiome(final String biome) {
     return biome != null && TREE_BIOMES.contains(biome);
@@ -290,8 +328,6 @@ public class TreePopulator extends BlockPopulator {
         return "MUSHROOM_FIELDS";
       case "DAPPLED_FOREST": // 26.3+
         return "DAPPLED_FOREST";
-      case "MEADOW":
-        return "MEADOW";
       default:
         return null;
 	  }

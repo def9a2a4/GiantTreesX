@@ -22,6 +22,8 @@ import java.io.FileInputStream;
 import java.util.Random;
 import java.util.logging.Level;
 
+import com.ryanmichela.trees.AzaleaRoots;
+
 import net.sourceforge.arbaro.params.AbstractParam;
 import net.sourceforge.arbaro.tree.Segment;
 import net.sourceforge.arbaro.tree.Stem;
@@ -153,6 +155,10 @@ public class TreeRenderer {
                                             () -> {
                                                 try {
                                                     d3d.applyChanges(TreeRenderer.this.plugin);
+                                                    // azalea root system; the batched placement above starts next tick and its blocks win
+                                                    if (AzaleaRoots.appliesTo(tree.params.WoodType)) {
+                                                        AzaleaRoots.place(TreeRenderer.this.plugin, refPoint);
+                                                    }
                                                 } catch (final Exception e) {
                                                     TreeRenderer.this.plugin.getLogger().log(Level.SEVERE, "Error rendering tree " + treeFile.getName(), e);
                                                 }

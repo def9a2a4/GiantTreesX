@@ -6,12 +6,12 @@
     <param name='WoodType' value='Birch'/>
     <param name='Shape' value='1'/>
     <param name='Levels' value='2'/>
-    <param name='Scale' value='50.0'/>
-    <param name='ScaleV' value='5.0'/>
+    <param name='Scale' value='40.0'/>
+    <param name='ScaleV' value='2.0'/>
     <param name='BaseSize' value='0.4'/>
     <param name='Ratio' value='0.1'/>
     <param name='RatioPower' value='0.8'/>
-    <param name='Flare' value='0.5'/>
+    <param name='Flare' value='0.0'/>
     <param name='Lobes' value='5'/>
     <param name='LobeDepth' value='0.1'/>
     <param name='Smooth' value='0.1'/>

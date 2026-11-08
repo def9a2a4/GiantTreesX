@@ -8,6 +8,7 @@ import java.util.function.UnaryOperator;
 
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.MultipleFacing;
 import org.bukkit.block.data.type.HangingMoss;
@@ -15,7 +16,7 @@ import org.bukkit.util.Vector;
 
 /**
  * Hangs strands below a tree's leaves: vines down the sides of leaf blocks (swamp trees) or a
- * hanging block such as pale hanging moss straight below them.
+ * hanging block such as pale hanging moss or weeping vines straight below them.
  * <p>
  * Every decision is a hash of the seed and the leaf position, and strands only test the blocks the
  * tree had before decorating, so the result doesn't depend on the tracker's iteration order. Kept
@@ -27,10 +28,6 @@ final class LeafDecorator {
   static final int VINE_ONE_IN = 5;
   static final int VINE_MIN = 2;
   static final int VINE_MAX = 12;
-  /** A leaf bottom grows a hanging strand when hash % HANGING_ONE_IN == 0. */
-  static final int HANGING_ONE_IN = 4;
-  static final int HANGING_MIN = 1;
-  static final int HANGING_MAX = 6;
 
   /** dx, dz of the vine's cell relative to the leaf, in the order N, S, E, W. */
   private static final int[][] SIDES = {{0, -1}, {0, 1}, {1, 0}, {-1, 0}};
@@ -44,7 +41,7 @@ final class LeafDecorator {
     if (type.decoration == TreeType.Decoration.LEAF_VINES) {
       vines(tracker, seed);
     } else if (type.decoration == TreeType.Decoration.HANGING) {
-      hanging(tracker, type.hangingMaterial, seed);
+      hanging(tracker, type, seed);
     }
   }
 
@@ -92,8 +89,16 @@ final class LeafDecorator {
     }
   }
 
-  private static void hanging(final WorldChangeTracker tracker, final Material material,
+  /**
+   * Strands of {@link TreeType#hangingMaterial} below leaf bottoms, ending in
+   * {@link TreeType#hangingTipMaterial} (the same block with its tip state for pale hanging moss,
+   * a fully grown WEEPING_VINES below WEEPING_VINES_PLANT for crimson fungi).
+   */
+  private static void hanging(final WorldChangeTracker tracker, final TreeType type,
                               final int seed) {
+    final int oneIn = type.hangingOneIn;
+    final int min = type.hangingMin;
+    final int max = type.hangingMax;
     final List<WorldChange> added = new ArrayList<>();
     final WorldChangeKey probe = new WorldChangeKey();
     for (final WorldChange change : tracker.getChanges()) {
@@ -104,10 +109,10 @@ final class LeafDecorator {
       final int y = change.location.getBlockY();
       final int z = change.location.getBlockZ();
       final int h = hash(seed, x, y, z, 4);
-      if (Math.floorMod(h, HANGING_ONE_IN) != 0) {
+      if (Math.floorMod(h, oneIn) != 0) {
         continue;
       }
-      final int length = HANGING_MIN + Math.floorMod(h >>> 8, HANGING_MAX - HANGING_MIN + 1);
+      final int length = min + Math.floorMod(h >>> 8, max - min + 1);
       // strands stop at the first block of the tree, so two never share a cell
       int bottom = y;
       for (int vy = y - 1; vy >= y - length && vy >= 1; vy--) {
@@ -120,7 +125,9 @@ final class LeafDecorator {
         bottom = vy;
       }
       for (int vy = y - 1; vy >= bottom; vy--) {
-        added.add(new WorldChange(new Vector(x, vy, z), material, tip(vy == bottom),
+        final boolean tip = vy == bottom;
+        added.add(new WorldChange(new Vector(x, vy, z),
+                                  tip ? type.hangingTipMaterial : type.hangingMaterial, tip(tip),
                                   WorldChange.Kind.HANGING, -1));
       }
     }
@@ -162,6 +169,10 @@ final class LeafDecorator {
     return blockData -> {
       if (blockData instanceof HangingMoss) {
         ((HangingMoss) blockData).setTip(tip);
+      } else if (tip && blockData instanceof Ageable) {
+        // a fully grown vine tip doesn't keep growing down
+        final Ageable ageable = (Ageable) blockData;
+        ageable.setAge(ageable.getMaximumAge());
       }
       return blockData;
     };

@@ -56,6 +56,13 @@ public class TreeType {
     /** WoodType used when wood or the first leaf block doesn't exist on this server. */
     final String fallback;
     int capLevel = Integer.MAX_VALUE;
+    boolean noisyLeaves = true;
+    /** Bottom block of a hanging strand; null for {@link #hanging} with its tip state set. */
+    String hangingTip;
+    /** A leaf bottom grows a strand one in this many times; strand length range. */
+    int hangingOneIn = 4;
+    int hangingMin = 1;
+    int hangingMax = 6;
 
     Spec(final String wood, final String[] leaves, final int[] weights,
          final Decoration decoration, final String hanging, final String fallback) {
@@ -91,16 +98,26 @@ public class TreeType {
     // mushroom branches are part of the cap
     add("Red Mushroom", "MUSHROOM_STEM", "RED_MUSHROOM_BLOCK", Decoration.NONE, "Oak");
     SPECS.get("Red Mushroom").capLevel = 1;
+    SPECS.get("Red Mushroom").noisyLeaves = false;
     add("Brown Mushroom", "MUSHROOM_STEM", "BROWN_MUSHROOM_BLOCK", Decoration.NONE, "Oak");
     SPECS.get("Brown Mushroom").capLevel = 1;
+    SPECS.get("Brown Mushroom").noisyLeaves = false;
     // 26.3+: on older servers poplar trees are grown as birch
     SPECS.put("Poplar", new Spec("POPLAR_LOG",
         new String[] {"YELLOW_POPLAR_LEAVES", "ORANGE_POPLAR_LEAVES", "RED_POPLAR_LEAVES"},
         new int[] {5, 3, 2}, Decoration.NONE, null, "Birch"));
+    // weeping vines hang from under the cap: plant blocks with a (fully grown) tip at the bottom
     SPECS.put("Crimson", new Spec("CRIMSON_STEM", new String[] {"NETHER_WART_BLOCK", "SHROOMLIGHT"},
-        new int[] {14, 1}, Decoration.NONE, null, "Oak"));
+        new int[] {14, 1}, Decoration.HANGING, "WEEPING_VINES_PLANT", "Oak"));
+    SPECS.get("Crimson").hangingTip = "WEEPING_VINES";
+    SPECS.get("Crimson").hangingOneIn = 6;
+    SPECS.get("Crimson").hangingMin = 1;
+    SPECS.get("Crimson").hangingMax = 9;
     SPECS.put("Warped", new Spec("WARPED_STEM", new String[] {"WARPED_WART_BLOCK", "SHROOMLIGHT"},
         new int[] {14, 1}, Decoration.NONE, null, "Oak"));
+    // fungus caps keep their smooth wart domes
+    SPECS.get("Crimson").noisyLeaves = false;
+    SPECS.get("Warped").noisyLeaves = false;
     SPECS.put("Azalea", new Spec("OAK_LOG", new String[] {"AZALEA_LEAVES", "FLOWERING_AZALEA_LEAVES"},
         new int[] {3, 2}, Decoration.NONE, null, "Oak"));
   }
@@ -115,8 +132,18 @@ public class TreeType {
   public final Decoration decoration;
   /** Block hung below leaves for {@link Decoration#HANGING}, otherwise null. */
   public final Material hangingMaterial;
+  /** Bottom (tip) block of each hanging strand: {@link #hangingMaterial} unless the type has its
+   *  own tip block (weeping vines); null without {@link Decoration#HANGING}. */
+  public final Material hangingTipMaterial;
+  /** {@link Decoration#HANGING}: a leaf bottom grows a strand when hash % hangingOneIn == 0, of
+   *  hangingMin to hangingMax blocks (see LeafDecorator). */
+  public final int hangingOneIn;
+  public final int hangingMin;
+  public final int hangingMax;
   /** Stems of this level and deeper are drawn with the leaf block (Draw3d); MAX_VALUE for none. */
   public final int capLevel;
+  /** Leaf clusters get an uneven, lumpy surface (Draw3d); false keeps plain ellipsoids. */
+  public final boolean noisyLeaves;
 
   public TreeType(final String treeType) {
     this(treeType, null);
@@ -150,10 +177,16 @@ public class TreeType {
     }
     this.leafMix = Collections.unmodifiableMap(mix);
     final Material hanging = spec.hanging == null ? null : lookup(spec.hanging);
-    this.decoration = spec.decoration == Decoration.HANGING && hanging == null
+    final Material hangingTip = spec.hangingTip == null ? hanging : lookup(spec.hangingTip);
+    this.decoration = spec.decoration == Decoration.HANGING && (hanging == null || hangingTip == null)
         ? Decoration.NONE : spec.decoration;
     this.hangingMaterial = this.decoration == Decoration.HANGING ? hanging : null;
+    this.hangingTipMaterial = this.decoration == Decoration.HANGING ? hangingTip : null;
+    this.hangingOneIn = spec.hangingOneIn;
+    this.hangingMin = spec.hangingMin;
+    this.hangingMax = spec.hangingMax;
     this.capLevel = spec.capLevel;
+    this.noisyLeaves = spec.noisyLeaves;
   }
 
   private static Material lookup(final String name) {
@@ -168,6 +201,9 @@ public class TreeType {
       Collections.addAll(names, s.leaves);
       if (s.hanging != null) {
         names.add(s.hanging);
+      }
+      if (s.hangingTip != null) {
+        names.add(s.hangingTip);
       }
     }
     return names;

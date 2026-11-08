@@ -55,7 +55,7 @@
     <param name='0RotateV' value='0.0' />
     <param name='0Branches' value='1' />
     <param name='0BranchDist' value='0.0' />
-    <param name='0Length' value='0.5' />
+    <param name='0Length' value='0.4' />
     <param name='0LengthV' value='0.0' />
     <param name='0Taper' value='1.2' />
     <param name='0SegSplits' value='0.0' />

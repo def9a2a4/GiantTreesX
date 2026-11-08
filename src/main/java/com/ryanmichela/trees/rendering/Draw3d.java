@@ -34,6 +34,20 @@ import org.bukkit.util.noise.SimplexNoiseGenerator;
 
 public class Draw3d {
 
+  // Leaf noise for TreeType.noisyLeaves (plotNoisyEllipsoid); kept in sync with
+  // docs/viewer/src/draw3d.js
+  /** Amplitude (blocks) and frequency of the simplex octave making lumps and dents. */
+  static final double LEAF_LUMP = 2.2;
+  static final double LEAF_LUMP_FREQ = 0.22;
+  /** Amplitude (blocks) and frequency of the finer octave roughening the outline. */
+  static final double LEAF_FINE = 0.6;
+  static final double LEAF_FINE_FREQ = 0.6;
+  /** Range (blocks) of the per-block hash jitter: single-block gaps and protrusions. */
+  static final double LEAF_JITTER = 0.6;
+  /** Clusters thinner than this (blocks, centre to surface) get proportionally weaker noise. */
+  static final double LEAF_FULL_RADIUS = 2.0;
+  private static final double LEAF_REACH = LEAF_LUMP + LEAF_FINE + LEAF_JITTER / 2;
+
   public class Point2D {
 
     public int p;
@@ -133,7 +147,10 @@ public class Draw3d {
 
   public void drawLeafCluster(final Vector pos, final double length,
                               final double width) {
-    for (final Vector loc : plotEllipsoid(pos, length, width, length, 0)) {
+    final List<Vector> points = treeType.noisyLeaves
+        ? plotNoisyEllipsoid(pos, length, width, length)
+        : plotEllipsoid(pos, length, width, length, 0);
+    for (final Vector loc : points) {
       changeTracker.addChange(loc, treeType.leafMaterial,
                                    persist(), WorldChange.Kind.LEAVES, -1, false);
     }
@@ -263,6 +280,63 @@ public class Draw3d {
                                                                (z + pos.getBlockZ()),
                                                                1, level);
           if (left <= (1 + noiseOffset)) {
+            points.add(new Vector(x, y, z).add(pos));
+          }
+        }
+      }
+    }
+    return points;
+  }
+
+  /**
+   * The ellipsoid of {@link #plotEllipsoid} (level 0) with an uneven surface. A block's distance
+   * outside the ellipsoid, in blocks along the ray from the centre, is compared with a displacement
+   * made of two simplex octaves (lumps and dents) and a per-block hash jitter (single-block gaps
+   * and protrusions). The displacement shrinks where the cluster is thinner than
+   * {@link #LEAF_FULL_RADIUS}, so small clusters don't vanish. Only exactly rounded double
+   * operations, so the viewer's port gives the same blocks.
+   */
+  private List<Vector> plotNoisyEllipsoid(final Vector pos, final double a, final double b,
+                                          final double c) {
+    final List<Vector> points = new LinkedList<>();
+    final int halfSize = (int) Math.ceil(Math.max(Math.max(a, b), c)) + 3;
+    final int px = pos.getBlockX();
+    final int py = pos.getBlockY();
+    final int pz = pos.getBlockZ();
+    final int seed = refPoint.hashCode();
+    for (int x = -halfSize; x <= halfSize; x++) {
+      for (int y = -halfSize; y <= halfSize; y++) {
+        for (int z = -halfSize; z <= halfSize; z++) {
+          final int bx = x + px;
+          final int by = y + py;
+          final int bz = z + pz;
+          final double left = ((x * x) / (a * a)) + ((y * y) / (b * b)) + ((z * z) / (c * c));
+          final double q = left / (1 + calculateNoiseOffset(bx, by, bz, 1, 0));
+          final boolean inside;
+          if (q == 0) {
+            inside = true;
+          } else {
+            final double r = Math.sqrt((x * x) + (y * y) + (z * z));
+            final double rDir = r / Math.sqrt(q); // centre to surface along this ray
+            final double out = r - rDir; // blocks outside the surface (negative inside)
+            if (out <= -LEAF_REACH) {
+              inside = true;
+            } else if (out > LEAF_REACH) {
+              inside = false;
+            } else {
+              final double amp = Math.min(1, rDir / LEAF_FULL_RADIUS);
+              final double lump = noise.noise((bx * LEAF_LUMP_FREQ) + 31.5,
+                                              (by * LEAF_LUMP_FREQ) + 47.25,
+                                              (bz * LEAF_LUMP_FREQ) + 13.75);
+              final double fine = noise.noise((bx * LEAF_FINE_FREQ) + 71.5,
+                                              (by * LEAF_FINE_FREQ) + 5.25,
+                                              (bz * LEAF_FINE_FREQ) + 89.75);
+              final double u = (LeafDecorator.hash(seed, bx, by, bz, 7) >>> 8) / 16777216.0;
+              inside = out <= (amp * ((LEAF_LUMP * lump) + (LEAF_FINE * fine)))
+                              + (LEAF_JITTER * (u - 0.5));
+            }
+          }
+          if (inside) {
             points.add(new Vector(x, y, z).add(pos));
           }
         }
