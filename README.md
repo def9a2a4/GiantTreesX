@@ -63,6 +63,9 @@ that CI runs on every push.
 `make preview` serves the website in `docs/` (the gallery and the viewer, published by GitHub
 Pages) and `make gallery` re-renders the gallery; see `docs/viewer/README.md`.
 
+`scripts/` has command-line tools for tuning tree files: block counts and sizes over many seeds,
+screenshots and contact sheets, and showing, diffing and editing params; see `scripts/README.md`.
+
 ## IMPORTANT NOTES for version 3.2
 Custom trees can be added to a biome by naming the tree and root files as such:
 

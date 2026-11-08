@@ -111,3 +111,19 @@ preview-check:
 	node $(VIEWER)/scripts/sync-trees.mjs --check
 	$(VIEWER)/scripts/check.sh
 	node $(VIEWER)/scripts/gallery-check.mjs
+
+# Tree tuning tools in scripts/ (see scripts/README.md). TREES is a comma-separated list of names
+# in src/main/resources (OAK = tree.OAK, wildcards like 'tree.*_SMALL'), SEEDS e.g. 12345,7 or 1..10.
+#   make tree-stats TREES=OAK,OAK_SMALL [SEEDS=1..10]       block counts and sizes over seeds
+#   make tree-shots TREES=OAK [SEEDS=1..4] [VIEWS=hero,cut]  images + sheet.jpg in .temp/shots/
+.PHONY: tree-stats
+tree-stats:
+	@[ -n "$(TREES)" ] || { echo "usage: make tree-stats TREES=OAK,OAK_SMALL [SEEDS=1..10]"; exit 1; }
+	node scripts/tree-stats.mjs $(if $(SEEDS),--seeds '$(SEEDS)') '$(TREES)'
+
+.PHONY: tree-shots
+tree-shots:
+	@[ -n "$(TREES)" ] || { echo "usage: make tree-shots TREES=OAK [SEEDS=1..4] [VIEWS=hero,cut]"; exit 1; }
+	[ -d $(VIEWER)/node_modules/playwright ] || npm install --prefix $(VIEWER) --no-audit --no-fund
+	cd $(VIEWER) && npx playwright install chromium
+	node scripts/tree-shots.mjs $(if $(SEEDS),--seeds '$(SEEDS)') $(if $(VIEWS),--views '$(VIEWS)') --sheet .temp/shots/sheet.jpg '$(TREES)'
