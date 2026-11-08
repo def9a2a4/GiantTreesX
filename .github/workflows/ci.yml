@@ -39,6 +39,28 @@ jobs:
           path: target/GiantTrees-*.jar
           if-no-files-found: error
 
+  # The browser preview's JS port of the tree generator must keep matching the Java plugin.
+  preview-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: maven
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Preview equivalence check
+        run: make preview-check
+
   server-test:
     needs: build
     runs-on: ubuntu-latest

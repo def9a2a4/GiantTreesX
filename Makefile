@@ -69,7 +69,7 @@ clean-test-server:
 
 # Integration test (what CI runs): a throwaway server in test-server/ci-<version>/ with a fresh
 # world, natural generation plus console-grown trees whose blocks are checked. See
-# tools/ci/server_test.py. Needs a built jar (run `make build` first, or let CI provide it).
+# tests/server_test.py. Needs a built jar (run `make build` first, or let CI provide it).
 CI_SERVER_DIR := $(TEST_SERVER_DIR)/ci-$(MINECRAFT_VERSION)
 
 .PHONY: server-test
@@ -79,4 +79,34 @@ server-test: $(SERVER_JAR)
 	echo "eula=true" > $(CI_SERVER_DIR)/eula.txt
 	printf "server-port=25599\nonline-mode=false\nlevel-seed=gianttrees\n" > $(CI_SERVER_DIR)/server.properties
 	cp $$(ls target/GiantTrees-*.jar | grep -v original) $(CI_SERVER_DIR)/plugins/
-	python3 tools/ci/server_test.py --server-dir $(CI_SERVER_DIR) --server-jar $(SERVER_JAR) --java $(JAVA)
+	python3 tests/server_test.py --server-dir $(CI_SERVER_DIR) --server-jar $(SERVER_JAR) --java $(JAVA)
+
+# Website in docs/ (GitHub Pages serves it as is): the gallery (docs/index.html), the viewer
+# (docs/viewer/) and copies of the plugin's tree files (docs/trees/).
+PREVIEW_PORT ?= 8000
+VIEWER := docs/viewer
+
+# Copy src/main/resources/{tree,biome}.*.xml into docs/trees/ (CI checks they are in sync).
+.PHONY: docs-trees
+docs-trees:
+	node $(VIEWER)/scripts/sync-trees.mjs
+
+.PHONY: preview
+preview: docs-trees
+	@echo "Gallery: http://localhost:$(PREVIEW_PORT)/   Viewer: http://localhost:$(PREVIEW_PORT)/viewer/"
+	cd docs && python3 -m http.server $(PREVIEW_PORT)
+
+# Render docs/gallery/ (every tree type: a hero shot plus three smaller views) with the viewer
+# in headless Chromium. Installs Playwright into docs/viewer/node_modules on first run.
+.PHONY: gallery
+gallery: docs-trees
+	[ -d $(VIEWER)/node_modules/playwright ] || npm install --prefix $(VIEWER) --no-audit --no-fund
+	cd $(VIEWER) && npx playwright install chromium
+	node $(VIEWER)/scripts/gallery.mjs
+
+# The viewer's JS port must match the plugin's Java tree generation, and docs/trees/ must match
+# the plugin's tree files (what CI runs).
+.PHONY: preview-check
+preview-check:
+	node $(VIEWER)/scripts/sync-trees.mjs --check
+	$(VIEWER)/scripts/check.sh

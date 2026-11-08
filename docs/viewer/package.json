@@ -1,0 +1,9 @@
+{
+  "name": "gianttrees-viewer-tools",
+  "private": true,
+  "description": "Dev-only dependencies for docs/viewer/scripts (the viewer itself needs none)",
+  "type": "module",
+  "devDependencies": {
+    "playwright": "1.64.1"
+  }
+}

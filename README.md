@@ -17,6 +17,9 @@ Jason Weber and Joseph Penn as implemented by Wolfram Diestel in Arbaro.
 * http://sourceforge.net/projects/arbaro/
 * http://ftp.cs.duke.edu/courses/fall02/cps124/resources/p119-weber.pdf
 
+**Tree gallery and viewer:** see every tree in 3D as blocks, cut into them and edit tree files
+in your browser at https://def9a2a4.github.io/GiantTreesX/
+
 ## Version 4.0
 Runs on Paper 1.21.x and 26.1 through 26.3 (one jar).
 
@@ -39,6 +42,9 @@ Existing configs keep working: missing settings fall back to the defaults above.
 `make server` builds the plugin and runs a local Paper test server in `test-server/` (gitignored;
 `MINECRAFT_VERSION=1.21.11` for another version). `make server-test` runs the integration test
 that CI runs on every push.
+
+`make preview` serves the website in `docs/` (the gallery and the viewer, published by GitHub
+Pages) and `make gallery` re-renders the gallery; see `docs/viewer/README.md`.
 
 ## IMPORTANT NOTES for version 3.2
 Custom trees can be added to a biome by naming the tree and root files as such:

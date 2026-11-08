@@ -1,0 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { renderTree } from '../src/render.js';
+const res = new URL('../../../src/main/resources/', import.meta.url).pathname;
+const name = process.argv[2] || 'tree.OAK';
+const seed = Number(process.argv[3] || 12345);
+const t = Date.now();
+const r = renderTree({ treeXml: readFileSync(res + name + '.xml', 'utf8'), rootXml: readFileSync(res + name + '.root.xml', 'utf8'), seed, treeName: name + '.xml' });
+const counts = {};
+for (let i = 0; i < r.store.n; i++) counts[r.store.kind[i]] = (counts[r.store.kind[i]] || 0) + 1;
+console.log(name, seed, r.store.n, counts, r.timing, Date.now() - t, 'ms', r.vineInfo, 'scale', r.scaleTree);

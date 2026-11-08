@@ -1,0 +1,421 @@
+{
+  "seed": 12345,
+  "trees": [
+    {
+      "name": "tree.ACACIA",
+      "aliases": [
+        "biome.SAVANNA-ACACIA"
+      ],
+      "seed": 12345,
+      "woodType": "Acacia",
+      "blocks": 24232,
+      "height": 48,
+      "width": 58,
+      "viewer": "viewer/#tree=tree.ACACIA&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.ACACIA/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.ACACIA/cut.jpg",
+          "caption": "Cut through the trunk"
+        },
+        "top": {
+          "src": "gallery/tree.ACACIA/top.jpg",
+          "caption": "From above"
+        },
+        "base": {
+          "src": "gallery/tree.ACACIA/base.jpg",
+          "caption": "Trunk base and roots"
+        }
+      }
+    },
+    {
+      "name": "tree.ACACIA-2",
+      "aliases": [
+        "biome.SAVANNA-ACACIA-2"
+      ],
+      "seed": 12345,
+      "woodType": "Acacia",
+      "blocks": 43368,
+      "height": 56,
+      "width": 98,
+      "viewer": "viewer/#tree=tree.ACACIA-2&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.ACACIA-2/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.ACACIA-2/cut.jpg",
+          "caption": "Cut through the trunk"
+        },
+        "top": {
+          "src": "gallery/tree.ACACIA-2/top.jpg",
+          "caption": "From above"
+        },
+        "base": {
+          "src": "gallery/tree.ACACIA-2/base.jpg",
+          "caption": "Trunk base and roots"
+        }
+      }
+    },
+    {
+      "name": "tree.BIRCH",
+      "aliases": [
+        "biome.BIRCH_FOREST-BIRCH"
+      ],
+      "seed": 12345,
+      "woodType": "Birch",
+      "blocks": 45110,
+      "height": 66,
+      "width": 60,
+      "viewer": "viewer/#tree=tree.BIRCH&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.BIRCH/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.BIRCH/cut.jpg",
+          "caption": "Cut through the trunk"
+        },
+        "top": {
+          "src": "gallery/tree.BIRCH/top.jpg",
+          "caption": "From above"
+        },
+        "base": {
+          "src": "gallery/tree.BIRCH/base.jpg",
+          "caption": "Trunk base and roots"
+        }
+      }
+    },
+    {
+      "name": "tree.BIRCH-2",
+      "aliases": [
+        "biome.BIRCH_FOREST-BIRCH-2"
+      ],
+      "seed": 12345,
+      "woodType": "Birch",
+      "blocks": 60811,
+      "height": 67,
+      "width": 81,
+      "viewer": "viewer/#tree=tree.BIRCH-2&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.BIRCH-2/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.BIRCH-2/cut.jpg",
+          "caption": "Cut through the trunk"
+        },
+        "top": {
+          "src": "gallery/tree.BIRCH-2/top.jpg",
+          "caption": "From above"
+        },
+        "base": {
+          "src": "gallery/tree.BIRCH-2/base.jpg",
+          "caption": "Trunk base and roots"
+        }
+      }
+    },
+    {
+      "name": "tree.CHERRY",
+      "aliases": [
+        "biome.CHERRY_GROVE-CHERRY"
+      ],
+      "seed": 12345,
+      "woodType": "Cherry",
+      "blocks": 12515,
+      "height": 53,
+      "width": 50,
+      "viewer": "viewer/#tree=tree.CHERRY&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.CHERRY/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.CHERRY/cut.jpg",
+          "caption": "Cut through the trunk"
+        },
+        "top": {
+          "src": "gallery/tree.CHERRY/top.jpg",
+          "caption": "From above"
+        },
+        "base": {
+          "src": "gallery/tree.CHERRY/base.jpg",
+          "caption": "Trunk base and roots"
+        }
+      }
+    },
+    {
+      "name": "tree.COTTONWOOD",
+      "aliases": [
+        "biome.FOREST-COTTONWOOD"
+      ],
+      "seed": 12345,
+      "woodType": "Birch",
+      "blocks": 28018,
+      "height": 65,
+      "width": 72,
+      "viewer": "viewer/#tree=tree.COTTONWOOD&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.COTTONWOOD/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.COTTONWOOD/cut.jpg",
+          "caption": "Cut through the trunk"
+        },
+        "top": {
+          "src": "gallery/tree.COTTONWOOD/top.jpg",
+          "caption": "From above"
+        },
+        "base": {
+          "src": "gallery/tree.COTTONWOOD/base.jpg",
+          "caption": "Trunk base and roots"
+        }
+      }
+    },
+    {
+      "name": "tree.DARK_OAK",
+      "aliases": [
+        "biome.DARK_FOREST-DARK_OAK"
+      ],
+      "seed": 12345,
+      "woodType": "Dark Oak",
+      "blocks": 73098,
+      "height": 62,
+      "width": 77,
+      "viewer": "viewer/#tree=tree.DARK_OAK&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.DARK_OAK/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.DARK_OAK/cut.jpg",
+          "caption": "Cut through the trunk"
+        },
+        "top": {
+          "src": "gallery/tree.DARK_OAK/top.jpg",
+          "caption": "From above"
+        },
+        "base": {
+          "src": "gallery/tree.DARK_OAK/base.jpg",
+          "caption": "Trunk base and roots"
+        }
+      }
+    },
+    {
+      "name": "tree.DARK_OAK-2",
+      "aliases": [
+        "biome.DARK_FOREST-DARK_OAK-2"
+      ],
+      "seed": 12345,
+      "woodType": "Dark Oak",
+      "blocks": 93323,
+      "height": 69,
+      "width": 87,
+      "viewer": "viewer/#tree=tree.DARK_OAK-2&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.DARK_OAK-2/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.DARK_OAK-2/cut.jpg",
+          "caption": "Cut through the trunk"
+        },
+        "top": {
+          "src": "gallery/tree.DARK_OAK-2/top.jpg",
+          "caption": "From above"
+        },
+        "base": {
+          "src": "gallery/tree.DARK_OAK-2/base.jpg",
+          "caption": "Trunk base and roots"
+        }
+      }
+    },
+    {
+      "name": "tree.JUNGLE",
+      "aliases": [],
+      "seed": 12345,
+      "woodType": "Jungle",
+      "blocks": 15624,
+      "height": 64,
+      "width": 49,
+      "viewer": "viewer/#tree=tree.JUNGLE&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.JUNGLE/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.JUNGLE/cut.jpg",
+          "caption": "Cut through the trunk"
+        },
+        "top": {
+          "src": "gallery/tree.JUNGLE/top.jpg",
+          "caption": "From above"
+        },
+        "base": {
+          "src": "gallery/tree.JUNGLE/base.jpg",
+          "caption": "Trunk base and roots"
+        }
+      }
+    },
+    {
+      "name": "tree.MANGROVE",
+      "aliases": [
+        "biome.MANGROVE_SWAMP-MANGROVE"
+      ],
+      "seed": 12345,
+      "woodType": "Mangrove",
+      "blocks": 16621,
+      "height": 65,
+      "width": 63,
+      "viewer": "viewer/#tree=tree.MANGROVE&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.MANGROVE/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.MANGROVE/cut.jpg",
+          "caption": "Cut through the trunk"
+        },
+        "top": {
+          "src": "gallery/tree.MANGROVE/top.jpg",
+          "caption": "From above"
+        },
+        "base": {
+          "src": "gallery/tree.MANGROVE/base.jpg",
+          "caption": "Trunk base and roots"
+        }
+      }
+    },
+    {
+      "name": "tree.MESAPUZZLE",
+      "aliases": [
+        "biome.BADLANDS-MESAPUZZLE"
+      ],
+      "seed": 12345,
+      "woodType": "Acacia",
+      "blocks": 23733,
+      "height": 44,
+      "width": 67,
+      "viewer": "viewer/#tree=tree.MESAPUZZLE&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.MESAPUZZLE/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.MESAPUZZLE/cut.jpg",
+          "caption": "Cut through the trunk"
+        },
+        "top": {
+          "src": "gallery/tree.MESAPUZZLE/top.jpg",
+          "caption": "From above"
+        },
+        "base": {
+          "src": "gallery/tree.MESAPUZZLE/base.jpg",
+          "caption": "Trunk base and roots"
+        }
+      }
+    },
+    {
+      "name": "tree.OAK",
+      "aliases": [
+        "biome.FOREST-OAK"
+      ],
+      "seed": 12345,
+      "woodType": "Oak",
+      "blocks": 45110,
+      "height": 66,
+      "width": 60,
+      "viewer": "viewer/#tree=tree.OAK&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.OAK/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.OAK/cut.jpg",
+          "caption": "Cut through the trunk"
+        },
+        "top": {
+          "src": "gallery/tree.OAK/top.jpg",
+          "caption": "From above"
+        },
+        "base": {
+          "src": "gallery/tree.OAK/base.jpg",
+          "caption": "Trunk base and roots"
+        }
+      }
+    },
+    {
+      "name": "tree.SPRUCE",
+      "aliases": [
+        "biome.TAIGA-SPRUCE"
+      ],
+      "seed": 12345,
+      "woodType": "Spruce",
+      "blocks": 6315,
+      "height": 51,
+      "width": 31,
+      "viewer": "viewer/#tree=tree.SPRUCE&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.SPRUCE/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.SPRUCE/cut.jpg",
+          "caption": "Cut through the trunk"
+        },
+        "top": {
+          "src": "gallery/tree.SPRUCE/top.jpg",
+          "caption": "From above"
+        },
+        "base": {
+          "src": "gallery/tree.SPRUCE/base.jpg",
+          "caption": "Trunk base and roots"
+        }
+      }
+    },
+    {
+      "name": "biome.JUNGLE-JUNGLE",
+      "aliases": [],
+      "seed": 12345,
+      "woodType": "Jungle",
+      "blocks": 15624,
+      "height": 64,
+      "width": 49,
+      "viewer": "viewer/#tree=biome.JUNGLE-JUNGLE&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/biome.JUNGLE-JUNGLE/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/biome.JUNGLE-JUNGLE/cut.jpg",
+          "caption": "Cut through the trunk"
+        },
+        "top": {
+          "src": "gallery/biome.JUNGLE-JUNGLE/top.jpg",
+          "caption": "From above"
+        },
+        "base": {
+          "src": "gallery/biome.JUNGLE-JUNGLE/base.jpg",
+          "caption": "Trunk base and roots"
+        }
+      }
+    }
+  ]
+}

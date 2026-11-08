@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GiantTrees Preview</title>
+<link rel="stylesheet" href="ui/style.css">
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+</head>
+<body>
+<header id="top">
+  <div class="brand">GiantTrees <span>preview</span></div>
+  <label class="field">Tree
+    <select id="treeSelect"></select>
+  </label>
+  <label class="field">Seed
+    <input id="seed" type="number" step="1" value="12345">
+  </label>
+  <button id="seedRandom" title="Random seed">Random</button>
+  <div id="treeInfo" class="info"></div>
+  <div class="spacer"></div>
+  <div id="busy" class="busy" hidden><span class="dot"></span><span id="busyText">Generating</span></div>
+  <button id="toggleParams" title="Show or hide the param editor">Params</button>
+</header>
+
+<div id="layout">
+  <aside id="left" class="panel">
+    <details open>
+      <summary>View</summary>
+      <div class="rows">
+        <label class="check"><input type="checkbox" id="showLeaves" checked> Leaves</label>
+        <label class="check"><input type="checkbox" id="showRoots" checked> Roots</label>
+        <label class="check"><input type="checkbox" id="showVines" checked> Vines</label>
+        <label class="check"><input type="checkbox" id="translucent"> Translucent leaves</label>
+        <label class="check"><input type="checkbox" id="showGrid" checked> Ground grid (y = 0)</label>
+        <label class="row">Colour by
+          <select id="colorBy">
+            <option value="block">Block</option>
+            <option value="level">Stem level</option>
+            <option value="part">Tree / root / junction</option>
+          </select>
+        </label>
+        <button id="resetCamera">Reset camera</button>
+      </div>
+    </details>
+
+    <details open>
+      <summary>Cross-section</summary>
+      <div class="rows">
+        <label class="row">Vertical cut
+          <select id="sliceAxis">
+            <option value="">Off</option>
+            <option value="x">X axis (east-west)</option>
+            <option value="z">Z axis (north-south)</option>
+          </select>
+        </label>
+        <div class="slider-row" id="sliceRow">
+          <input type="range" id="slicePos" min="-50" max="50" step="1" value="0">
+          <input type="number" id="slicePosNum" step="1" value="0">
+        </div>
+        <label class="check"><input type="checkbox" id="sliceFlip"> Keep the other half</label>
+        <label class="row">Max Y (horizontal cut)</label>
+        <div class="slider-row">
+          <input type="range" id="maxY" min="0" max="100" step="1" value="100">
+          <input type="number" id="maxYNum" step="1" value="100">
+        </div>
+        <label class="check" title="Hide every block between the camera and a vertical plane facing it. The plane turns with the camera when you stop orbiting."><input type="checkbox" id="viewCut"> View cut (vertical plane facing the camera)</label>
+        <div class="slider-row" id="viewCutRow">
+          <input type="range" id="viewCutDepth" min="-40" max="40" step="1" value="0">
+          <input type="number" id="viewCutDepthNum" step="1" value="0">
+        </div>
+        <button id="clearSlice">Clear cuts</button>
+      </div>
+    </details>
+
+    <details open>
+      <summary>Wood style</summary>
+      <div class="rows">
+        <div id="styleNotice" class="notice" hidden></div>
+        <label class="row">Style
+          <select id="woodStyle">
+            <option value="all_log">all_log</option>
+            <option value="mixed" selected>mixed</option>
+            <option value="mixed_stripped">mixed_stripped</option>
+          </select>
+        </label>
+        <label class="row">Hollow chance (%)</label>
+        <div class="slider-row">
+          <input type="range" id="hollowChance" min="0" max="100" step="1" value="0">
+          <input type="number" id="hollowChanceNum" min="0" max="100" step="1" value="0">
+        </div>
+        <label class="check"><input type="checkbox" id="forceHollow"> Force hollow (preview only)</label>
+        <label class="row">Wall thickness
+          <input type="number" id="wallThickness" min="1" max="16" step="1" value="2">
+        </label>
+        <div class="subhead">Leaf mix <span class="hint">(empty = the wood type's own leaves)</span></div>
+        <div id="leafRows"></div>
+        <div class="btns">
+          <button id="leafAdd">Add leaf block</button>
+          <button id="leafClear">Own leaves</button>
+        </div>
+        <datalist id="leafMaterials"></datalist>
+        <div class="subhead">Config snippet</div>
+        <label class="row">Write style as
+          <select id="yamlScope">
+            <option value="type">override for this wood type</option>
+            <option value="global">global (wood:)</option>
+          </select>
+        </label>
+        <pre id="yamlOut" class="code"></pre>
+        <button id="copyYaml">Copy config snippet</button>
+      </div>
+    </details>
+
+    <details open>
+      <summary>Stats</summary>
+      <div id="stats" class="rows stats"></div>
+    </details>
+  </aside>
+
+  <main id="viewport">
+    <canvas id="canvas"></canvas>
+    <div id="error" class="error" hidden>
+      <button id="errorClose" title="Dismiss">×</button>
+      <div id="errorTitle"></div>
+      <pre id="errorText"></pre>
+    </div>
+    <div id="hover" class="hover"></div>
+    <div class="legend">Drag to orbit · right-drag to pan · wheel to zoom · drop .xml files to import</div>
+    <div id="drop" class="drop" hidden>Drop Arbaro XML (.xml / .root.xml)</div>
+  </main>
+
+  <aside id="right" class="panel">
+    <div class="tabs">
+      <button class="tab active" data-tab="tree">Tree file</button>
+      <button class="tab" data-tab="root">Root file</button>
+    </div>
+    <div class="param-tools">
+      <div id="fileLabel" class="file-label"></div>
+      <label class="check" id="useRootWrap"><input type="checkbox" id="useRoot" checked> Generate roots from this file</label>
+      <div class="btns">
+        <button id="importBtn">Import XML</button>
+        <button id="exportBtn">Download XML</button>
+        <button id="resetTab">Reset to bundled</button>
+      </div>
+      <input type="file" id="fileInput" accept=".xml,text/xml" multiple hidden>
+      <input type="search" id="paramFilter" placeholder="Filter params">
+    </div>
+    <div id="paramGroups"></div>
+  </aside>
+</div>
+<script type="module" src="ui/app.js"></script>
+</body>
+</html>
