@@ -96,7 +96,8 @@ preview: docs-trees
 	@echo "Gallery: http://localhost:$(PREVIEW_PORT)/   Viewer: http://localhost:$(PREVIEW_PORT)/viewer/"
 	cd docs && python3 -m http.server $(PREVIEW_PORT)
 
-# Render docs/gallery/ (every tree type: a hero shot plus three smaller views) with the viewer
+# Render docs/gallery/ (one card per tree type: the giant's hero shot, plus its huge and big
+# variants and a cut through the giant's trunk) with the viewer
 # in headless Chromium. Installs Playwright into docs/viewer/node_modules on first run.
 .PHONY: gallery
 gallery: docs-trees
@@ -113,12 +114,12 @@ preview-check:
 	node $(VIEWER)/scripts/gallery-check.mjs
 
 # Tree tuning tools in scripts/ (see scripts/README.md). TREES is a comma-separated list of names
-# in src/main/resources (OAK = tree.OAK, wildcards like 'tree.*_SMALL'), SEEDS e.g. 12345,7 or 1..10.
-#   make tree-stats TREES=OAK,OAK_SMALL [SEEDS=1..10]       block counts and sizes over seeds
+# in src/main/resources (OAK = tree.OAK, wildcards like 'tree.*_HUGE'), SEEDS e.g. 12345,7 or 1..10.
+#   make tree-stats TREES=OAK,OAK_HUGE [SEEDS=1..10]       block counts and sizes over seeds
 #   make tree-shots TREES=OAK [SEEDS=1..4] [VIEWS=hero,cut]  images + sheet.jpg in .temp/shots/
 .PHONY: tree-stats
 tree-stats:
-	@[ -n "$(TREES)" ] || { echo "usage: make tree-stats TREES=OAK,OAK_SMALL [SEEDS=1..10]"; exit 1; }
+	@[ -n "$(TREES)" ] || { echo "usage: make tree-stats TREES=OAK,OAK_HUGE [SEEDS=1..10]"; exit 1; }
 	node scripts/tree-stats.mjs $(if $(SEEDS),--seeds '$(SEEDS)') '$(TREES)'
 
 .PHONY: tree-shots
