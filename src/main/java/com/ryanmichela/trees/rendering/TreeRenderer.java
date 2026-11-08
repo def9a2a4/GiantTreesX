@@ -19,7 +19,10 @@ package com.ryanmichela.trees.rendering;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 
 import com.ryanmichela.trees.AzaleaRoots;
@@ -30,6 +33,12 @@ import net.sourceforge.arbaro.tree.Stem;
 import net.sourceforge.arbaro.tree.Tree;
 
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Tag;
+import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Waterlogged;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -57,7 +66,7 @@ public class TreeRenderer {
 
   /**
    * Blocks a tree file is raised above the ground so its stilt roots show: files whose name
-   * contains MANGROVE, by tier (18 for the giant, 10 for {@code _HUGE}, 5 for {@code _BIG});
+   * contains MANGROVE, by tier (18 for the giant, 10 for {@code _HUGE}, 7 for {@code _BIG});
    * 0 for every other file. Kept in sync with mangroveRaise in docs/viewer/src/render.js.
    */
   static int mangroveRaise(final String fileName) {
@@ -73,6 +82,56 @@ public class TreeRenderer {
       return 10;
     }
     return 18;
+  }
+
+  /**
+   * Fits a root system to the ground it is placed on (main thread, just before placing): root
+   * blocks that go into solid ground become the root type's {@link TreeType#groundWoodMaterial}
+   * (mangrove roots in mud become muddy mangrove roots) and root blocks placed in water are
+   * waterlogged. Done here rather than when drawing because only the world knows where the
+   * ground is: the viewer approximates it with flat ground at the planting height.
+   */
+  static void settleRoots(final WorldChangeTracker tracker, final Location refPoint,
+                          final TreeType rootType) {
+    final World world = refPoint.getWorld();
+    if (rootType == null || world == null) {
+      return;
+    }
+    final Material roots = rootType.woodMaterial;
+    final Material ground = rootType.groundWoodMaterial;
+    final List<WorldChange> waterlogged = new ArrayList<>();
+    for (final WorldChange change : tracker.getChanges()) {
+      if (change.kind != WorldChange.Kind.WOOD || change.material != roots) {
+        continue;
+      }
+      final Location loc = refPoint.clone().add(change.location);
+      if (loc.getBlockY() < world.getMinHeight() || loc.getBlockY() >= world.getMaxHeight()) {
+        continue;
+      }
+      final Block block = loc.getBlock();
+      final Material there = block.getType();
+      if (ground != null && isGround(there, roots)) {
+        change.material = ground;
+      } else if (there == Material.WATER) {
+        final UnaryOperator<BlockData> mutator = change.blockDataMutator;
+        waterlogged.add(new WorldChange(change.location, change.material, data -> {
+          final BlockData d = mutator.apply(data);
+          if (d instanceof Waterlogged) {
+            ((Waterlogged) d).setWaterlogged(true);
+          }
+          return d;
+        }, change.kind, change.level));
+      }
+    }
+    for (final WorldChange change : waterlogged) {
+      tracker.addChange(change, true);
+    }
+  }
+
+  /** Solid ground a root grows into: not air, fluids, plants, leaves, logs or other roots. */
+  private static boolean isGround(final Material type, final Material roots) {
+    return type.isSolid() && type != roots && !Tag.LEAVES.isTagged(type)
+           && !Tag.LOGS.isTagged(type);
   }
 
   private Tree loadTree(final File treeFile, final int seed) throws Exception {
@@ -134,6 +193,7 @@ public class TreeRenderer {
                         d3d.drawRootJunction(d3d.toMcVector(((Segment) ((Stem) tree.trunks.get(0)).stemSegments().nextElement()).posFrom()),
                                 ((Stem) tree.trunks.get(0)).baseRadius);
 
+                        TreeType rootTypeFound = null;
                         if ((rootFile != null) && rootFile.exists()) {
                             TreeRenderer.this.logVerbose("Rendering root "
                                     + rootFile.getName());
@@ -146,6 +206,7 @@ public class TreeRenderer {
                             root.make();
                             final TreeType rootType = new TreeType(root.params.WoodType,
                                     TreeRenderer.this.plugin.getLogger());
+                            rootTypeFound = rootType;
                             final Draw3d d3dInverted = new Draw3d(refPoint,
                                     root.params.Smooth,
                                     rootType,
@@ -164,6 +225,7 @@ public class TreeRenderer {
                                         tree.params.WoodType, TreeRenderer.this.plugin.getLogger()),
                                 seed);
 
+                        final TreeType placedRootType = rootTypeFound;
                         final long generationDelay = withDelay ? TreeRenderer.this.plugin.getConfig().getInt("generation-delay", 0) * 20 : 0;
 
                         if (plugin.isEnabled()) {
@@ -172,6 +234,7 @@ public class TreeRenderer {
                                     .runTaskLater(TreeRenderer.this.plugin,
                                             () -> {
                                                 try {
+                                                    TreeRenderer.settleRoots(changeTracker, refPoint, placedRootType);
                                                     d3d.applyChanges(TreeRenderer.this.plugin);
                                                     // azalea root system; the batched placement above starts next tick and its blocks win
                                                     if (AzaleaRoots.appliesTo(tree.params.WoodType)) {

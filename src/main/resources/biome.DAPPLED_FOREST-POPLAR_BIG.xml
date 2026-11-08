@@ -25,8 +25,8 @@
     <param name='Scale' value='16.5' />
     <param name='ScaleV' value='2.0' />
     <param name='BaseSize' value='0.3' />
-    <param name='Ratio' value='0.12' />
-    <param name='RatioPower' value='0.5' />
+    <param name='Ratio' value='0.065' />
+    <param name='RatioPower' value='3.0' />
     <param name='Flare' value='0.2' />
     <param name='Lobes' value='0' />
     <param name='LobeDepth' value='0.0' />
@@ -45,7 +45,7 @@
     <param name='PrunePowerHigh' value='0.5' />
     <param name='PruneWidth' value='0.5' />
     <param name='PruneWidthPeak' value='0.5' />
-    <param name='0Scale' value='1.0' />
+    <param name='0Scale' value='1.25' />
     <param name='0ScaleV' value='0.0' />
     <param name='0BaseSplits' value='0' />
     <!-- level 0 -->

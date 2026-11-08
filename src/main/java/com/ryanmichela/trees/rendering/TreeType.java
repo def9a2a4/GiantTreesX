@@ -63,6 +63,9 @@ public class TreeType {
     int hangingOneIn = 4;
     int hangingMin = 1;
     int hangingMax = 6;
+    /** Wood block for the parts of a root system that end up in the ground (mud, dirt, ...);
+     *  null to keep {@link #wood} there. */
+    String groundWood;
 
     Spec(final String wood, final String[] leaves, final int[] weights,
          final Decoration decoration, final String hanging, final String fallback) {
@@ -93,6 +96,8 @@ public class TreeType {
     // vines hang from the leaves, like vanilla's leave_vine decorator (no vines on the trunk)
     add("Mangrove", "MANGROVE_LOG", "MANGROVE_LEAVES", Decoration.LEAF_VINES, "Oak");
     add("Mangrove_roots", "MANGROVE_ROOTS", "MANGROVE_LEAVES", Decoration.NONE, "Oak");
+    // prop roots that reach into the mud become muddy mangrove roots, like vanilla's
+    SPECS.get("Mangrove_roots").groundWood = "MUDDY_MANGROVE_ROOTS";
     SPECS.put("Pale Oak", new Spec("PALE_OAK_LOG", new String[] {"PALE_OAK_LEAVES"}, new int[] {1},
         Decoration.HANGING, "PALE_HANGING_MOSS", "Dark Oak"));
     add("Swamp Oak", "OAK_LOG", "OAK_LEAVES", Decoration.LEAF_VINES, "Oak");
@@ -145,6 +150,9 @@ public class TreeType {
   public final int capLevel;
   /** Leaf clusters get an uneven, lumpy surface (Draw3d); false keeps plain ellipsoids. */
   public final boolean noisyLeaves;
+  /** {@link #woodMaterial} blocks placed into solid ground become this block when the tree is
+   *  placed (TreeRenderer); null to leave them as they are. */
+  public final Material groundWoodMaterial;
 
   public TreeType(final String treeType) {
     this(treeType, null);
@@ -188,6 +196,7 @@ public class TreeType {
     this.hangingMax = spec.hangingMax;
     this.capLevel = spec.capLevel;
     this.noisyLeaves = spec.noisyLeaves;
+    this.groundWoodMaterial = spec.groundWood == null ? null : lookup(spec.groundWood);
   }
 
   private static Material lookup(final String name) {
@@ -205,6 +214,9 @@ public class TreeType {
       }
       if (s.hangingTip != null) {
         names.add(s.hangingTip);
+      }
+      if (s.groundWood != null) {
+        names.add(s.groundWood);
       }
     }
     return names;

@@ -9,7 +9,7 @@
     <param name='Scale' value='10.0'/>
     <param name='ScaleV' value='0.0'/>
     <param name='BaseSize' value='0.25'/>
-    <param name='Ratio' value='0.07'/>
+    <param name='Ratio' value='0.09'/>
     <param name='RatioPower' value='1.0'/>
     <param name='Flare' value='0.5'/>
     <param name='Lobes' value='0'/>
@@ -31,28 +31,41 @@
     <param name='PruneWidthPeak' value='0.5'/>
     <param name='0Scale' value='1.0'/>
     <param name='0ScaleV' value='0.0'/>
-    <param name='0BaseSplits' value='5'/>
+    <param name='0BaseSplits' value='10'/>
     <!-- level 0 -->
-    <param name='0DownAngle' value='15.0'/>
+    <param name='0DownAngle' value='35'/>
     <param name='0DownAngleV' value='0.0'/>
     <param name='0Rotate' value='0.0'/>
     <param name='0RotateV' value='0.0'/>
     <param name='0Branches' value='1'/>
     <param name='0BranchDist' value='0.0'/>
-    <param name='0Length' value='0.5'/>
+    <param name='0Length' value='0.72'/>
     <param name='0LengthV' value='0.0'/>
-    <param name='0Taper' value='1.2'/>
+    <param name='0Taper' value='0.9'/>
     <param name='0SegSplits' value='0.0'/>
     <param name='0SplitAngle' value='0.0'/>
-    <param name='0SplitAngleV' value='0.0'/>
+    <param name='0SplitAngleV' value='20'/>
     <param name='0CurveRes' value='20'/>
-    <param name='0Curve' value='45.0'/>
-    <param name='0CurveBack' value='-45.0'/>
-    <param name='0CurveV' value='0.0'/>
+    <param name='0Curve' value='25'/>
+    <param name='0CurveBack' value='-60'/>
+    <param name='0CurveV' value='15'/>
     <!-- level 1 -->
-    <param name='1DownAngle' value='30.0'/>
-    <param name='1DownAngleV' value='0.0'/>
-    <param name='1Rotate' value='120.0'/>
-    <param name='1RotateV' value='0.0'/>
+    <param name='1DownAngle' value='25'/>
+    <param name='1DownAngleV' value='10'/>
+    <param name='1Rotate' value='140'/>
+    <param name='1RotateV' value='30'/>
+    <param name='1Branches' value='3'/>
+    <param name='1BranchDist' value='1.0'/>
+    <param name='1Length' value='0.35'/>
+    <param name='1LengthV' value='0.1'/>
+    <param name='1Taper' value='1.0'/>
+    <param name='1CurveRes' value='6'/>
+    <param name='1Curve' value='10'/>
+    <param name='1CurveV' value='10'/>
+    <param name='1SegSplits' value='0'/>
+    <param name='1SplitAngle' value='0'/>
+    <param name='1SplitAngleV' value='0'/>
+    <param name='2DownAngle' value='30'/>
+    <param name='2Rotate' value='120'/>
   </species>
 </arbaro>

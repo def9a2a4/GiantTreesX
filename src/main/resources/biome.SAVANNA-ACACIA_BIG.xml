@@ -25,8 +25,8 @@
     <param name='Scale' value='17.0' />
     <param name='ScaleV' value='1.5' />
     <param name='BaseSize' value='0.6' />
-    <param name='Ratio' value='0.085' />
-    <param name='RatioPower' value='0.7' />
+    <param name='Ratio' value='0.075' />
+    <param name='RatioPower' value='2.5' />
     <param name='Flare' value='0.1' />
     <param name='Lobes' value='0' />
     <param name='LobeDepth' value='0.0' />

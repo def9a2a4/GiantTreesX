@@ -9,7 +9,7 @@
     <param name='Scale' value='14.0' />
     <param name='ScaleV' value='2.0' />
     <param name='BaseSize' value='0.86' />
-    <param name='Ratio' value='0.14' />
+    <param name='Ratio' value='0.105' />
     <param name='RatioPower' value='1.0' />
     <param name='Flare' value='0.4' />
     <param name='Lobes' value='0' />

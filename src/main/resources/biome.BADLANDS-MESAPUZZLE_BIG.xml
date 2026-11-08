@@ -10,7 +10,7 @@
     <param name='ScaleV' value='0.0'/>
     <param name='BaseSize' value='0.4'/>
     <param name='Ratio' value='0.06'/>
-    <param name='RatioPower' value='1.0'/>
+    <param name='RatioPower' value='2.5'/>
     <param name='Flare' value='0.4'/>
     <param name='Lobes' value='0'/>
     <param name='LobeDepth' value='0.0'/>

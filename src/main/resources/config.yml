@@ -225,6 +225,7 @@ planting-patterns:
     - YZY
   # 3 x 3 plus shapes: big trees (bone-meal-consumed-big). Only the saplings north, east,
   # south and west of the core count; the corners (-) can be anything.
+  # Jungle and spruce have no big tree: vanilla's 2 x 2 jungle and spruce trees fill that size.
   acacia_big:
     - "-A-"
     - AXA
@@ -245,14 +246,6 @@ planting-patterns:
     - "-D-"
     - DXD
     - "-D-"
-  spruce_big:
-    - "-S-"
-    - SXS
-    - "-S-"
-  jungle_big:
-    - "-J-"
-    - JXJ
-    - "-J-"
   mangrove_big:
     - "-M-"
     - MXM
