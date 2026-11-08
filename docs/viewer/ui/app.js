@@ -4,7 +4,7 @@ import { OrbitControls } from '../vendor/OrbitControls.js';
 import { PARAM_DEFS, ENUMS, ParamDB, paramDbToXml, xmlHeaderComment } from '../src/params.js';
 import { BLOCK_COLORS, TRANSLUCENT, treeTypeMaterials } from '../src/materials.js';
 import { mesh, voxelAt } from './mesher.js';
-import { loadPluginTrees } from './trees.js';
+import { loadPluginTrees, biomeLabel } from './trees.js';
 import { buildAtlas } from './textures.js';
 
 const $ = (id) => document.getElementById(id);
@@ -15,7 +15,7 @@ const DEFAULT_STYLE = { style: 'mixed', hollowChance: 0, hollowWallThickness: 2 
 // State
 // ---------------------------------------------------------------------------------------------
 const S = {
-  entry: null, // bundled entry {name, treeXml, rootXml, aliasOf}
+  entry: null, // bundled entry {name, treeXml, rootXml, spawnsIn}
   treeName: '', // passed to renderTree (MANGROVE rule)
   files: {
     tree: { db: null, base: null, header: '', label: '' },
@@ -1080,28 +1080,11 @@ function loadFileFromXml(which, xml, label, bundled) {
 // ---------------------------------------------------------------------------------------------
 function buildPicker() {
   const sel = $('treeSelect');
-  const aliases = new Map();
-  for (const t of BUNDLED) if (t.aliasOf) (aliases.get(t.aliasOf) || aliases.set(t.aliasOf, []).get(t.aliasOf)).push(t.name);
-  const groups = [
-    ['Trees', BUNDLED.filter((t) => !t.aliasOf && t.name.startsWith('tree.'))],
-    ['Biome trees (unique files)', BUNDLED.filter((t) => !t.aliasOf && !t.name.startsWith('tree.'))],
-    ['Biome files identical to a tree file', BUNDLED.filter((t) => t.aliasOf)],
-  ];
-  for (const [title, list] of groups) {
-    if (!list.length) continue;
-    const og = document.createElement('optgroup');
-    og.label = title;
-    for (const t of list) {
-      const op = document.createElement('option');
-      op.value = t.name;
-      if (t.aliasOf) op.textContent = `${t.name}  (= ${t.aliasOf})`;
-      else {
-        const al = aliases.get(t.name);
-        op.textContent = t.name + (al ? `  (also ${al.map((a) => a.replace(/^biome\./, '')).join(', ')})` : '');
-      }
-      og.append(op);
-    }
-    sel.append(og);
+  for (const t of BUNDLED) {
+    const op = document.createElement('option');
+    op.value = t.name;
+    op.textContent = t.name + (t.spawnsIn.length ? `  (${t.spawnsIn.map(biomeLabel).join(', ')})` : '');
+    sel.append(op);
   }
 }
 

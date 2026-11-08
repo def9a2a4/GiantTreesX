@@ -5,11 +5,11 @@
 //   node docs/viewer/scripts/gallery.mjs [--seed 12345] [--trees tree.OAK,tree.JUNGLE]
 //                                        [--types OAK,BIRCH] [--out <dir>]
 //
-// For every distinct tree file in docs/trees/ (byte-identical biome copies are listed as aliases)
-// it writes pictures to docs/gallery/<tree>/, plus docs/gallery/gallery.json, which
-// docs/index.html turns into the gallery page: one card per tree file, i.e. per type and size
-// (tree.OAK, tree.OAK_HUGE and tree.OAK_BIG are three cards), each with the pictures in
-// CARD_IMAGES (a hero shot, a cut through the middle, a view from above).
+// For every tree file in docs/trees/ it writes pictures to docs/gallery/<tree>/, plus
+// docs/gallery/gallery.json, which docs/index.html turns into the gallery page: one card per tree
+// file, i.e. per type and size (tree.OAK, tree.OAK_HUGE and tree.OAK_BIG are three cards), each
+// with the pictures in CARD_IMAGES (a hero shot, a cut through the middle, a view from above) and
+// the biomes it spawns in (spawnsIn, from config.yml's natural-trees).
 // --types renders whole types; --out writes somewhere else than docs/gallery/ (for trying it out;
 // image paths in gallery.json still say gallery/..., so use e.g. --out <site>/gallery).
 import { createServer } from 'node:http';
@@ -37,7 +37,7 @@ const SHOTS = {
   top: { caption: 'From above', size: [480, 480], view: { azimuth: 40, elevation: 70 } },
 };
 
-// ---- distinct tree files (same grouping as ui/trees.js) ----
+// ---- tree files ----
 const allTrees = galleryTrees(DOCS);
 const trees = allTrees.filter((t) => !only || only.trees.includes(t.name) || only.types.includes(t.type));
 
@@ -88,7 +88,7 @@ for (const t of trees) {
     images[shot] = { src: `gallery/${t.name}/${shot}.jpg`, caption: s.caption };
   }
   // hash: the tree files' content, so gallery-check.mjs can tell when an entry is out of date
-  entries.push({ name: t.name, aliases: t.aliases, hash: t.hash, type: t.type, category: t.category, tier: t.tier, seed: SEED, ...info,
+  entries.push({ name: t.name, spawnsIn: t.spawnsIn, hash: t.hash, type: t.type, category: t.category, tier: t.tier, seed: SEED, ...info,
     viewer: `viewer/#tree=${encodeURIComponent(t.name)}&seed=${SEED}`, images });
   console.log(`${info.blocks} blocks`);
 }

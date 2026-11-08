@@ -9,7 +9,7 @@
 // stay within --tolerance (a fraction of the tree's blocks, default 0.001 = 0.1%).
 //
 //   node scripts/equivalence.mjs [--seeds 1,12345,-7] [--ref '0,64,0;123,70,-456'] [--trees OAK,JUNGLE]
-//                                [--styles 'mixed/0/2/-;...' | --no-styles] [--all-aliases]
+//                                [--styles 'mixed/0/2/-;...' | --no-styles]
 //                                [--quick] [--keep] [--quiet] [--tolerance 0.001]
 //
 // --quick: one ref point and two seeds (what scripts/check.sh runs by default).
@@ -65,7 +65,7 @@ function styleOpts(spec, seed, hasMaterial) {
   };
 }
 
-let trees = bundledTrees().filter((t) => flag('all-aliases') || !t.aliasOf);
+let trees = bundledTrees();
 if (treeFilter) trees = trees.filter((t) => treeFilter.some((f) => t.name === f || t.name.endsWith('.' + f)));
 if (!trees.length) {
   console.error('no trees selected');

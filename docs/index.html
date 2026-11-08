@@ -77,6 +77,7 @@
 <nav class="bar" aria-label="Filter the gallery"><div id="filters"></div></nav>
 <main id="gallery"><div id="status">Loading…</div></main>
 <script type="module">
+  import { biomeLabel } from './viewer/ui/trees.js';
   // Built from gallery/gallery.json (written by viewer/scripts/gallery.mjs): one entry, and one
   // card, per tree file, i.e. per type and size. The filters (category, size) and the grouping
   // are kept in the URL hash: #cat=fungi&size=huge&group=size.
@@ -100,7 +101,7 @@
   const TIERS = data.tiers || ['giant', 'huge', 'big'];
   const catOf = (t) => t.category || 'tree';
   const tierOf = (t) => t.tier || (/_HUGE$/.test(t.name) ? 'huge' : /_BIG$/.test(t.name) ? 'big' : 'giant');
-  const typeOf = (t) => t.type || t.name.replace(/^tree\./, '').replace(/^biome\.[^-]*-/, '').replace(/_(HUGE|BIG)$/, '');
+  const typeOf = (t) => t.type || t.name.replace(/^tree\./, '').replace(/_(HUGE|BIG)$/, '');
 
   const OPTIONS = {
     cat: { label: 'Show', values: [['all', 'All'], ...Object.entries(CATS)] },
@@ -140,7 +141,7 @@
         <h3><a href="${esc(t.viewer)}">${esc(cap(typeOf(t)))}</a> <span class="tier ${tier}">${esc(cap(tier))}</span></h3>
         <p>${t.height} tall · ${t.width} wide · ${t.blocks.toLocaleString()} blocks</p>
         <p><code>${esc(t.name)}</code> · ${esc(t.woodType)} · seed ${t.seed}</p>
-        ${t.aliases.length ? `<p>Also used as ${t.aliases.map((a) => `<code>${esc(a)}</code>`).join(', ')}</p>` : ''}
+        <p>${t.spawnsIn?.length ? `Spawns in: ${esc(t.spawnsIn.map(biomeLabel).join(', '))}` : 'Planting only'}</p>
       </div>
     </article>`;
   }

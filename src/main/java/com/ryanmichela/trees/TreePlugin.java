@@ -20,6 +20,7 @@ package com.ryanmichela.trees;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -46,20 +47,24 @@ public class TreePlugin extends JavaPlugin {
                          .info("Attaching giant tree populator to world \""
                                    + event.getWorld().getName() + "\"");
           event.getWorld().getPopulators()
-               .add(new TreePopulator(TreePlugin.this));
+               .add(new TreePopulator(TreePlugin.this, TreePlugin.this.naturalTrees));
           return;
         }
       }
     }
   }
 
+  private NaturalTrees naturalTrees;
+
   @Override
   public void onEnable() {
+    this.warnAboutBiomeFiles();
     try {
       this.getServer().getPluginManager()
           .registerEvents(new PlantTreeEventHandler(this), this);
       // attach to worlds automatically when onlyUseWorldManagers is false
       if (this.getConfig().getBoolean("naturallyGrowTrees", true)) {
+        this.naturalTrees = NaturalTrees.load(this, NaturalTrees.serverBiomes());
         this.getServer().getPluginManager()
             .registerEvents(new WorldInitListener(), this);
       }
@@ -79,8 +84,25 @@ public class TreePlugin extends JavaPlugin {
   }
 
   /**
-   * Writes every tree and biome file bundled in the plugin jar ({@code tree.*.xml},
-   * {@code biome.*.xml}, roots included) that the data folder does not have yet. Existing files
+   * Biome files (biome.FOREST-OAK.xml) from before natural-trees: they are no longer read, so an
+   * edited or added one would otherwise stop spawning without a word.
+   */
+  private void warnAboutBiomeFiles() {
+    final String[] old = this.getDataFolder().list(
+        (dir, name) -> name.startsWith("biome.") && name.endsWith(".xml") && !name.endsWith(".root.xml"));
+    if (old != null && old.length > 0) {
+      Arrays.sort(old);
+      this.getLogger().warning(old.length + " biome.*.xml files in the plugin folder are no longer"
+                               + " used (" + String.join(", ", old) + "). Natural trees are now set"
+                               + " in config.yml's natural-trees, by tree name (tree.<NAME>.xml);"
+                               + " to keep a custom one, rename it to tree.<NAME>.xml and list it"
+                               + " there. The biome files can be deleted.");
+    }
+  }
+
+  /**
+   * Writes every tree file bundled in the plugin jar ({@code tree.*.xml}, roots included) that
+   * the data folder does not have yet. Existing files
    * are never overwritten, so edited trees survive upgrades; deleted ones come back.
    */
   private void unpackTreeFiles() {
@@ -106,7 +128,7 @@ public class TreePlugin extends JavaPlugin {
     }
   }
 
-  /** Tree files at the root of the jar: tree.X.xml, biome.X.xml and their .root.xml files. */
-  private static final Pattern TREE_FILE = Pattern.compile("(tree|biome)\\.[^/]+\\.xml");
+  /** Tree files at the root of the jar: tree.X.xml and tree.X.root.xml. */
+  private static final Pattern TREE_FILE = Pattern.compile("tree\\.[^/]+\\.xml");
 
 }

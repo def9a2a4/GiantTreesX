@@ -29,7 +29,7 @@ From the repo root:
 
 ```sh
 docs/viewer/scripts/check.sh          # quick: every bundled tree, 2 seeds, 7 styles (~30 s)
-docs/viewer/scripts/check.sh --full   # every bundled file incl. biome aliases, 3 seeds x 2 refs
+docs/viewer/scripts/check.sh --full   # every bundled tree, 3 seeds x 2 refs, 7 styles
 docs/viewer/scripts/check.sh --trees OAK,JUNGLE --seeds 1,2,3 --no-styles   # passed to equivalence.mjs
 ```
 

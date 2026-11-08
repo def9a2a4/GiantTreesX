@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Checks that docs/gallery/ still matches the tree files in docs/trees/ (what CI runs):
-//   - every distinct tree has an entry in docs/gallery/gallery.json, and there are no entries for
+//   - every tree file has an entry in docs/gallery/gallery.json, and there are no entries for
 //     trees that no longer exist,
-//   - each entry lists the same aliases (byte-identical copies) as the tree files have now,
+//   - each entry lists the biomes the tree spawns in (spawnsIn) that config.yml's natural-trees
+//     gives it now,
 //   - each entry (one card per tree file) has the type, category (trees / fungi) and size tier
 //     the tree files give it now, and every card picture (CARD_IMAGES), and they exist,
 //   - the gallery's category and tier tables (the page's filters) match gallery-trees.mjs,
@@ -52,8 +53,8 @@ for (const t of trees) {
     problems.push(`${t.name}: no gallery entry`);
     continue;
   }
-  if (!sameSet(e.aliases || [], t.aliases)) {
-    problems.push(`${t.name}: gallery lists aliases [${(e.aliases || []).join(', ')}], tree files have [${t.aliases.join(', ')}]`);
+  if (!sameSet(e.spawnsIn || [], t.spawnsIn)) {
+    problems.push(`${t.name}: gallery says it spawns in [${(e.spawnsIn || []).join(', ')}], config.yml says [${t.spawnsIn.join(', ')}]`);
   }
   if (e.hash && e.hash !== t.hash) problems.push(`${t.name}: tree files changed since the gallery was rendered`);
   for (const field of ['type', 'category', 'tier']) {
@@ -67,7 +68,7 @@ for (const t of trees) {
   }
 }
 for (const e of entries) {
-  if (!treeNames.has(e.name)) problems.push(`${e.name}: gallery entry for a tree that no longer exists (or is now an alias)`);
+  if (!treeNames.has(e.name)) problems.push(`${e.name}: gallery entry for a tree that no longer exists`);
 }
 // leftover image folders from trees that were removed
 if (existsSync(GALLERY)) {

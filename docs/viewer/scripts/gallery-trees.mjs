@@ -1,7 +1,6 @@
-// The distinct trees the gallery shows: every tree file in docs/trees/index.json, with
-// byte-identical copies (usually the biome.* duplicates of a tree.* file) folded in as aliases.
-// Shared by gallery.mjs (which renders them) and gallery-check.mjs (which checks the gallery
-// still matches them). Same grouping as ui/trees.js.
+// The trees the gallery shows: every tree file in docs/trees/index.json, with the biomes it spawns
+// in (spawnsIn, from config.yml's natural-trees; see natural-trees.mjs). Shared by gallery.mjs
+// (which renders them) and gallery-check.mjs (which checks the gallery still matches them).
 //
 // The gallery shows one card per tree file, i.e. per (type, size): tree.OAK (giant),
 // tree.OAK_HUGE (huge) and tree.OAK_BIG (big) are three cards, each with its own pictures
@@ -11,6 +10,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { mangroveRaise } from '../src/render.js';
+import { naturalTrees } from './natural-trees.mjs';
 
 /** Size tiers, largest first (the order cards are shown in). */
 export const TIERS = ['giant', 'huge', 'big'];
@@ -37,38 +37,31 @@ export function tierOf(name) {
   return 'giant';
 }
 
-/** Tree type from the name: tree.OAK_HUGE -> OAK, biome.FOREST-OAK_BIG -> OAK, tree.AZALEA -> AZALEA. */
+/** Tree type from the name: tree.OAK_HUGE -> OAK, tree.AZALEA -> AZALEA. */
 export function typeOf(name) {
-  let n = name.replace(/^tree\./, '');
-  if (n.startsWith('biome.')) {
-    n = n.slice('biome.'.length);
-    const hyphen = n.indexOf('-');
-    if (hyphen >= 0) n = n.slice(hyphen + 1);
-  }
-  return n.replace(/_(HUGE|BIG)$/, '');
+  return name.replace(/^tree\./, '').replace(/_(HUGE|BIG)$/, '');
 }
 
 /**
- * [{name, aliases: [name], hash, type, category, tier}] for docs/trees/, ordered by type (as the
- * tree files sort, tree.* first) and within a type giant, huge, big.
+ * [{name, spawnsIn: [biome], hash, type, category, tier}] for docs/trees/, ordered by type (as the
+ * tree files sort) and within a type giant, huge, big.
  */
 export function galleryTrees(docsDir) {
   const treesDir = join(docsDir, 'trees');
   const files = JSON.parse(readFileSync(join(treesDir, 'index.json'), 'utf8'));
-  const names = files.filter((f) => f.endsWith('.xml') && !f.endsWith('.root.xml')).map((f) => f.slice(0, -4))
-    .sort((a, b) => (a.startsWith('tree.') === b.startsWith('tree.') ? a.localeCompare(b) : a.startsWith('tree.') ? -1 : 1));
+  const names = files.filter((f) => /^tree\..*\.xml$/.test(f) && !f.endsWith('.root.xml')).map((f) => f.slice(0, -4))
+    .sort((a, b) => a.localeCompare(b));
+  const natural = naturalTrees(names);
   const read = (f) => (existsSync(join(treesDir, f)) ? readFileSync(join(treesDir, f), 'utf8') : '');
-  const groups = new Map(); // identity -> { name, aliases, hash }
-  for (const name of names) {
-    // the refPoint raise (mangroves) depends on the file name, so it is part of the identity
+  const trees = names.map((name) => {
+    // the refPoint raise (mangroves) depends on the file name, so it is part of the hash
     const raise = mangroveRaise(name + '.xml');
     const key = read(name + '.xml') + '\0' + read(name + '.root.xml') + (raise ? 'R' + raise : '');
-    if (groups.has(key)) groups.get(key).aliases.push(name);
-    else groups.set(key, { name, aliases: [], hash: createHash('sha256').update(key).digest('hex').slice(0, 16) });
-  }
+    return { name, spawnsIn: natural[name] || [], hash: createHash('sha256').update(key).digest('hex').slice(0, 16) };
+  });
   // by type, in the order the types first appear; within a type by tier, then file order
   const byType = new Map();
-  for (const t of groups.values()) {
+  for (const t of trees) {
     const type = typeOf(t.name);
     if (!byType.has(type)) byType.set(type, []);
     byType.get(type).push({ ...t, type, category: categoryOf(type), tier: tierOf(t.name) });

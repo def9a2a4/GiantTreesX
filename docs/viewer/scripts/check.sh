@@ -3,7 +3,7 @@
 #
 #   docs/viewer/scripts/check.sh            quick run (all bundled trees, 2 seeds, 1 ref point,
 #                                                  7 wood styles), ~30 s
-#   docs/viewer/scripts/check.sh --full     3 seeds x 2 ref points, every bundled file
+#   docs/viewer/scripts/check.sh --full     3 seeds x 2 ref points
 #   docs/viewer/scripts/check.sh <args>     extra args go to scripts/equivalence.mjs
 #
 # Builds what is missing (plugin classes via mvn, the harness), then exits non-zero when any job's
@@ -34,8 +34,8 @@ fi
 cd "$HERE"
 status=0
 EQ_ARGS=(--quick)
-if [ "${1:-}" = "--full" ]; then EQ_ARGS=(--all-aliases); shift; fi
+if [ "${1:-}" = "--full" ]; then EQ_ARGS=(); shift; fi
 if [ $# -gt 0 ]; then EQ_ARGS=("$@"); fi
-node scripts/equivalence.mjs "${EQ_ARGS[@]}" || status=1
+node scripts/equivalence.mjs ${EQ_ARGS[@]+"${EQ_ARGS[@]}"} || status=1
 if [ $status -eq 0 ]; then echo "tree-preview check: OK"; else echo "tree-preview check: FAILED" >&2; fi
 exit $status
