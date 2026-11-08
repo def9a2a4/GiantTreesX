@@ -25,12 +25,12 @@
     <param name='Scale' value='10.0' />
     <param name='ScaleV' value='0.0' />
     <param name='BaseSize' value='0.25' />
-    <param name='Ratio' value='0.05' />
+    <param name='Ratio' value='0.1' />
     <param name='RatioPower' value='1.0' />
-    <param name='Flare' value='0.0' />
+    <param name='Flare' value='0.5' />
     <param name='Lobes' value='0' />
     <param name='LobeDepth' value='0.0' />
-    <param name='Smooth' value='0.5' />
+    <param name='Smooth' value='0.1' />
     <param name='Leaves' value='0' />
     <param name='LeafShape' value='0' />
     <param name='LeafScale' value='0.2' />
@@ -47,9 +47,9 @@
     <param name='PruneWidthPeak' value='0.5' />
     <param name='0Scale' value='1.0' />
     <param name='0ScaleV' value='0.0' />
-    <param name='0BaseSplits' value='0' />
+    <param name='0BaseSplits' value='4' />
     <!-- level 0 -->
-    <param name='0DownAngle' value='0.0' />
+    <param name='0DownAngle' value='50' />
     <param name='0DownAngleV' value='0.0' />
     <param name='0Rotate' value='0.0' />
     <param name='0RotateV' value='0.0' />
@@ -57,13 +57,13 @@
     <param name='0BranchDist' value='0.0' />
     <param name='0Length' value='0.4' />
     <param name='0LengthV' value='0.0' />
-    <param name='0Taper' value='1.0' />
+    <param name='0Taper' value='1.2' />
     <param name='0SegSplits' value='0.0' />
     <param name='0SplitAngle' value='0.0' />
     <param name='0SplitAngleV' value='0.0' />
-    <param name='0CurveRes' value='3' />
-    <param name='0Curve' value='0.0' />
-    <param name='0CurveBack' value='0.0' />
+    <param name='0CurveRes' value='10' />
+    <param name='0Curve' value='40' />
+    <param name='0CurveBack' value='-40' />
     <param name='0CurveV' value='0.0' />
     <!-- level 1 -->
     <param name='1DownAngle' value='30.0' />

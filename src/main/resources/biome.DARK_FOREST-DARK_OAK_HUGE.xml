@@ -20,20 +20,20 @@
   <species name='default'>
     <!-- general params -->
     <param name='WoodType' value='Dark Oak' />
-    <param name='Shape' value='0' />
+    <param name='Shape' value='2' />
     <param name='Levels' value='3' />
     <param name='Scale' value='26.0' />
-    <param name='ScaleV' value='5.0' />
-    <param name='BaseSize' value='0.15' />
-    <param name='Ratio' value='0.11' />
+    <param name='ScaleV' value='3.0' />
+    <param name='BaseSize' value='0.3' />
+    <param name='Ratio' value='0.12' />
     <param name='RatioPower' value='2.0' />
-    <param name='Flare' value='0.15' />
+    <param name='Flare' value='0.0' />
     <param name='Lobes' value='0' />
     <param name='LobeDepth' value='0.0' />
     <param name='Smooth' value='0.2' />
     <param name='Leaves' value='5' />
     <param name='LeafShape' value='disc' />
-    <param name='LeafScale' value='8.0' />
+    <param name='LeafScale' value='9.0' />
     <param name='LeafScaleX' value='0.7' />
     <param name='LeafQuality' value='1.0' />
     <param name='LeafStemLen' value='0.0' />
@@ -66,11 +66,11 @@
     <param name='0CurveBack' value='0.0' />
     <param name='0CurveV' value='0.0' />
     <!-- level 1 -->
-    <param name='1DownAngle' value='25.0' />
+    <param name='1DownAngle' value='48' />
     <param name='1DownAngleV' value='5.0' />
     <param name='1Rotate' value='125.0' />
     <param name='1RotateV' value='10.0' />
-    <param name='1Branches' value='12' />
+    <param name='1Branches' value='16' />
     <param name='1BranchDist' value='1.0' />
     <param name='1Length' value='1.0' />
     <param name='1LengthV' value='0.0' />
@@ -87,7 +87,7 @@
     <param name='2DownAngleV' value='0.0' />
     <param name='2Rotate' value='90.0' />
     <param name='2RotateV' value='0.0' />
-    <param name='2Branches' value='6' />
+    <param name='2Branches' value='5' />
     <param name='2BranchDist' value='1.0' />
     <param name='2Length' value='0.6' />
     <param name='2LengthV' value='0.0' />

@@ -10,26 +10,37 @@ worlds:
 
 # How often each biome tree is picked when a tree grows naturally. Every biome.<BIOME>-<name>.xml
 # file in the plugin folder is a candidate for its biome; <name> is the key here. A key starting
-# with * matches every name ending in the rest, so "*_SMALL" covers OAK_SMALL, SPRUCE_SMALL, ...
+# with * matches every name ending in the rest, so "*_HUGE" covers OAK_HUGE, SPRUCE_HUGE, ...
 # An exact name beats a * key. Trees not listed weigh "default". 0 stops a tree spawning.
-# With the weights below a forest gets 3 small oaks for every giant oak. treeGrowthPercentChance
-# still decides how often a tree grows at all.
+# Trees come in three sizes: giant (OAK, 40-60 blocks tall), huge (OAK_HUGE, 25-40) and big
+# (OAK_BIG, about 14-24). With the weights below a forest gets 4 big and 2 huge oaks for every
+# giant oak. treeGrowthPercentChance still decides how often a tree grows at all.
+# Azalea trees (biome.LUSH_CAVES-*.xml) grow on soil in any biome, but only above lush caves.
 natural-tree-weights:
   default: 1
-  "*_SMALL": 3
+  "*_HUGE": 2
+  "*_BIG": 4
 
 # The planting pattern is used to grow giant trees in survival mode using collected resources.
 planting-patterns:
-  # A 5 x 5 pattern grows a giant tree, a 3 x 3 pattern a small one (it costs
-  # bone-meal-consumed-small instead of bone-meal-consumed). The core block is in the center.
-  # When both a 5 x 5 and a 3 x 3 pattern fit around the core block, the 5 x 5 one wins.
-  # The name of a pattern is the tree file it grows: oak_small grows tree.OAK_SMALL.xml.
+  # Three sizes, by the shape of the pattern around the core block (in the center):
+  #   5 x 5 ring        giant tree (tree.OAK.xml)       costs bone-meal-consumed
+  #   full 3 x 3 ring   huge tree  (tree.OAK_HUGE.xml)  costs bone-meal-consumed-huge
+  #   3 x 3 plus        big tree   (tree.OAK_BIG.xml)   costs bone-meal-consumed-big
+  # The plus shape has saplings north, east, south and west of the core; its corners are "-"
+  # (don't care), so whatever stands there is ignored and left alone.
+  # The most specific pattern that fits wins: a 5 x 5 ring before the 3 x 3 ring inside it, a
+  # full 3 x 3 ring before a plus. Patterns are matched in all four 90 degree rotations.
+  # The name of a pattern is the tree file it grows: oak_huge grows tree.OAK_HUGE.xml. The cost
+  # goes by the name: *_huge (and *_small from older configs) costs bone-meal-consumed-huge, *_big
+  # bone-meal-consumed-big; other names go by shape (5 x 5 giant, full 3 x 3 huge, else big).
   # Each row in the pattern represents one row of blocks placed horizontally on the ground.
   # All rows must be as long as there are rows (a square).
   # Each character in the pattern represents one of the following saplings:
   # A=Acacia, O=Oak, D=Dark Oak, B=Birch, C=Cherry, M=Mangrove Propaglue, S=Spruce, J=Jungle,
   # P=Pale Oak, L=Poplar (Minecraft 26.3+), R=Red Mushroom, N=Brown Mushroom, F=Crimson Fungus,
-  # W=Warped Fungus, Z=Azalea, Y=Flowering Azalea, H=Blue Orchid, and X for core.
+  # W=Warped Fungus, Z=Azalea, Y=Flowering Azalea, H=Blue Orchid, X for core, and - for any
+  # block (don't care). Rows starting with - are quoted ("-O-") to keep them plain strings.
   # Patterns using a sapling the server doesn't have (e.g. poplar before 26.3) are skipped.
   acacia:
     - AAAAA
@@ -139,55 +150,163 @@ planting-patterns:
     - ZZXZZ
     - YZZZY
     - ZYZYZ
-  # 3 x 3 patterns: small trees
-  acacia_small:
+  # 3 x 3 rings: huge trees (bone-meal-consumed-huge)
+  acacia_huge:
     - AAA
     - AXA
     - AAA
-  oak_small:
+  oak_huge:
     - OOO
     - OXO
     - OOO
-  birch_small:
+  birch_huge:
     - BBB
     - BXB
     - BBB
-  cherry_small:
+  cherry_huge:
     - CCC
     - CXC
     - CCC
-  dark_oak_small:
+  dark_oak_huge:
     - DDD
     - DXD
     - DDD
-  spruce_small:
+  spruce_huge:
     - SSS
     - SXS
     - SSS
-  jungle_small:
+  jungle_huge:
     - JJJ
     - JXJ
     - JJJ
-  mangrove_small:
+  mangrove_huge:
     - MMM
     - MXM
     - MMM
-  mesapuzzle_small:
+  pale_oak_huge:
+    - PPP
+    - PXP
+    - PPP
+  poplar_huge:
+    - LLL
+    - LXL
+    - LLL
+  red_mushroom_huge:
+    - RRR
+    - RXR
+    - RRR
+  brown_mushroom_huge:
+    - NNN
+    - NXN
+    - NNN
+  crimson_fungus_huge:
+    - FFF
+    - FXF
+    - FFF
+  warped_fungus_huge:
+    - WWW
+    - WXW
+    - WWW
+  mesapuzzle_huge:
     - AOA
     - OXO
     - AOA
-  cottonwood_small:
+  cottonwood_huge:
     - OBO
     - BXB
     - OBO
+  swamp_oak_huge:
+    - HOH
+    - OXO
+    - HOH
+  azalea_huge:
+    - YZY
+    - ZXZ
+    - YZY
+  # 3 x 3 plus shapes: big trees (bone-meal-consumed-big). Only the saplings north, east,
+  # south and west of the core count; the corners (-) can be anything.
+  acacia_big:
+    - "-A-"
+    - AXA
+    - "-A-"
+  oak_big:
+    - "-O-"
+    - OXO
+    - "-O-"
+  birch_big:
+    - "-B-"
+    - BXB
+    - "-B-"
+  cherry_big:
+    - "-C-"
+    - CXC
+    - "-C-"
+  dark_oak_big:
+    - "-D-"
+    - DXD
+    - "-D-"
+  spruce_big:
+    - "-S-"
+    - SXS
+    - "-S-"
+  jungle_big:
+    - "-J-"
+    - JXJ
+    - "-J-"
+  mangrove_big:
+    - "-M-"
+    - MXM
+    - "-M-"
+  pale_oak_big:
+    - "-P-"
+    - PXP
+    - "-P-"
+  poplar_big:
+    - "-L-"
+    - LXL
+    - "-L-"
+  red_mushroom_big:
+    - "-R-"
+    - RXR
+    - "-R-"
+  brown_mushroom_big:
+    - "-N-"
+    - NXN
+    - "-N-"
+  crimson_fungus_big:
+    - "-F-"
+    - FXF
+    - "-F-"
+  warped_fungus_big:
+    - "-W-"
+    - WXW
+    - "-W-"
+  mesapuzzle_big:
+    - "-A-"
+    - OXO
+    - "-A-"
+  cottonwood_big:
+    - "-B-"
+    - OXO
+    - "-B-"
+  swamp_oak_big:
+    - "-H-"
+    - OXO
+    - "-H-"
+  azalea_big:
+    - "-Y-"
+    - ZXZ
+    - "-Y-"
 
 # core block (marked by X in patterns)
 core: EMERALD_BLOCK
 
 # Fertilizing the tree consumes some number of bone meal: bone-meal-consumed for a giant tree
-# (5 x 5 pattern), bone-meal-consumed-small for a small one (3 x 3 pattern).
+# (5 x 5 ring), bone-meal-consumed-huge for a huge one (full 3 x 3 ring), bone-meal-consumed-big
+# for a big one (3 x 3 plus). An older config's bone-meal-consumed-small sets the huge cost.
 bone-meal-consumed: 64
-bone-meal-consumed-small: 16
+bone-meal-consumed-huge: 32
+bone-meal-consumed-big: 16
   
 # Giant trees can possibly smother players if they don't get out of the way.
 # How many seconds should Giant Trees wait before adding a tree to the world?

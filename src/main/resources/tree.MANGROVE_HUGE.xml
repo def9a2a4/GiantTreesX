@@ -6,7 +6,7 @@
     <param name='WoodType' value='Mangrove'/>
     <param name='Shape' value='2'/>
     <param name='Levels' value='3'/>
-    <param name='Scale' value='29.0'/>
+    <param name='Scale' value='24.0'/>
     <param name='ScaleV' value='3.0'/>
     <param name='BaseSize' value='0.35'/>
     <param name='Ratio' value='0.085'/>

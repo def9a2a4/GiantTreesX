@@ -22,7 +22,7 @@
     <param name='WoodType' value='Jungle' />
     <param name='Shape' value='3' />
     <param name='Levels' value='3' />
-    <param name='Scale' value='30.0' />
+    <param name='Scale' value='31.0' />
     <param name='ScaleV' value='2.0' />
     <param name='BaseSize' value='0.72' />
     <param name='Ratio' value='0.08' />
@@ -56,7 +56,7 @@
     <param name='0Branches' value='1' />
     <param name='0BranchDist' value='0.0' />
     <param name='0Length' value='0.8' />
-    <param name='0LengthV' value='0.2' />
+    <param name='0LengthV' value='0.1' />
     <param name='0Taper' value='0.6' />
     <param name='0SegSplits' value='0.0' />
     <param name='0SplitAngle' value='0.0' />
