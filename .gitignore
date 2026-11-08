@@ -60,3 +60,6 @@ buildNumber.properties
 
 ### Custom ###
 version.properties
+
+### Local test server (see Makefile) ###
+test-server/

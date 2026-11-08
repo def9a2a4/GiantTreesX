@@ -194,7 +194,7 @@ public class PlantTreeEventHandler implements Listener {
 
 		final ItemStack itemInHand = event.getItem();
 
-		final ItemCost cost = new ItemCost(Material.BONE_MEAL, (short) 15, boneMealConsumed);
+		final ItemCost cost = new ItemCost(Material.BONE_MEAL, boneMealConsumed);
 
 		// build matrix of blocks 5x5 that are around the core
 		Material[][] worldblocks = new Material[5][5];

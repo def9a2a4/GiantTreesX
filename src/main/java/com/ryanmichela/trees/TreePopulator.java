@@ -28,8 +28,6 @@ import java.util.regex.Pattern;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.World;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
@@ -61,8 +59,8 @@ public class TreePopulator extends BlockPopulator {
       Biome biome = this.simplifyBiome(world.getBiome(refPoint.getBlockX(), refPoint.getBlockY(), refPoint.getBlockZ()));
 
       if (this.isAcceptableBiome(biome) && this.treeCanGrow(random)) {
-        final String treeType = biome.name();
-        
+        final String biomeName = biome.getKey().value().toUpperCase();
+
         // get list of available tree files with biome name in
         File [] biometreefiles = this.plugin.getDataFolder().listFiles(new FilenameFilter() {
             @Override
@@ -71,7 +69,7 @@ public class TreePopulator extends BlockPopulator {
             }
         });
         ArrayList<String> availabletrees = new ArrayList<String>();
-		String regex = "biome." + biome.name().toUpperCase() + "((-([0-9A-Z-_]*)){0,}).xml";
+		String regex = "biome." + biomeName + "((-([0-9A-Z-_]*)){0,}).xml";
 		Pattern pattern = Pattern.compile(regex);
 		for ( int idx = 0; idx < biometreefiles.length; idx++ ) {
 			Matcher match = pattern.matcher( biometreefiles[idx].toString() );
@@ -79,7 +77,10 @@ public class TreePopulator extends BlockPopulator {
 				availabletrees.add(match.group());
 			}
 		}
-		        
+		if (availabletrees.isEmpty()) {
+		  return;
+		}
+
         // pick a random file from set
 		int randtreeidx = (int) ((Math.random() * (availabletrees.size() - 0)) + 0);
         

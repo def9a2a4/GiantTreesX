@@ -10,38 +10,24 @@ import org.bukkit.inventory.ItemStack;
 
 public class ItemCost extends Cost {
     private final ItemStack toMatch;
-    private final boolean matchData;
     private final boolean matchMeta;
     private int dropped;
     private List<ItemStack> taken = new ArrayList<ItemStack>();
 
     public ItemCost(Material mat, double quantity) {
         super(quantity);
-        this.matchData = false;
         this.matchMeta = false;
-        this.toMatch = new ItemStack(mat, (int) quantity, (short) 0);
-    }
-
-    public ItemCost(Material mat, short data, double quantity) {
-        super(quantity);
-        this.matchData = true;
-        this.matchMeta = false;
-        this.toMatch = new ItemStack(mat, (int) quantity, data);
+        this.toMatch = new ItemStack(mat, (int) quantity);
     }
 
     public ItemCost(ItemStack stack) {
         super(stack.getAmount());
-        this.matchData = stack.getDurability() != 32767;
         this.matchMeta = true;
         this.toMatch = stack.clone();
     }
 
     public Material getMaterial() {
         return toMatch.getType();
-    }
-
-    public short getData() {
-        return toMatch.getData().getData();
     }
 
     @Override
@@ -127,14 +113,14 @@ public class ItemCost extends Cost {
         int maxStackSize = inventory.getMaxStackSize();
 
         while (quantity > maxStackSize) {
-            Map<Integer, ItemStack> toDrop = inventory.addItem(new ItemStack(getMaterial(), maxStackSize, getData()));
+            Map<Integer, ItemStack> toDrop = inventory.addItem(new ItemStack(getMaterial(), maxStackSize));
             if (!toDrop.isEmpty()) {
                 // this inventory is full; return the number of items that could not be added
                 return toDrop.get(0).getAmount() + (quantity - maxStackSize);
             }
             quantity -= maxStackSize;
         }
-        Map<Integer, ItemStack> toDrop = inventory.addItem(new ItemStack(getMaterial(), quantity, getData()));
+        Map<Integer, ItemStack> toDrop = inventory.addItem(new ItemStack(getMaterial(), quantity));
         return toDrop.isEmpty() ? 0 : toDrop.get(0).getAmount();
     }
 
@@ -163,8 +149,6 @@ public class ItemCost extends Cost {
     protected boolean matches(ItemStack stack) {
         if (toMatch.getType() != stack.getType()) {
             return false;
-        } else if (matchData && toMatch.getData().getData() != stack.getData().getData()) {
-            return false;
         } else if (matchMeta) {
             String d1 = stack.hasItemMeta() ? stack.getItemMeta().getDisplayName() : null;
             String d2 = toMatch.hasItemMeta() ? toMatch.getItemMeta().getDisplayName() : null;
@@ -181,7 +165,7 @@ public class ItemCost extends Cost {
 
     private void dropExcess(Player player, int nToDrop) {
         while (nToDrop > 0) {
-            ItemStack stack = new ItemStack(getMaterial(), Math.min(nToDrop, getMaterial().getMaxStackSize()), getData());
+            ItemStack stack = new ItemStack(getMaterial(), Math.min(nToDrop, getMaterial().getMaxStackSize()));
             player.getWorld().dropItemNaturally(player.getLocation(), stack);
             nToDrop -= getMaterial().getMaxStackSize();
         }

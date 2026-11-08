@@ -22,7 +22,7 @@
   <groupId>GiantTrees</groupId>
   <artifactId>GiantTrees</artifactId>
   <name>GiantTrees</name>
-  <version>3.2</version>
+  <version>4.0</version>
   <description>Grows enormous trees</description>
 
   <properties>
@@ -63,12 +63,7 @@
     <dependency>
       <groupId>io.papermc.paper</groupId>
       <artifactId>paper-api</artifactId>
-      <version>1.21.10-R0.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>33.3.0-jre</version>
+      <version>1.21.11-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
