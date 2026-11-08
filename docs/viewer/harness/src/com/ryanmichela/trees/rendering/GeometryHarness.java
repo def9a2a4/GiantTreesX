@@ -217,9 +217,7 @@ public final class GeometryHarness {
     AbstractParam.loading = true;
     final WorldChangeTracker changeTracker = new WorldChangeTracker();
     final Tree tree = loadTree(treeFile, seed);
-    if (treeFile.getName().contains("MANGROVE")) {
-      refPoint.add(0, 18, 0);
-    }
+    refPoint.add(0, TreeRenderer.mangroveRaise(treeFile.getName()), 0);
     tree.make();
     final TreeType treeType = new TreeType(tree.params.WoodType);
     final Draw3d d3d = recordingDraw3d(refPoint, tree.params.Smooth, treeType, changeTracker,

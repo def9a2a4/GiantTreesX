@@ -55,6 +55,26 @@ public class TreeRenderer {
                     withDelay);
   }
 
+  /**
+   * Blocks a tree file is raised above the ground so its stilt roots show: files whose name
+   * contains MANGROVE, by tier (18 for the giant, 10 for {@code _HUGE}, 5 for {@code _BIG});
+   * 0 for every other file. Kept in sync with mangroveRaise in docs/viewer/src/render.js.
+   */
+  static int mangroveRaise(final String fileName) {
+    if (!fileName.contains("MANGROVE")) {
+      return 0;
+    }
+    final String name = fileName.endsWith(".xml")
+        ? fileName.substring(0, fileName.length() - 4) : fileName;
+    if (name.endsWith("_BIG")) {
+      return 5;
+    }
+    if (name.endsWith("_HUGE")) {
+      return 10;
+    }
+    return 18;
+  }
+
   private Tree loadTree(final File treeFile, final int seed) throws Exception {
     if (treeFile == null) { return null; }
 
@@ -85,10 +105,8 @@ public class TreeRenderer {
     // our own copy: the async task must not read a Location the caller may still change, nor
     // change the caller's (the mangrove offset below used to move it)
     final Location refPoint = requestedRefPoint.clone();
-    // mangrove tree needs roots exposed so raise up refpoint by 18 blocks (purely experimental)
-    if (treeFile.getName().contains("MANGROVE")) {
-      refPoint.add(0, 18, 0);
-    }
+    // mangrove trees stand on exposed stilt roots: raise the refpoint by the tier's root height
+    refPoint.add(0, mangroveRaise(treeFile.getName()), 0);
 
     if (plugin.isEnabled()) {
         this.plugin.getServer().getScheduler()

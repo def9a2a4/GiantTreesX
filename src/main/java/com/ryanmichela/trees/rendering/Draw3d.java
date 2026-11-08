@@ -242,13 +242,25 @@ public class Draw3d {
     return points2d;
   }
 
+  /**
+   * Noisy half-sphere below the trunk base. Its top (ground) layer is a plain disc of the trunk
+   * radius rounded like {@link #drawCone}'s circles, so it never sticks out past the trunk's first
+   * circle as a ring at ground level.
+   */
   private List<Vector> plotDownwardHemisphere(final Vector pos, final double r) {
     final List<Vector> points = new LinkedList<>();
     final int rCeil = (int) Math.ceil(r) + 4;
     final double r2 = r * r;
+    final int rTop = (int) Math.round(r);
     for (int x = -rCeil; x <= rCeil; x++) {
       for (int y = -rCeil; y <= 0; y++) {
         for (int z = -rCeil; z <= rCeil; z++) {
+          if (y == 0) {
+            if (((x * x) + (z * z)) <= (rTop * rTop)) {
+              points.add(new Vector(x, y, z).add(pos));
+            }
+            continue;
+          }
           final double left = (x * x) + (y * y) + (z * z);
           final double noiseOffset = calculateNoiseOffset((x + pos.getBlockX()),
                                                                (y + pos.getBlockY()),

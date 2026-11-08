@@ -232,12 +232,18 @@ export class Draw3d {
 
   drawRootJunction(pos, r) {
     // plotDownwardHemisphere(pos, r)
+    // the top (ground) layer is a plain disc of the trunk radius rounded like drawCone's circles
     const rCeil = (Math.ceil(r) | 0) + 4;
     const r2 = r * r;
+    const rTop = roundToInt(r);
     const px = blockFloor(pos.x), py = blockFloor(pos.y), pz = blockFloor(pos.z);
     for (let x = -rCeil; x <= rCeil; x++) {
       for (let y = -rCeil; y <= 0; y++) {
         for (let z = -rCeil; z <= rCeil; z++) {
+          if (y === 0) {
+            if (x * x + z * z <= rTop * rTop) this.addWood(blockFloor(x + pos.x), blockFloor(y + pos.y), blockFloor(z + pos.z), Y_MAJOR, 0, PART_JUNCTION);
+            continue;
+          }
           const left = x * x + y * y + z * z;
           const no = this.calculateNoiseOffset(x + px, y + py, z + pz, 2, 0);
           if (left <= r2 + no * no) {

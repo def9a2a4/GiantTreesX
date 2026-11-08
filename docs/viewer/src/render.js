@@ -135,6 +135,18 @@ function decorateLeaves(store, treeType, seed) {
 }
 
 /**
+ * TreeRenderer.mangroveRaise: blocks a tree file is raised so its stilt roots show. Files whose
+ * name contains MANGROVE, by tier: 18 for the giant, 10 for _HUGE, 5 for _BIG; 0 otherwise.
+ */
+export function mangroveRaise(fileName) {
+  if (!fileName.includes('MANGROVE')) return 0;
+  const name = fileName.endsWith('.xml') ? fileName.slice(0, -4) : fileName;
+  if (name.endsWith('_BIG')) return 5;
+  if (name.endsWith('_HUGE')) return 10;
+  return 18;
+}
+
+/**
  * Render a tree exactly like TreeRenderer.renderTree, up to (not including) WoodStyler: the
  * store holds the tracker's changes with their raw TreeType materials. Run woodStyleAssign
  * (materials.js) on makeVoxelView(result) for the blocks the plugin actually places.
@@ -145,7 +157,7 @@ function decorateLeaves(store, treeType, seed) {
  * @param {string|ParamDB|null} [o.rootXml]
  * @param {number} o.seed            int seed passed to renderTree
  * @param {{x:number,y:number,z:number}} [o.refPoint]  Location (world null) - default 0,64,0
- * @param {string} [o.treeName]      file name; "MANGROVE" in it raises refPoint by 18 like the plugin
+ * @param {string} [o.treeName]      file name; "MANGROVE" in it raises refPoint (see mangroveRaise)
  * @param {number} [o.worldHash]     World.hashCode() contribution to Location.hashCode (0 = null world)
  * @param {(name: string) => boolean} [o.hasMaterial]  blocks the server has (TreeType fallbacks)
  */
@@ -165,7 +177,7 @@ export function renderTree(o) {
   };
 
   const tree = loadTree(treeDb, seed);
-  if (o.treeName && o.treeName.includes('MANGROVE')) ref.y += 18;
+  if (o.treeName) ref.y += mangroveRaise(o.treeName);
   ref.hash = locationHashCode(ref.x, ref.y, ref.z, 0, 0, o.worldHash || 0);
 
   tree.make();
