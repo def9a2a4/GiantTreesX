@@ -150,6 +150,20 @@ function roots(rgb, r) {
   return t;
 }
 
+/** Muddy mangrove roots: the root strands packed in grey-brown mud (an opaque block). */
+function muddyRoots(rgb, r) {
+  const t = tile();
+  const strandRgb = [rgb[0] * 1.45, rgb[1] * 1.3, rgb[2] * 1.15]; // warmer, lighter root wood
+  for (let y = 0; y < TILE; y++) {
+    for (let x = 0; x < TILE; x++) {
+      const strand = (x + 2 * y) % 7 < 2 || (2 * x - y + 64) % 9 < 2;
+      if (strand) put(t, x, y, strandRgb, 0.85 + r() * 0.2);
+      else put(t, x, y, rgb, (r() < 0.15 ? 0.8 : 0.95) + r() * 0.1); // mud with a few darker specks
+    }
+  }
+  return t;
+}
+
 /** Vine: transparent with wandering vertical strands and a few leaves (alpha cut-out). */
 function vine(rgb, r) {
   const t = tile();
@@ -314,6 +328,8 @@ export function buildAtlas(names, colors, missing = 0xff00ff) {
       side = end = add(barkTile(rgb));
     } else if (name.endsWith('_LEAVES') || name.endsWith('_WART_BLOCK')) {
       side = end = add(leaves(rgb, r));
+    } else if (name === 'MUDDY_MANGROVE_ROOTS') {
+      side = end = add(muddyRoots(rgb, r));
     } else if (name.endsWith('_ROOTS')) {
       side = end = add(roots(rgb, r));
     } else if (name === 'VINE') {

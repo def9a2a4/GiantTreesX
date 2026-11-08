@@ -7,6 +7,7 @@
 <style>
   :root {
     --bg: #14181d; --panel: #1c2229; --line: #2c343d; --text: #d8dee5; --muted: #8b96a3; --accent: #7cc36b;
+    --chip: #232a32;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, sans-serif; }
@@ -15,93 +16,176 @@
   h1 span { color: var(--accent); }
   header p { margin: 4px 0; color: var(--muted); }
   a { color: var(--accent); }
-  main { max-width: 1200px; margin: 0 auto; padding: 16px; display: grid; gap: 20px;
-         grid-template-columns: repeat(auto-fill, minmax(min(100%, 540px), 1fr)); }
+
+  /* filters: sticky so they stay at hand while scrolling */
+  .bar { position: sticky; top: 0; z-index: 2; background: rgba(20, 24, 29, 0.94); backdrop-filter: blur(6px);
+         border-bottom: 1px solid var(--line); }
+  .bar > div { max-width: 1200px; margin: 0 auto; padding: 10px 16px; display: flex; flex-wrap: wrap;
+               gap: 8px 20px; align-items: center; }
+  .seg { display: flex; align-items: center; gap: 8px; }
+  .seg > span { color: var(--muted); font-size: 13px; }
+  .seg > div { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { font: inherit; font-size: 14px; color: var(--text); background: var(--chip); border: 0;
+                padding: 5px 12px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button:hover { background: #2b333c; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #10140f; font-weight: 600; }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  #count { color: var(--muted); font-size: 13px; margin-left: auto; }
+  @media (max-width: 600px) { .bar { position: static; } } /* three rows of buttons: don't pin them */
+
+  main { max-width: 1200px; margin: 0 auto; padding: 8px 16px 32px; }
+  section { margin-top: 18px; }
+  section > h2 { margin: 0 0 8px; font-size: 18px; font-weight: 600; display: flex; align-items: baseline; gap: 10px; }
+  section > h2 small { color: var(--muted); font-size: 13px; font-weight: 400; }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+
+  /* a card: the 4:5 hero beside two square shots stacked (8:5 columns make them the same height) */
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
-          display: grid; grid-template-columns: 12fr 5fr; }
-  /* the hero (4:5) is exactly as tall as three square views next to it (huge, big, cut), so
-     nothing is cropped; a card with more or fewer pictures crops the hero to fit */
+          display: grid; grid-template-columns: 8fr 5fr; align-content: start; }
+  .card.solo { grid-template-columns: 1fr; }
   .card a.img { display: block; position: relative; background: #8eb4d6; }
   .card img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .card a.img:hover img { filter: brightness(1.08); }
-  .hero { grid-row: span var(--rows, 3); }
+  .hero { grid-row: span var(--rows, 2); }
+  .solo .hero { aspect-ratio: 4 / 5; }
   .small { border-left: 1px solid var(--line); aspect-ratio: 1; }
   .small + .small { border-top: 1px solid var(--line); }
-  .cap { position: absolute; left: 6px; bottom: 6px; padding: 1px 7px; border-radius: 4px; font-size: 12px;
-         background: rgba(10, 14, 18, 0.72); color: var(--text); }
-  .meta { grid-column: 1 / -1; padding: 10px 14px 12px; border-top: 1px solid var(--line); }
-  .meta h2 { margin: 0; font-size: 17px; font-weight: 600; }
-  .meta h2 a { color: var(--text); text-decoration: none; }
-  .meta h2 a:hover { color: var(--accent); }
+  .cap { position: absolute; left: 5px; bottom: 5px; padding: 0 6px; border-radius: 4px; font-size: 11px;
+         background: rgba(10, 14, 18, 0.72); color: var(--text); white-space: nowrap; }
+  .meta { grid-column: 1 / -1; padding: 9px 12px 11px; border-top: 1px solid var(--line); }
+  .meta h3 { margin: 0; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .meta h3 a { color: var(--text); text-decoration: none; }
+  .meta h3 a:hover { color: var(--accent); }
+  .tier { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+          padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+  .tier.giant { color: var(--accent); border-color: rgba(124, 195, 107, 0.5); }
   .meta p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
-  .meta ul { margin: 4px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 13px; }
-  .meta li a { color: var(--text); }
-  .meta li a:hover { color: var(--accent); }
-  #status { color: var(--muted); padding: 0 16px; max-width: 1200px; margin: 0 auto; }
+  .meta code { font-size: 12px; color: var(--text); }
+  #status { color: var(--muted); padding: 16px 0; }
 </style>
 </head>
 <body>
 <header>
   <h1>GiantTrees <span>gallery</span></h1>
-  <p>Every tree the plugin ships, as blocks. Each tree type comes in three sizes: a giant
+  <p>Every tree the plugin ships, as blocks. Tree types come in up to three sizes: a giant
      (40&ndash;60 blocks tall, 5x5 sapling ring), a huge one (25&ndash;40, full 3x3 ring) and a big one
      (about 14&ndash;24, 3x3 plus). Click any picture to open that tree in the
      <a href="viewer/">viewer</a>, where you can turn it around, cut into it and edit its config.</p>
   <p><a href="https://github.com/def9a2a4/GiantTreesX">GiantTreesX on GitHub</a></p>
 </header>
-<div id="status">Loading…</div>
-<main id="gallery"></main>
+<nav class="bar" aria-label="Filter the gallery"><div id="filters"></div></nav>
+<main id="gallery"><div id="status">Loading…</div></main>
 <script type="module">
+  // Built from gallery/gallery.json (written by viewer/scripts/gallery.mjs): one entry, and one
+  // card, per tree file, i.e. per type and size. The filters (category, size) and the grouping
+  // are kept in the URL hash: #cat=fungi&size=huge&group=size.
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const status = document.getElementById('status');
+  const cap = (s) => s.toLowerCase().split('_').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
+  const main = document.getElementById('gallery');
+  const filters = document.getElementById('filters');
+
+  let data;
   try {
     const r = await fetch('gallery/gallery.json');
     if (!r.ok) throw new Error(`gallery/gallery.json: HTTP ${r.status} (run make gallery)`);
-    const { trees } = await r.json();
-    const TIERS = ['giant', 'huge', 'big'];
-    const TIER_NAME = { giant: 'Giant', huge: 'Huge', big: 'Big' };
-    // entries from gallery.mjs carry type and tier; derive them for older entries
-    const tierOf = (t) => t.tier || (/_HUGE$/.test(t.name) ? 'huge' : /_BIG$/.test(t.name) ? 'big' : 'giant');
-    const typeOf = (t) => t.type || t.name.replace(/^tree\./, '').replace(/^biome\.[^-]*-/, '').replace(/_(HUGE|BIG)$/, '');
-    // one card per tree type, in gallery.json order; giant first within a type
-    const types = new Map();
-    for (const t of trees) {
-      if (!types.has(typeOf(t))) types.set(typeOf(t), []);
-      types.get(typeOf(t)).push(t);
-    }
-    const img = (t, im, cls) => `<a class="img ${cls}" href="${esc(t.viewer)}" title="Open ${esc(t.name)} in the viewer">
-        <img src="${esc(im.src)}" alt="${esc(t.name)}: ${esc(im.caption)}" loading="lazy">
-        ${cls === 'hero' ? '' : `<span class="cap">${esc(im.caption)}</span>`}</a>`;
-    const pretty = (type) => type.toLowerCase().split('_').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
-    const card = (type, list) => {
-      list.sort((a, b) => TIERS.indexOf(tierOf(a)) - TIERS.indexOf(tierOf(b)));
-      const lead = list[0];
-      const heroImg = lead.images.hero || lead.images.view;
-      // smaller pictures: the variants, then the cut through the lead's trunk
-      const smalls = [
-        ...list.slice(1).map((t) => img(t, t.images.view || t.images.hero, 'small')),
-        ...(lead.images.cut ? [img(lead, lead.images.cut, 'small')] : []),
-      ];
-      return `
-      <article class="card" style="--rows: ${Math.max(1, smalls.length)}">
-        ${img(lead, heroImg, 'hero')}
-        ${smalls.join('')}
-        <div class="meta">
-          <h2><a href="${esc(lead.viewer)}">${esc(pretty(type))}</a></h2>
-          <ul>${list.map((t) => `
-            <li>${TIER_NAME[tierOf(t)]}: <a href="${esc(t.viewer)}">${esc(t.name)}</a> ·
-              ${t.height} blocks tall · ${t.width} wide · ${t.blocks.toLocaleString()} blocks
-              ${t.aliases.length ? `<br>&nbsp;&nbsp;also used as ${t.aliases.map(esc).join(', ')}` : ''}</li>`).join('')}
-          </ul>
-          <p>${esc(lead.woodType)} · seed ${lead.seed}</p>
-        </div>
-      </article>`;
-    };
-    document.getElementById('gallery').innerHTML = [...types].map(([type, list]) => card(type, list)).join('');
-    status.remove();
+    data = await r.json();
   } catch (e) {
-    status.textContent = 'Could not load the gallery: ' + e.message;
+    document.getElementById('status').textContent = 'Could not load the gallery: ' + e.message;
+    throw e;
   }
+  const trees = data.trees;
+  // the category and tier tables come from gallery-trees.mjs via gallery.json
+  const CATS = data.categories || { tree: 'Trees' };
+  const TIERS = data.tiers || ['giant', 'huge', 'big'];
+  const catOf = (t) => t.category || 'tree';
+  const tierOf = (t) => t.tier || (/_HUGE$/.test(t.name) ? 'huge' : /_BIG$/.test(t.name) ? 'big' : 'giant');
+  const typeOf = (t) => t.type || t.name.replace(/^tree\./, '').replace(/^biome\.[^-]*-/, '').replace(/_(HUGE|BIG)$/, '');
+
+  const OPTIONS = {
+    cat: { label: 'Show', values: [['all', 'All'], ...Object.entries(CATS)] },
+    size: { label: 'Size', values: [['all', 'All'], ...TIERS.map((t) => [t, cap(t)])] },
+    group: { label: 'Group by', values: [['type', 'Type'], ['size', 'Size']] },
+  };
+  const DEFAULTS = { cat: 'all', size: 'all', group: 'type' };
+
+  function readHash() {
+    const h = new URLSearchParams(location.hash.slice(1));
+    const s = {};
+    for (const [k, o] of Object.entries(OPTIONS)) {
+      const v = h.get(k);
+      s[k] = o.values.some(([x]) => x === v) ? v : DEFAULTS[k];
+    }
+    return s;
+  }
+  function writeHash(s) {
+    const h = new URLSearchParams();
+    for (const k of Object.keys(OPTIONS)) if (s[k] !== DEFAULTS[k]) h.set(k, s[k]);
+    const str = h.toString();
+    history.replaceState(null, '', str ? '#' + str : location.pathname + location.search);
+  }
+
+  const img = (t, im, cls) => `<a class="img ${cls}" href="${esc(t.viewer)}" title="Open ${esc(t.name)} in the viewer">
+      <img src="${esc(im.src)}" alt="${esc(t.name)}: ${esc(im.caption)}" loading="lazy">
+      ${cls === 'hero' ? '' : `<span class="cap">${esc(im.caption)}</span>`}</a>`;
+  function card(t) {
+    const hero = t.images.hero || t.images.view;
+    const smalls = ['cut', 'top'].filter((k) => t.images[k]).map((k) => img(t, t.images[k], 'small'));
+    const tier = tierOf(t);
+    return `
+    <article class="card${smalls.length ? '' : ' solo'}" style="--rows: ${Math.max(1, smalls.length)}">
+      ${img(t, hero, 'hero')}
+      ${smalls.join('')}
+      <div class="meta">
+        <h3><a href="${esc(t.viewer)}">${esc(cap(typeOf(t)))}</a> <span class="tier ${tier}">${esc(cap(tier))}</span></h3>
+        <p>${t.height} tall · ${t.width} wide · ${t.blocks.toLocaleString()} blocks</p>
+        <p><code>${esc(t.name)}</code> · ${esc(t.woodType)} · seed ${t.seed}</p>
+        ${t.aliases.length ? `<p>Also used as ${t.aliases.map((a) => `<code>${esc(a)}</code>`).join(', ')}</p>` : ''}
+      </div>
+    </article>`;
+  }
+
+  function render() {
+    const s = readHash();
+    filters.innerHTML = Object.entries(OPTIONS).map(([k, o]) => `
+      <div class="seg" role="group" aria-label="${esc(o.label)}"><span>${esc(o.label)}</span><div>${o.values.map(([v, label]) =>
+        `<button type="button" data-k="${k}" data-v="${esc(v)}" aria-pressed="${s[k] === v}">${esc(label)}</button>`).join('')}</div></div>`).join('')
+      + '<span id="count"></span>';
+
+    // trees first, then fungi (the order of the categories); otherwise gallery.json order
+    const catRank = (t) => { const i = Object.keys(CATS).indexOf(catOf(t)); return i < 0 ? Infinity : i; };
+    const shown = trees.filter((t) => (s.cat === 'all' || catOf(t) === s.cat) && (s.size === 'all' || tierOf(t) === s.size))
+      .map((t, i) => [t, i]).sort(([a, i], [b, j]) => catRank(a) - catRank(b) || i - j).map(([t]) => t);
+    // sections: per type (giant, huge, big side by side) or per size; gallery.json is already
+    // in type order, giant first. One section per card (type grouping with one size) is a flat grid.
+    const groups = new Map();
+    const key = s.group === 'size' ? tierOf : typeOf;
+    if (s.group === 'size') for (const tier of TIERS) groups.set(tier, []);
+    for (const t of shown) {
+      if (!groups.has(key(t))) groups.set(key(t), []);
+      groups.get(key(t)).push(t);
+    }
+    const sections = [...groups].filter(([, list]) => list.length);
+    const flat = s.group === 'type' && s.size !== 'all';
+    const catLabel = (t) => (Object.keys(CATS).length > 1 ? CATS[catOf(t)] || '' : '');
+    main.innerHTML = !shown.length ? '<div id="status">No trees match these filters.</div>'
+      : flat ? `<div class="grid">${shown.map(card).join('')}</div>`
+      : sections.map(([g, list]) => `
+        <section>
+          <h2>${esc(cap(g))} <small>${s.group === 'size' ? `${list.length} tree${list.length === 1 ? '' : 's'}` : esc(catLabel(list[0]))}</small></h2>
+          <div class="grid">${list.map(card).join('')}</div>
+        </section>`).join('');
+    document.getElementById('count').textContent = `${shown.length} of ${trees.length}`;
+  }
+
+  filters.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-k]');
+    if (!b) return;
+    writeHash({ ...readHash(), [b.dataset.k]: b.dataset.v });
+    render();
+  });
+  addEventListener('hashchange', render);
+  render();
 </script>
 </body>
 </html>

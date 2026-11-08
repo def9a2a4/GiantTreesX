@@ -10,6 +10,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
+import { mangroveRaise } from '../src/render.js';
 
 /** Size tiers, largest first (the order cards are shown in). */
 export const TIERS = ['giant', 'huge', 'big'];
@@ -59,8 +60,9 @@ export function galleryTrees(docsDir) {
   const read = (f) => (existsSync(join(treesDir, f)) ? readFileSync(join(treesDir, f), 'utf8') : '');
   const groups = new Map(); // identity -> { name, aliases, hash }
   for (const name of names) {
-    // the MANGROVE refPoint rule depends on the file name, so it is part of the identity
-    const key = read(name + '.xml') + '\0' + read(name + '.root.xml') + (name.includes('MANGROVE') ? 'M' : '');
+    // the refPoint raise (mangroves) depends on the file name, so it is part of the identity
+    const raise = mangroveRaise(name + '.xml');
+    const key = read(name + '.xml') + '\0' + read(name + '.root.xml') + (raise ? 'R' + raise : '');
     if (groups.has(key)) groups.get(key).aliases.push(name);
     else groups.set(key, { name, aliases: [], hash: createHash('sha256').update(key).digest('hex').slice(0, 16) });
   }

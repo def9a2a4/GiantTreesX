@@ -41,13 +41,15 @@ const CAP_LEVELS = { 'Red Mushroom': 1, 'Brown Mushroom': 1 };
 const HANGING_TIPS = { 'Crimson': 'WEEPING_VINES' };
 /** TreeType hangingOneIn / hangingMin / hangingMax (LeafDecorator.hanging); default [4, 1, 6]. */
 const HANGING_SHAPES = { 'Crimson': [6, 1, 9] };
+/** TreeType groundWood: root blocks that end up in the ground become this block (see groundY in woodStyleAssign). */
+const GROUND_WOODS = { 'Mangrove_roots': 'MUDDY_MANGROVE_ROOTS' };
 /** TreeType.noisyLeaves: false keeps the plain (Smooth-noised) ellipsoid leaf clusters. */
 const PLAIN_LEAVES = new Set(['Red Mushroom', 'Brown Mushroom', 'Crimson', 'Warped']);
 export const WOOD_TYPES = Object.freeze(Object.keys(TREE_TYPES));
 /** Every block TreeType can produce (GeometryHarness reports which of them its API lacks). */
 export const TREE_TYPE_MATERIALS = Object.freeze([...new Set([
   ...Object.values(TREE_TYPES).flatMap(([w, l, , h]) => [w, ...l.map((e) => e[0]), ...(h ? [h] : [])]),
-  ...Object.values(HANGING_TIPS)])]);
+  ...Object.values(HANGING_TIPS), ...Object.values(GROUND_WOODS)])]);
 const ALL_MATERIALS = () => true;
 
 /**
@@ -79,6 +81,7 @@ export function treeTypeMaterials(woodType, hasMaterial = ALL_MATERIALS) {
     hanging: isHanging ? hanging : null, hangingTip: isHanging ? hangingTip : null,
     hangingShape: HANGING_SHAPES[name] ?? [4, 1, 6],
     capLevel, noisyLeaves: !PLAIN_LEAVES.has(name), type: name,
+    groundWood: GROUND_WOODS[name] && hasMaterial(GROUND_WOODS[name]) ? GROUND_WOODS[name] : null,
   };
 }
 
@@ -105,7 +108,7 @@ export const BLOCK_COLORS = {
   MUSHROOM_STEM: 0xcdc6ba, RED_MUSHROOM_BLOCK: 0xc4282a, BROWN_MUSHROOM_BLOCK: 0x96714f,
   VINE: 0x2f6b14,
 };
-export const TRANSLUCENT = (name) => name.endsWith('_LEAVES') || name === 'VINE' || name.endsWith('ROOTS') || name === 'PALE_HANGING_MOSS' || name.startsWith('WEEPING_VINES');
+export const TRANSLUCENT = (name) => name.endsWith('_LEAVES') || name === 'VINE' || (name.endsWith('ROOTS') && name !== 'MUDDY_MANGROVE_ROOTS') || name === 'PALE_HANGING_MOSS' || name.startsWith('WEEPING_VINES');
 /** Materials that place nothing visible (WoodStyler carves hollow trunks with AIR). */
 export const isSkippedMaterial = (name) => name === 'AIR' || name === 'CAVE_AIR' || name === 'VOID_AIR';
 
@@ -289,6 +292,10 @@ export function woodDepth(voxels) {
  *        tree's TreeType leafMix when it has one, as WoodStyle.fromConfig)
  * @param {(name: string) => boolean} [opts.hasMaterial]  see treeTypeMaterials
  * @param {number} opts.seed  the tree seed (same int passed to renderTree)
+ * @param {number} [opts.groundY]  preview-only: store y of the ground surface. Root wood at or
+ *        below it becomes its type's groundWood (mangrove roots -> muddy mangrove roots). The
+ *        plugin decides this from the actual world when it places the tree (TreeRenderer.
+ *        settleRoots), so the equivalence check leaves this unset.
  * @param {MaterialTable} table
  * @returns {Uint16Array} material id per voxel ('AIR' for carved voxels)
  */
@@ -320,11 +327,19 @@ export function woodStyleAssign(voxels, opts, table) {
     return v;
   };
   const leafIds = leafEntries.length ? new Map(leafEntries.map(([m]) => [m, table.id(m)])) : null;
+  // root wood in the ground (flat ground at groundY): ids per wood type, -1 for none
+  const groundIds = Number.isFinite(o.groundY)
+    ? voxels.woodTypes.map((w) => { const g = treeTypeMaterials(w, o.hasMaterial || undefined).groundWood; return g ? table.id(g) : -1; })
+    : null;
 
   for (let i = 0; i < voxels.n; i++) {
     const k = voxels.kind[i];
     if (k === KIND_LEAF) {
       if (leafIds) out[i] = leafIds.get(pickLeaf(leafEntries, leafTotal, voxels.x[i], voxels.y[i], voxels.z[i], seed));
+      continue;
+    }
+    if (k === KIND_WOOD && groundIds && voxels.y[i] <= o.groundY && groundIds[voxels.wood[i]] >= 0) {
+      out[i] = groundIds[voxels.wood[i]]; // as TreeRenderer.settleRoots (runs after WoodStyler, which leaves roots alone)
       continue;
     }
     if (k !== KIND_WOOD || !depth) continue;

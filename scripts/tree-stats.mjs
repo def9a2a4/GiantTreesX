@@ -18,7 +18,8 @@ Columns: blocks placed (after the wood style; hollow trunks remove blocks), wood
 (vines + hanging moss) / root blocks, height above the ground, crown width (largest x or z extent
 of everything but the roots), root depth below the ground, trunk radius at some heights above the
 tree's base (the radius of a disc with the trunk's cross-section area; split trunks count
-together; MANGROVE files start their tree 18 blocks above the ground) and the generation time.
+together; MANGROVE files start their tree above the ground, on their roots: 18 blocks for the
+giant, 10 for _HUGE, 7 for _BIG) and the generation time.
 
 Options:
   -s, --seeds LIST      seeds: numbers and ranges, e.g. 12345,7 or 1..10 (default 12345,1..9)

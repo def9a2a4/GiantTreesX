@@ -1,6 +1,8 @@
 // Loads every tree the plugin ships from docs/trees/ (copies of src/main/resources, kept in sync by
 // `make docs-trees`; index.json lists the files).
 
+import { mangroveRaise } from '../src/render.js';
+
 export const TREES = new URL('../../trees/', import.meta.url);
 
 async function listFiles() {
@@ -29,11 +31,12 @@ export async function loadPluginTrees() {
     rootXml: files.has(name + '.root.xml') ? await text(name + '.root.xml') : null,
   })));
 
-  // byte-identical files are folded into the first one; the MANGROVE refPoint rule depends on the
-  // file name, so it is part of the identity
+  // byte-identical files are folded into the first one; the refPoint raise (mangroves) depends on
+  // the file name, so it is part of the identity
   const seen = new Map();
   for (const t of trees) {
-    const key = t.treeXml + '\0' + (t.rootXml ?? '') + (t.name.includes('MANGROVE') ? 'M' : '');
+    const raise = mangroveRaise(t.name + '.xml');
+    const key = t.treeXml + '\0' + (t.rootXml ?? '') + (raise ? 'R' + raise : '');
     t.aliasOf = seen.get(key) ?? null;
     if (!t.aliasOf) seen.set(key, t.name);
   }

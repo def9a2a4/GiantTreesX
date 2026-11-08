@@ -138,7 +138,7 @@ function decorateLeaves(store, treeType, seed) {
 
 /**
  * TreeRenderer.mangroveRaise: blocks a tree file is raised so its stilt roots show. Files whose
- * name contains MANGROVE, by tier: 18 for the giant, 10 for _HUGE, 5 for _BIG; 0 otherwise.
+ * name contains MANGROVE, by tier: 18 for the giant, 10 for _HUGE, 7 for _BIG; 0 otherwise.
  */
 export function mangroveRaise(fileName) {
   if (!fileName.includes('MANGROVE')) return 0;

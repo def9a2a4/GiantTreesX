@@ -28,7 +28,7 @@ function toDb(xml, entries) {
   return xml == null ? null : xml;
 }
 
-function materialPass(view, style, seed) {
+function materialPass(view, style, seed, groundY) {
   const table = new M.MaterialTable();
   const t0 = now();
   const fn = M.woodStyleAssign;
@@ -42,6 +42,8 @@ function materialPass(view, style, seed) {
       hollowWallThickness: Math.max(1, style.hollowWallThickness | 0 || 2),
       leaves: style.leaves && Object.keys(style.leaves).length ? style.leaves : null,
       seed,
+      groundY, // roots reaching the (flat) ground show as muddy roots, as the plugin places them in mud
+
     }, table);
     usedStyle = true;
   } else {
@@ -65,8 +67,10 @@ function handle(d) {
       treeName: d.treeName || '',
     });
     const view = M.makeVoxelView(result);
-    cache = { result, view, seed: d.seed | 0 };
-    const m = materialPass(view, d.style || {}, d.seed | 0);
+    // the planting block (y = 0 above ground) in store coordinates, which start at the raised ref point
+    const groundY = REF.y - result.refPoint.y;
+    cache = { result, view, seed: d.seed | 0, groundY };
+    const m = materialPass(view, d.style || {}, d.seed | 0, groundY);
     const s = result.store;
     const n = s.n;
     const out = {
@@ -96,7 +100,7 @@ function handle(d) {
     post(out, [out.x.buffer, out.y.buffer, out.z.buffer, out.kind.buffer, out.part.buffer, out.level.buffer, out.orient.buffer, out.wood.buffer, out.mat.buffer]);
   } else if (d.type === 'materials') {
     if (!cache) throw new Error('no tree generated yet');
-    const m = materialPass(cache.view, d.style || {}, cache.seed);
+    const m = materialPass(cache.view, d.style || {}, cache.seed, cache.groundY);
     post({ type: 'materials', id: d.id, mat: m.mat, matNames: m.matNames, usedStyle: m.usedStyle, timing: { material: m.materialMs } }, [m.mat.buffer]);
   }
 }
