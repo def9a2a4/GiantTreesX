@@ -4,7 +4,7 @@
 export const KIND_WOOD = 1;
 export const KIND_LEAF = 2;
 export const KIND_VINE = 3;
-export const KIND_HANGING = 4; // WorldChange.Kind.HANGING (pale hanging moss); orient 1 = tip
+export const KIND_HANGING = 4; // WorldChange.Kind.HANGING (pale hanging moss, weeping vines); orient 1 = tip
 export const KIND_NAMES = { 1: 'wood', 2: 'leaf', 3: 'vine', 4: 'hanging' };
 
 export const PART_TREE = 0;

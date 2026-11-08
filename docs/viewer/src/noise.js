@@ -98,3 +98,20 @@ export function locationHashCode(x, y, z, pitch = 0, yaw = 0, worldHash = 0) {
   hash = (Math.imul(19, hash) + floatToIntBits(yaw)) | 0;
   return hash;
 }
+
+const GOLD32 = 0x9e3779b1 | 0;
+
+/** LeafDecorator.hash: 32-bit position hash (Java int arithmetic). Also Draw3d's leaf jitter. */
+export function positionHash(seed, x, y, z, salt) {
+  let h = seed | 0;
+  h = (Math.imul(h, GOLD32) + x) | 0;
+  h = (Math.imul(h, GOLD32) + y) | 0;
+  h = (Math.imul(h, GOLD32) + z) | 0;
+  h = (Math.imul(h, GOLD32) + salt) | 0;
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b | 0);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35 | 0);
+  h ^= h >>> 16;
+  return h | 0;
+}

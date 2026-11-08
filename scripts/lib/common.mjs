@@ -59,7 +59,7 @@ export function treeNames(dir = RES) {
 /**
  * Resolves a tree argument to its files: a path to an .xml file, or a name looked up in `dir`
  * ("OAK" = "tree.OAK", "biome.FOREST-OAK", "OAK.root" for a root file). Names may contain * as
- * a wildcard ("tree.*_SMALL", "*MANGROVE*"); those expand to every matching tree file.
+ * a wildcard ("tree.*_HUGE", "*MANGROVE*"); those expand to every matching tree file.
  * Returns [{name, file, rootFile|null}]; with allowRoot, ".root" names resolve to the root file itself.
  */
 export function resolveTrees(arg, { dir = RES, allowRoot = false } = {}) {

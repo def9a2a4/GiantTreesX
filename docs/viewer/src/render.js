@@ -6,7 +6,7 @@ import { ParamDB } from './params.js';
 import { Draw3d, orient } from './draw3d.js';
 import { VoxelStore, KIND_WOOD, KIND_LEAF, KIND_VINE, KIND_HANGING, PART_TREE, PART_ROOT } from './voxels.js';
 import { treeTypeMaterials, DECORATION_TRUNK_VINES, DECORATION_LEAF_VINES, DECORATION_HANGING } from './materials.js';
-import { locationHashCode, SimplexNoiseGenerator } from './noise.js';
+import { locationHashCode, SimplexNoiseGenerator, positionHash } from './noise.js';
 import { hashMapIterationOrder } from './javamap.js';
 import { JavaRandom } from './jrandom.js';
 
@@ -85,28 +85,14 @@ function populateVines(store, seed) {
 
 // ---- LeafDecorator ----
 const VINE_ONE_IN = 5, VINE_MIN = 2, VINE_MAX = 12;
-const HANGING_ONE_IN = 4, HANGING_MIN = 1, HANGING_MAX = 6;
 const SIDES = [[0, -1], [0, 1], [1, 0], [-1, 0]]; // N, S, E, W; vine face index = side index
-const GOLD32 = 0x9e3779b1 | 0;
-
-/** LeafDecorator.hash: 32-bit position hash (Java int arithmetic). */
-export function decoHash(seed, x, y, z, salt) {
-  let h = seed | 0;
-  h = (Math.imul(h, GOLD32) + x) | 0;
-  h = (Math.imul(h, GOLD32) + y) | 0;
-  h = (Math.imul(h, GOLD32) + z) | 0;
-  h = (Math.imul(h, GOLD32) + salt) | 0;
-  h ^= h >>> 16;
-  h = Math.imul(h, 0x85ebca6b | 0);
-  h ^= h >>> 13;
-  h = Math.imul(h, 0xc2b2ae35 | 0);
-  h ^= h >>> 16;
-  return h | 0;
-}
+/** LeafDecorator.hash (= Draw3d's leaf jitter hash). */
+export const decoHash = positionHash;
 const floorMod = (a, n) => ((a % n) + n) % n;
 
 /** LeafDecorator.populate: vines down leaf sides or hanging blocks below leaves. */
-function decorateLeaves(store, decoration, seed) {
+function decorateLeaves(store, treeType, seed) {
+  const decoration = treeType.decoration;
   const n = store.n; // only blocks the tree had before decorating are tested
   if (decoration === DECORATION_LEAF_VINES) {
     const cells = new Map(); // "x,y,z" -> [x, y, z, face]; where strands meet the lower face wins
@@ -128,6 +114,8 @@ function decorateLeaves(store, decoration, seed) {
     }
     for (const [vx, vy, vz, s] of cells.values()) store.add(vx, vy, vz, KIND_VINE, -1, s, PART_TREE, 0, false);
   } else if (decoration === DECORATION_HANGING) {
+    // TreeType hangingOneIn / hangingMin / hangingMax; orient 1 = tip (TreeType.hangingTipMaterial)
+    const [HANGING_ONE_IN, HANGING_MIN, HANGING_MAX] = treeType.hangingShape;
     const added = [];
     for (let i = 0; i < n; i++) {
       if (store.kind[i] !== KIND_LEAF) continue;
@@ -186,6 +174,7 @@ export function renderTree(o) {
   const treeType = treeTypeMaterials(tree.params.WoodType, o.hasMaterial || undefined);
   const d3d = new Draw3d(ref, tree.params.Smooth, woodIndex(tree.params.WoodType), store, false, PART_TREE, noise);
   d3d.capLevel = treeType.capLevel;
+  d3d.noisyLeaves = treeType.noisyLeaves;
   exportTree(tree, d3d);
 
   let vineInfo = null;
@@ -209,7 +198,7 @@ export function renderTree(o) {
     d3dInv.capLevel = treeTypeMaterials(root.params.WoodType, o.hasMaterial || undefined).capLevel;
     exportTree(root, d3dInv);
   }
-  decorateLeaves(store, treeType.decoration, seed);
+  decorateLeaves(store, treeType, seed);
   const t1 = (typeof performance !== 'undefined' ? performance : Date).now();
   return {
     store,

@@ -208,6 +208,40 @@ function hangingMoss(rgb, r) {
   return t;
 }
 
+/**
+ * Weeping vines: a wavy central stem with clumps of small fleshy lobes on both sides (cut-out).
+ * The stem wanders back to its start column so a column of plant blocks reads as one strand. The
+ * tip block (WEEPING_VINES) stops two thirds down in a rounded clump.
+ */
+function weepingVines(rgb, r, tip) {
+  const t = tile();
+  const end = tip ? 11 : TILE;
+  const x0 = 7;
+  const phase = r() * TAU;
+  for (let y = 0; y < end; y++) {
+    const x = x0 + Math.round(1.3 * Math.sin((TAU * y) / TILE + phase));
+    put(t, x, y, rgb, 0.7 + r() * 0.15);
+    // lobes: short sideways clumps every few rows, alternating sides
+    if (y % 3 === 0 || r() < 0.2) {
+      const side = (y / 3) % 2 === 0 ? -1 : 1;
+      const len = 2 + Math.floor(r() * 3);
+      for (let j = 1; j <= len; j++) {
+        const lx = x + side * j;
+        if (lx < 0 || lx >= TILE) break;
+        put(t, lx, y, rgb, 0.95 + r() * 0.25);
+        if (j < len && r() < 0.6 && y + 1 < end) put(t, lx, y + 1, rgb, 0.85 + r() * 0.2);
+      }
+    }
+  }
+  if (tip) {
+    for (let y = end - 2; y < end + 3; y++) for (let x = x0 - 2; x <= x0 + 2; x++) {
+      const dx = x - x0, dy = y - end;
+      if (dx * dx + dy * dy <= 5 && r() < 0.9) put(t, x, y, rgb, 1.0 + r() * 0.2);
+    }
+  }
+  return t;
+}
+
 /** Leaves with small flowers (flowering azalea). */
 function flowering(rgb, r) {
   const t = leaves(rgb, r);
@@ -225,6 +259,8 @@ function specialTile(name, rgb, r) {
   if (name === 'BROWN_MUSHROOM_BLOCK') return mushroomCap(rgb, r, 0);
   if (name === 'SHROOMLIGHT') return glow(rgb, r);
   if (name === 'PALE_HANGING_MOSS') return hangingMoss(rgb, r);
+  if (name === 'WEEPING_VINES_PLANT') return weepingVines(rgb, r, false);
+  if (name === 'WEEPING_VINES') return weepingVines(rgb, r, true);
   if (name === 'FLOWERING_AZALEA_LEAVES') return flowering(rgb, r);
   return null;
 }

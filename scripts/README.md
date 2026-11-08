@@ -7,7 +7,7 @@ or let `make tree-shots` do it). Every script prints its full usage with `--help
 
 All three take trees the same way. A name is looked up in `src/main/resources/` (or `--dir`):
 `OAK` means `tree.OAK.xml`, `biome.FOREST-OAK` a biome file, `OAK.root` a root file (only for
-`tree-params`), and `*` is a wildcard (`'tree.*_SMALL'`; quote it in the shell). A path to an
+`tree-params`), and `*` is a wildcard (`'tree.*_HUGE'`; quote it in the shell). A path to an
 `.xml` file anywhere also works, with its `.root.xml` next to it if there is one. Lists may be
 comma-separated. Seeds are numbers and ranges: `12345,7` or `1..10`.
 
@@ -22,11 +22,11 @@ min/median/max: blocks placed, wood, leaf, vine and root blocks, height, crown w
 trunk radius at a few heights, and generation time.
 
 ```sh
-node scripts/tree-stats.mjs OAK OAK_SMALL                      # seeds 12345,1..9
-node scripts/tree-stats.mjs --seeds 1..20 --summary 'tree.*_SMALL'
+node scripts/tree-stats.mjs OAK OAK_HUGE                      # seeds 12345,1..9
+node scripts/tree-stats.mjs --seeds 1..20 --summary 'tree.*_HUGE'
 node scripts/tree-stats.mjs -m --style mixed_stripped --hollow -s 12345 DARK_OAK   # material counts
 node scripts/tree-stats.mjs --format csv -s 1..50 JUNGLE > jungle.csv              # or --format json
-make tree-stats TREES=OAK,OAK_SMALL SEEDS=1..10
+make tree-stats TREES=OAK,OAK_HUGE SEEDS=1..10
 ```
 
 `--trunk-at 2,6,12` picks the heights of the trunk radius (above the tree's base).
@@ -43,10 +43,10 @@ no leaves), `wood` (no leaves); `--view JSON` adds a custom one from the viewer'
 `name`). `--sheet FILE` combines all images into one captioned contact sheet, a row per tree.
 
 ```sh
-node scripts/tree-shots.mjs OAK OAK_SMALL
+node scripts/tree-shots.mjs OAK OAK_HUGE
 node scripts/tree-shots.mjs --seeds 1..4 --views hero,cut --sheet .temp/oak.jpg OAK
 node scripts/tree-shots.mjs --style all_log,mixed_stripped --hollow --views base,cut DARK_OAK
-node scripts/tree-shots.mjs --sheet .temp/smalls.jpg --thumb 200 'tree.*_SMALL'
+node scripts/tree-shots.mjs --sheet .temp/huge.jpg --thumb 200 'tree.*_HUGE'
 node scripts/tree-shots.mjs --view '{"name":"close","elevation":20,"zoom":2.5,"focusY":25}' JUNGLE
 node scripts/tree-shots.mjs --prefix new_ --sheet .temp/new.jpg path/to/draft/tree.ACACIA.xml
 make tree-shots TREES=OAK SEEDS=1..4 VIEWS=hero,cut              # also writes .temp/shots/sheet.jpg
@@ -62,11 +62,11 @@ against Arbaro's types and ranges.
 
 ```sh
 node scripts/tree-params.mjs show OAK.root                 # every param; unset ones show (default)
-node scripts/tree-params.mjs diff OAK OAK_SMALL            # only the params that differ
-node scripts/tree-params.mjs diff -p Scale,Ratio,1Branches 'tree.*_SMALL'
-node scripts/tree-params.mjs set OAK_SMALL Scale=28.0 1Branches=11 --copies
-node scripts/tree-params.mjs set --add CHERRY_SMALL Levels=3 2Branches=6   # add params the file lacks
-node scripts/tree-params.mjs set -n 'tree.*_SMALL' LeafScale=8.0    # dry run
+node scripts/tree-params.mjs diff OAK OAK_HUGE            # only the params that differ
+node scripts/tree-params.mjs diff -p Scale,Ratio,1Branches 'tree.*_HUGE'
+node scripts/tree-params.mjs set OAK_HUGE Scale=28.0 1Branches=11 --copies
+node scripts/tree-params.mjs set --add CHERRY_HUGE Levels=3 2Branches=6   # add params the file lacks
+node scripts/tree-params.mjs set -n 'tree.*_HUGE' LeafScale=8.0    # dry run
 node scripts/tree-params.mjs copies OAK OAK.root           # list byte-identical copies
 node scripts/tree-params.mjs derive --biome FOREST OAK OAK_TALL Scale=70.0 ScaleV=5.0
 ```

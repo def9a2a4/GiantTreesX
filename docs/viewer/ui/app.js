@@ -350,7 +350,7 @@ function rebuildMesh() {
   // colour-by modes tint a plain white tile; block mode shows the block's texture
   const tileOf = d.matNames.map((n) => at.tiles.get(n));
   const tileFor = colorFor && view.colorBy !== 'block'
-    ? (i) => (d.kind[i] === 3 ? tileOf[d.mat[i]].side : at.plain)
+    ? (i) => (d.kind[i] >= 3 ? tileOf[d.mat[i]].side : at.plain) // cards keep their cut-out
     : (i, end) => (end ? tileOf[d.mat[i]].end : tileOf[d.mat[i]].side);
   const m = mesh(d, {
     matInfo: info,
@@ -456,7 +456,7 @@ function updateStats() {
     ${rows}
     <tr class="sep"><td class="k">Total blocks</td><td class="num">${total.toLocaleString()}</td></tr>
     ${air ? `<tr><td class="k">Hollowed out (air)</td><td class="num">${air.toLocaleString()}</td></tr>` : ''}
-    <tr><td class="k">Wood / leaves / vines + moss</td><td class="num">${kinds[1].toLocaleString()} / ${kinds[2].toLocaleString()} / ${(kinds[3] + (kinds[4] || 0)).toLocaleString()}</td></tr>
+    <tr><td class="k">Wood / leaves / vines + hanging</td><td class="num">${kinds[1].toLocaleString()} / ${kinds[2].toLocaleString()} / ${(kinds[3] + (kinds[4] || 0)).toLocaleString()}</td></tr>
     <tr><td class="k">Tree / roots / junction</td><td class="num">${parts[0].toLocaleString()} / ${parts[1].toLocaleString()} / ${parts[2].toLocaleString()}</td></tr>
     <tr class="sep"><td class="k">Bounding box (x × y × z)</td><td class="num">${bb.maxX - bb.minX + 1} × ${bb.maxY - bb.minY + 1} × ${bb.maxZ - bb.minZ + 1}</td></tr>
     <tr><td class="k">X range / Z range</td><td class="num">${bb.minX}..${bb.maxX} / ${bb.minZ}..${bb.maxZ}</td></tr>
@@ -522,7 +522,7 @@ function pick(e) {
   }
   const i = voxelAt(m, X, Y, Z);
   if (i < 0) { $('hover').textContent = ''; return; }
-  const kind = ['', 'wood', 'leaf', 'vine'][d.kind[i]];
+  const kind = ['', 'wood', 'leaf', 'vine', 'hanging'][d.kind[i]];
   const part = ['tree', 'root', 'junction'][d.part[i]];
   const lvl = d.kind[i] === 1 ? ` level ${d.level[i]}` : '';
   $('hover').textContent = `${X}, ${Y}, ${Z}  ${d.matNames[d.mat[i]]}  ${kind}${lvl}  ${part}`;

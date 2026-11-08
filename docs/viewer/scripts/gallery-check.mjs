@@ -3,7 +3,8 @@
 //   - every distinct tree has an entry in docs/gallery/gallery.json, and there are no entries for
 //     trees that no longer exist,
 //   - each entry lists the same aliases (byte-identical copies) as the tree files have now,
-//   - each entry's images exist,
+//   - each entry has the type, size tier and role (the type card's hero or a variant) the tree
+//     files give it now, and the pictures that role needs, and they exist,
 //   - entries carrying a content hash (written by gallery.mjs) were rendered from the current
 //     tree files. Entries without one, from older gallery runs, skip this check.
 //
@@ -13,7 +14,7 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { REPO } from './bundled.mjs';
-import { galleryTrees } from './gallery-trees.mjs';
+import { galleryTrees, ROLE_IMAGES } from './gallery-trees.mjs';
 
 const DOCS = join(REPO, 'docs');
 const GALLERY = join(DOCS, 'gallery');
@@ -42,6 +43,12 @@ for (const t of trees) {
     problems.push(`${t.name}: gallery lists aliases [${(e.aliases || []).join(', ')}], tree files have [${t.aliases.join(', ')}]`);
   }
   if (e.hash && e.hash !== t.hash) problems.push(`${t.name}: tree files changed since the gallery was rendered`);
+  for (const field of ['type', 'tier', 'role']) {
+    if (e[field] !== t[field]) problems.push(`${t.name}: gallery has ${field} ${e[field]}, tree files make it ${t[field]}`);
+  }
+  for (const shot of ROLE_IMAGES[t.role]) {
+    if (!e.images?.[shot]) problems.push(`${t.name}: no ${shot} picture (needed as the type's ${t.role})`);
+  }
   for (const img of Object.values(e.images || {})) {
     if (!img?.src || !existsSync(join(DOCS, img.src))) problems.push(`${t.name}: missing image ${img?.src}`);
   }

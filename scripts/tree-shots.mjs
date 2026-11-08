@@ -24,7 +24,7 @@ Usage: node scripts/tree-shots.mjs [options] TREE...
 
 Renders each tree for every seed, view and wood style with the viewer and saves the images. TREE
 is a name in src/main/resources ("OAK" = tree.OAK, "biome.FOREST-OAK", wildcards like
-"tree.*_SMALL") or a path to a tree .xml file anywhere (its .root.xml next to it is used if
+"tree.*_HUGE") or a path to a tree .xml file anywhere (its .root.xml next to it is used if
 present). Tree files are served straight from src/main/resources (or --dir), so docs/trees/ does
 not need to be synced first. Lists may be comma-separated.
 
@@ -50,10 +50,10 @@ Images are named <prefix><tree>_<seed>_<view>[_<style>][_hollow].jpg. Needs Play
   npm install --prefix docs/viewer && npx --prefix docs/viewer playwright install chromium
 
 Examples:
-  node scripts/tree-shots.mjs OAK OAK_SMALL
+  node scripts/tree-shots.mjs OAK OAK_HUGE
   node scripts/tree-shots.mjs --seeds 1..4 --views hero,cut --sheet .temp/shots/oak.jpg OAK
   node scripts/tree-shots.mjs --style all_log,mixed_stripped --views base,cut DARK_OAK
-  node scripts/tree-shots.mjs --sheet .temp/smalls.jpg --thumb 200 'tree.*_SMALL'
+  node scripts/tree-shots.mjs --sheet .temp/huge.jpg --thumb 200 'tree.*_HUGE'
   node scripts/tree-shots.mjs --view '{"name":"close","elevation":20,"zoom":2.5,"focusY":25}' JUNGLE
 `;
 

@@ -31,15 +31,23 @@ const TREE_TYPES = {
   'Red Mushroom': ['MUSHROOM_STEM', [['RED_MUSHROOM_BLOCK', 1]], DECORATION_NONE, null, 'Oak'],
   'Brown Mushroom': ['MUSHROOM_STEM', [['BROWN_MUSHROOM_BLOCK', 1]], DECORATION_NONE, null, 'Oak'],
   'Poplar': ['POPLAR_LOG', [['YELLOW_POPLAR_LEAVES', 5], ['ORANGE_POPLAR_LEAVES', 3], ['RED_POPLAR_LEAVES', 2]], DECORATION_NONE, null, 'Birch'],
-  'Crimson': ['CRIMSON_STEM', [['NETHER_WART_BLOCK', 14], ['SHROOMLIGHT', 1]], DECORATION_NONE, null, 'Oak'],
+  'Crimson': ['CRIMSON_STEM', [['NETHER_WART_BLOCK', 14], ['SHROOMLIGHT', 1]], DECORATION_HANGING, 'WEEPING_VINES_PLANT', 'Oak'],
   'Warped': ['WARPED_STEM', [['WARPED_WART_BLOCK', 14], ['SHROOMLIGHT', 1]], DECORATION_NONE, null, 'Oak'],
   'Azalea': ['OAK_LOG', [['AZALEA_LEAVES', 3], ['FLOWERING_AZALEA_LEAVES', 2]], DECORATION_NONE, null, 'Oak'],
 };
 /** TreeType.capLevel: stems of this level and deeper are drawn with the leaf block (mushroom caps). */
 const CAP_LEVELS = { 'Red Mushroom': 1, 'Brown Mushroom': 1 };
+/** TreeType hangingTip (bottom block of a hanging strand; default: the hanging block itself). */
+const HANGING_TIPS = { 'Crimson': 'WEEPING_VINES' };
+/** TreeType hangingOneIn / hangingMin / hangingMax (LeafDecorator.hanging); default [4, 1, 6]. */
+const HANGING_SHAPES = { 'Crimson': [6, 1, 9] };
+/** TreeType.noisyLeaves: false keeps the plain (Smooth-noised) ellipsoid leaf clusters. */
+const PLAIN_LEAVES = new Set(['Red Mushroom', 'Brown Mushroom', 'Crimson', 'Warped']);
 export const WOOD_TYPES = Object.freeze(Object.keys(TREE_TYPES));
 /** Every block TreeType can produce (GeometryHarness reports which of them its API lacks). */
-export const TREE_TYPE_MATERIALS = Object.freeze([...new Set(Object.values(TREE_TYPES).flatMap(([w, l, , h]) => [w, ...l.map((e) => e[0]), ...(h ? [h] : [])]))]);
+export const TREE_TYPE_MATERIALS = Object.freeze([...new Set([
+  ...Object.values(TREE_TYPES).flatMap(([w, l, , h]) => [w, ...l.map((e) => e[0]), ...(h ? [h] : [])]),
+  ...Object.values(HANGING_TIPS)])]);
 const ALL_MATERIALS = () => true;
 
 /**
@@ -48,7 +56,8 @@ const ALL_MATERIALS = () => true;
  * @param {(name: string) => boolean} [hasMaterial]  whether the server has a block (default: all,
  *        i.e. the newest Minecraft); missing blocks make the type fall back like the plugin does
  * @returns {{ wood: string, leaf: string, leafMix: [string, number][] | null, decoration: string,
- *             hanging: string | null, capLevel: number, type: string }}  type = the wood type actually used
+ *             hanging: string | null, hangingTip: string | null,
+ *             hangingShape: [number, number, number], capLevel: number, noisyLeaves: boolean, type: string }}  type = the wood type actually used
  */
 export function treeTypeMaterials(woodType, hasMaterial = ALL_MATERIALS) {
   let name = Object.hasOwn(TREE_TYPES, woodType) ? woodType : 'Oak';
@@ -60,9 +69,17 @@ export function treeTypeMaterials(woodType, hasMaterial = ALL_MATERIALS) {
   const [wood, leaves, deco, hangingName] = spec;
   const leafMix = leaves.length > 1 ? leaves.filter(([m]) => hasMaterial(m)) : [];
   const hanging = hangingName && hasMaterial(hangingName) ? hangingName : null;
-  const decoration = deco === DECORATION_HANGING && !hanging ? DECORATION_NONE : deco;
+  const tipName = HANGING_TIPS[name] ?? hanging;
+  const hangingTip = tipName && hasMaterial(tipName) ? tipName : null;
+  const decoration = deco === DECORATION_HANGING && (!hanging || !hangingTip) ? DECORATION_NONE : deco;
   const capLevel = CAP_LEVELS[name] ?? Infinity;
-  return { wood, leaf: leaves[0][0], leafMix: leafMix.length ? leafMix : null, decoration, hanging: decoration === DECORATION_HANGING ? hanging : null, capLevel, type: name };
+  const isHanging = decoration === DECORATION_HANGING;
+  return {
+    wood, leaf: leaves[0][0], leafMix: leafMix.length ? leafMix : null, decoration,
+    hanging: isHanging ? hanging : null, hangingTip: isHanging ? hangingTip : null,
+    hangingShape: HANGING_SHAPES[name] ?? [4, 1, 6],
+    capLevel, noisyLeaves: !PLAIN_LEAVES.has(name), type: name,
+  };
 }
 
 // Approximate block colours (sRGB hex) and alpha. Unknown materials fall back to magenta.
@@ -81,14 +98,14 @@ export const BLOCK_COLORS = {
   WARPED_STEM: 0x3a3a4d, WARPED_HYPHAE: 0x3a3a4d, STRIPPED_WARPED_STEM: 0x4cb4a6, STRIPPED_WARPED_HYPHAE: 0x4cb4a6, WARPED_WART_BLOCK: 0x167e86,
   AZALEA_LEAVES: 0x5a7a2c, FLOWERING_AZALEA_LEAVES: 0x7a7a4c,
   SHROOMLIGHT: 0xf09246, MOSS_BLOCK: 0x596e2d,
-  PALE_HANGING_MOSS: 0x7d8a78,
+  PALE_HANGING_MOSS: 0x7d8a78, WEEPING_VINES: 0xa3261c, WEEPING_VINES_PLANT: 0x8f1d16,
   // 26.3+
   POPLAR_LOG: 0x8c8676, POPLAR_WOOD: 0x8c8676, STRIPPED_POPLAR_LOG: 0xd8c9a2, STRIPPED_POPLAR_WOOD: 0xd8c9a2,
   YELLOW_POPLAR_LEAVES: 0xd8b02a, ORANGE_POPLAR_LEAVES: 0xd6731f, RED_POPLAR_LEAVES: 0xb0321f,
   MUSHROOM_STEM: 0xcdc6ba, RED_MUSHROOM_BLOCK: 0xc4282a, BROWN_MUSHROOM_BLOCK: 0x96714f,
   VINE: 0x2f6b14,
 };
-export const TRANSLUCENT = (name) => name.endsWith('_LEAVES') || name === 'VINE' || name.endsWith('ROOTS') || name === 'PALE_HANGING_MOSS';
+export const TRANSLUCENT = (name) => name.endsWith('_LEAVES') || name === 'VINE' || name.endsWith('ROOTS') || name === 'PALE_HANGING_MOSS' || name.startsWith('WEEPING_VINES');
 /** Materials that place nothing visible (WoodStyler carves hollow trunks with AIR). */
 export const isSkippedMaterial = (name) => name === 'AIR' || name === 'CAVE_AIR' || name === 'VOID_AIR';
 
@@ -140,11 +157,12 @@ export function defaultAssignMaterials(voxels, opts, table) {
   const woodIds = types.map((t) => table.id(t.wood));
   const leafIds = types.map((t) => table.id(t.leaf));
   const hangIds = types.map((t) => (t.hanging ? table.id(t.hanging) : 0));
+  const tipIds = types.map((t) => (t.hangingTip ? table.id(t.hangingTip) : 0));
   let vine = -1;
   for (let i = 0; i < voxels.n; i++) {
     const k = voxels.kind[i];
     if (k === KIND_VINE && vine < 0) vine = table.id('VINE');
-    out[i] = k === KIND_WOOD ? woodIds[voxels.wood[i]] : k === KIND_LEAF ? leafIds[voxels.wood[i]] : k === KIND_VINE ? vine : k === KIND_HANGING ? hangIds[voxels.wood[i]] : 0;
+    out[i] = k === KIND_WOOD ? woodIds[voxels.wood[i]] : k === KIND_LEAF ? leafIds[voxels.wood[i]] : k === KIND_VINE ? vine : k === KIND_HANGING ? (voxels.orient[i] === 1 ? tipIds : hangIds)[voxels.wood[i]] : 0;
   }
   return out;
 }

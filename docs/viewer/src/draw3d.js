@@ -1,9 +1,16 @@
 // Port of com.ryanmichela.trees.rendering.Draw3d + Orientation (geometry only).
 import { blockFloor, roundToInt } from './jmath.js';
-import { SimplexNoiseGenerator } from './noise.js';
+import { SimplexNoiseGenerator, positionHash } from './noise.js';
 import { KIND_WOOD, KIND_LEAF, PART_JUNCTION } from './voxels.js';
 
 export const X_MAJOR = 0, Y_MAJOR = 1, Z_MAJOR = 2;
+
+// Draw3d leaf noise (TreeType.noisyLeaves): see drawNoisyLeafCluster
+export const LEAF_LUMP = 2.2, LEAF_LUMP_FREQ = 0.22;
+export const LEAF_FINE = 0.6, LEAF_FINE_FREQ = 0.6;
+export const LEAF_JITTER = 0.6;
+export const LEAF_FULL_RADIUS = 2.0;
+const LEAF_REACH = LEAF_LUMP + LEAF_FINE + LEAF_JITTER / 2;
 
 /** Orientation.orient(l1, l2) on Bukkit vectors */
 export function orient(l1, l2) {
@@ -72,7 +79,9 @@ export class Draw3d {
     this.inverted = inverted;
     this.part = part;
     this.capLevel = Infinity; // TreeType.capLevel, set by render.js
+    this.noisyLeaves = false; // TreeType.noisyLeaves, set by render.js
     this.cache = new Map();
+    this.leafCache = new Map();
   }
 
   toMcVector(v) {
@@ -86,6 +95,19 @@ export class Draw3d {
     if (v === undefined) {
       v = this.noise.noise(x * 0.25, y * 0.25, z * 0.25);
       this.cache.set(key, v);
+    }
+    return v;
+  }
+
+  /** LEAF_LUMP * lump + LEAF_FINE * fine octave at a block, memoized (clusters overlap a lot). */
+  leafNoise(x, y, z) {
+    const key = ((x + 32768) * 65536 + (y + 32768)) * 65536 + (z + 32768);
+    let v = this.leafCache.get(key);
+    if (v === undefined) {
+      const lump = this.noise.noise(x * LEAF_LUMP_FREQ + 31.5, y * LEAF_LUMP_FREQ + 47.25, z * LEAF_LUMP_FREQ + 13.75);
+      const fine = this.noise.noise(x * LEAF_FINE_FREQ + 71.5, y * LEAF_FINE_FREQ + 5.25, z * LEAF_FINE_FREQ + 89.75);
+      v = LEAF_LUMP * lump + LEAF_FINE * fine;
+      this.leafCache.set(key, v);
     }
     return v;
   }
@@ -137,6 +159,7 @@ export class Draw3d {
   }
 
   drawLeafCluster(pos, length, width) {
+    if (this.noisyLeaves) { this.drawNoisyLeafCluster(pos, length, width); return; }
     // plotEllipsoid(pos, length, width, length, 0)
     const a = length, b = width, c = length;
     const halfSize = (Math.ceil(Math.max(Math.max(a, b), c)) | 0) + 2;
@@ -152,6 +175,56 @@ export class Draw3d {
             // new Vector(x,y,z).add(pos) -> block coords via floor
             store.add(blockFloor(x + pos.x), blockFloor(y + pos.y), blockFloor(z + pos.z), KIND_LEAF, -1, -1, this.part, this.wood, false);
           }
+        }
+      }
+    }
+  }
+
+  /**
+   * Draw3d.plotNoisyEllipsoid: the ellipsoid of drawLeafCluster with an uneven surface. A block's
+   * distance outside the (Smooth-noised) ellipsoid, in blocks along the ray from the centre, is
+   * compared with a displacement made of two simplex octaves (lumps and dents) and a per-block
+   * hash jitter (single-block gaps and protrusions). The displacement shrinks where the cluster is
+   * thinner than LEAF_FULL_RADIUS, so small clusters don't vanish.
+   */
+  drawNoisyLeafCluster(pos, length, width) {
+    const a = length, b = width, c = length;
+    const halfSize = (Math.ceil(Math.max(Math.max(a, b), c)) | 0) + 3;
+    const px = blockFloor(pos.x), py = blockFloor(pos.y), pz = blockFloor(pos.z);
+    const aa = a * a, bb = b * b, cc = c * c;
+    const store = this.store, seed = this.refPoint.hash;
+    // calculateNoiseOffset(.., 1, 0) <= 2 * Smooth (simplex noise stays within [-1, 1])
+    const tMax = 1 + 2.5 * this.noiseIntensity;
+    for (let x = -halfSize; x <= halfSize; x++) {
+      for (let y = -halfSize; y <= halfSize; y++) {
+        for (let z = -halfSize; z <= halfSize; z++) {
+          const bx = x + px, by = y + py, bz = z + pz;
+          const left = (x * x) / aa + (y * y) / bb + (z * z) / cc;
+          const r2 = x * x + y * y + z * z;
+          // far outside even for the largest Smooth offset: skip the noise lookups
+          if (left > 0 && Math.sqrt(r2) * (1 - Math.sqrt(tMax / left)) > LEAF_REACH) continue;
+          const q = left / (1 + this.calculateNoiseOffset(bx, by, bz, 1, 0));
+          let inside;
+          if (q === 0) {
+            inside = true;
+          } else {
+            const r = Math.sqrt(r2);
+            const d = Math.sqrt(q);
+            const rDir = r / d; // centre to surface along this ray
+            const out = r - rDir; // blocks outside the surface (negative inside)
+            if (out <= -LEAF_REACH) inside = true;
+            else if (out > LEAF_REACH) inside = false;
+            else {
+              const amp = Math.min(1, rDir / LEAF_FULL_RADIUS);
+              if (out <= -(amp * (LEAF_LUMP + LEAF_FINE) + LEAF_JITTER / 2)) inside = true;
+              else if (out > amp * (LEAF_LUMP + LEAF_FINE) + LEAF_JITTER / 2) inside = false;
+              else {
+                const u = (positionHash(seed, bx, by, bz, 7) >>> 8) / 16777216;
+                inside = out <= amp * this.leafNoise(bx, by, bz) + LEAF_JITTER * (u - 0.5);
+              }
+            }
+          }
+          if (inside) store.add(blockFloor(x + pos.x), blockFloor(y + pos.y), blockFloor(z + pos.z), KIND_LEAF, -1, -1, this.part, this.wood, false);
         }
       }
     }

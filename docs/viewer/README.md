@@ -34,11 +34,15 @@ the tree files are fetched from `docs/trees/`. Any static server works.
 ## Gallery
 
 `scripts/gallery.mjs` opens the viewer in headless Chromium (capture mode, `#...&capture=1`,
-shows only the 3D view) and, for every distinct tree file, saves a hero shot and three smaller
-views: a cut through the trunk, the tree from above, and a close-up of the trunk base and roots.
-The angles live at the top of the script. It drives the viewer through
-`window.__treePreview.shot()` (camera angle, zoom, view cut, toggles) and waits on `isIdle()`.
-Every picture on the gallery page links to that tree and seed in the viewer.
+shows only the 3D view) and renders every distinct tree file. The gallery page shows one card per
+tree type, grouped by name (`tree.OAK`, `tree.OAK_HUGE`, `tree.OAK_BIG` and any differing
+`biome.*-OAK*` copies; see `scripts/gallery-trees.mjs`): the giant's hero shot, and as smaller
+pictures the huge and big variants and a cut through the giant's trunk. So the giant (the type's
+"lead") gets `hero.jpg` and `cut.jpg`, each variant a square `view.jpg`. The angles live at the
+top of the script. It drives the viewer through `window.__treePreview.shot()` (camera angle,
+zoom, view cut, toggles) and waits on `isIdle()`. Every picture on the gallery page links to its
+own tree and seed in the viewer. `--types OAK,BIRCH` renders just those types, `--trees` just
+those files, and `--out <dir>` writes somewhere other than `docs/gallery/` for trying changes.
 
 `make preview-check` (CI) runs `scripts/gallery-check.mjs`, which fails when a distinct tree has
 no gallery entry, an entry is left over for a tree that is gone, or an entry's content hash (each

@@ -124,7 +124,7 @@ function jsRun(job, hasMaterial) {
   for (let i = 0; i < s.n; i++) {
     const k = s.kind[i];
     const tt = treeTypeMaterials(r.woodTypes[s.wood[i]], hasMaterial);
-    const mat = k === KIND_WOOD ? tt.wood : k === KIND_LEAF ? tt.leaf : k === KIND_HANGING ? tt.hanging : 'VINE';
+    const mat = k === KIND_WOOD ? tt.wood : k === KIND_LEAF ? tt.leaf : k === KIND_HANGING ? (s.orient[i] === 1 ? tt.hangingTip : tt.hanging) : 'VINE';
     const axis = k === KIND_WOOD ? AXIS[s.orient[i]] : '-';
     const face = k === KIND_VINE ? FACE[s.orient[i]] : k === KIND_HANGING && s.orient[i] === 1 ? 'TIP' : '-';
     const level = k === KIND_WOOD ? s.level[i] : -1;

@@ -7,14 +7,14 @@ Runs a real Paper server (already set up by `make server-setup`) twice:
    nothing went wrong (no errors, exceptions, or legacy-material warnings).
 2. placement: grows trees from the console at known spots and inspects the placed blocks with
    vanilla `execute if block`: planted on the soil surface, bark on the outside, the configured
-   core block, a hollow trunk, a malformed wood setting only warns, and a small tree
-   (tree.OAK_SMALL) stays small.
+   core block, a hollow trunk, a malformed wood setting only warns, huge and big trees
+   (tree.OAK_HUGE, tree.OAK_BIG) stay within their height, and an azalea tree gets a capped
+   column of rooted dirt under it.
 
 Exit status is non-zero on any failure; every problem is printed.
 """
 
 import argparse
-import json
 import json
 import queue
 import re
@@ -155,14 +155,17 @@ def phase_natural(args) -> list[str]:
         failures.append("natural: GiantTrees was not enabled")
     rendered = sum("Rendering tree" in l for l in lines)
     placed = sum("Placed tree at" in l for l in lines)
-    small = sum(bool(re.search(r"Rendering tree biome\.\S+_SMALL\.xml", l)) for l in lines)
-    print(f"natural: {rendered} trees rendered ({small} small), {placed} placed")
+    smaller = sum(bool(re.search(r"Rendering tree biome\.\S+_(HUGE|BIG)\.xml", l)) for l in lines)
+    azalea = sum("Rendering tree biome.LUSH_CAVES-" in l for l in lines)
+    print(f"natural: {rendered} trees rendered ({smaller} huge or big, {azalea} azalea over lush caves), "
+          f"{placed} placed")
     if placed == 0:
         failures.append("natural: no trees were placed")
-    # natural-tree-weights makes small trees 3x as likely as giants; with 10+ trees, none small
-    # is a ~1e-6 fluke, so it means the weights or the biome.*_SMALL files are not being used
-    if rendered >= 10 and small == 0:
-        failures.append(f"natural: {rendered} trees rendered but none was a small variant")
+    # natural-tree-weights makes huge trees 2x and big trees 4x as likely as giants, so 6 in 7
+    # trees are huge or big; with 10+ trees, none is a ~1e-8 fluke, so it means the weights or the
+    # biome.*_HUGE / *_BIG files are not being used
+    if rendered >= 10 and smaller == 0:
+        failures.append(f"natural: {rendered} trees rendered but none was a huge or big variant")
     failures += [f"natural: {p}" for p in scan_problems(lines)]
     return failures
 
@@ -195,6 +198,22 @@ SOIL = ("minecraft:grass_block", "minecraft:dirt", "minecraft:coarse_dirt", "min
 
 
 PLACEMENT_WORLD = "placement"
+# AzaleaRoots.MAX_COLUMN: the rooted dirt column under an azalea tree is at most this long
+AZALEA_ROOT_COLUMN = 20
+
+
+def azalea_root_checks(server: "Server", x: int, y: int, z: int) -> list[str]:
+    """The superflat world has 60 blocks of stone under the soil and no caves, so the rooted dirt
+    column under an azalea runs its full length (the base block and the 19 below it) and stops.
+    The tree's own roots may overwrite parts of it, so only some of it has to be rooted dirt."""
+    failures = []
+    probes = [y - d for d in (2, 5, 9, 14, AZALEA_ROOT_COLUMN - 1)]
+    if not any(server.test_block(x, py, z, "minecraft:rooted_dirt") for py in probes):
+        failures.append(f"no rooted dirt under the tree at {x} {probes[0]}..{probes[-1]} {z}")
+    below = y - AZALEA_ROOT_COLUMN
+    if server.test_block(x, below, z, "minecraft:rooted_dirt"):
+        failures.append(f"rooted dirt column longer than {AZALEA_ROOT_COLUMN} (at {x} {below} {z})")
+    return failures
 
 
 def set_property(server_dir: Path, key: str, value: str):
@@ -231,11 +250,6 @@ def phase_placement(args) -> list[str]:
         "layers": [{"block": "minecraft:bedrock", "height": 1}, {"block": "minecraft:stone", "height": 60},
                    {"block": "minecraft:dirt", "height": 3}, {"block": "minecraft:grass_block", "height": 1}],
         "biome": "minecraft:plains"}, separators=(",", ":")))
-    # explicit layers (26.x refuses a flat world without them); deep stone leaves room for roots
-    set_property(args.server_dir, "generator-settings", json.dumps({
-        "layers": [{"block": "minecraft:bedrock", "height": 1}, {"block": "minecraft:stone", "height": 60},
-                   {"block": "minecraft:dirt", "height": 3}, {"block": "minecraft:grass_block", "height": 1}],
-        "biome": "minecraft:plains"}, separators=(",", ":")))
     server = Server(args.server_dir, args.server_jar, args.java, args.server_dir / "placement.log")
     failures = []
     try:
@@ -243,6 +257,7 @@ def phase_placement(args) -> list[str]:
             return ["placement: server did not finish starting"]
 
         # (species, x, z, wood, trunk core block, max height above the base or None)
+        # wood None: no bark check, just the core block 3 above the base
         trees = [
             ("tree.OAK", 3000, 3000, "oak", "minecraft:stripped_oak_log", None),
             ("tree.DARK_OAK", 3400, 3000, "dark_oak", "minecraft:air", None),
@@ -251,7 +266,10 @@ def phase_placement(args) -> list[str]:
             ("tree.RED_MUSHROOM", 4200, 3000, None, "minecraft:mushroom_stem", None),
             # poplar blocks exist from 26.3 on; older servers grow the poplar file as a birch
             ("tree.POPLAR", 4600, 3000, "poplar", "minecraft:stripped_poplar_log", None),
-            ("tree.OAK_SMALL", 5000, 3000, "oak", "minecraft:stripped_oak_log", 40),
+            ("tree.OAK_HUGE", 5000, 3000, "oak", "minecraft:stripped_oak_log", 40),
+            ("tree.OAK_BIG", 5400, 3000, "oak", "minecraft:stripped_oak_log", 28),
+            # azalea trunks are oak; checked for its rooted dirt column below
+            ("tree.AZALEA", 5800, 3000, None, "#minecraft:oak_logs", None),
         ]
         for species, x, z, wood, core, max_height in trees:
             server.drain()
@@ -276,6 +294,8 @@ def phase_placement(args) -> list[str]:
                     "Poplar blocks are not available" in l for l in server.all_lines):
                 print("placement: no poplar blocks on this version, expecting a birch")
                 wood, core = "birch", "minecraft:stripped_birch_log"
+            if species == "tree.AZALEA":
+                failures += [f"placement: {species}: {f}" for f in azalea_root_checks(server, bx, by, bz)]
             if wood is None:
                 if not server.test_block(bx, by + 3, bz, core):
                     failures.append(f"placement: {species}: expected {core} at {bx} {by + 3} {bz}")
@@ -283,10 +303,12 @@ def phase_placement(args) -> list[str]:
             failures += [f"placement: {species}: {f}" for f in
                          trunk_checks(server, bx, by, bz, wood, core)]
             if max_height is not None:
-                # a small tree: trunk still there well above the ground, nothing above max_height
+                # a huge or big tree: trunk still there well above the ground, nothing above
+                # max_height
                 family = f"#minecraft:{wood}_logs"
-                if not server.test_block(bx, by + 10, bz, family):
-                    failures.append(f"placement: {species}: no trunk at {bx} {by + 10} {bz}")
+                trunk_y = by + min(10, max_height // 4)
+                if not server.test_block(bx, trunk_y, bz, family):
+                    failures.append(f"placement: {species}: no trunk at {bx} {trunk_y} {bz}")
                 for dy in (max_height, max_height + 5):
                     if not server.test_block(bx, by + dy, bz, "minecraft:air"):
                         failures.append(f"placement: {species}: taller than {max_height} "

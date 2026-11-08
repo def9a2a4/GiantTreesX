@@ -10,7 +10,7 @@ const USAGE = `
 Usage: node scripts/tree-stats.mjs [options] TREE...
 
 Generates each tree for every seed and prints its block counts and size. TREE is a name in
-src/main/resources ("OAK" = tree.OAK, "biome.FOREST-OAK", wildcards like "tree.*_SMALL") or a path
+src/main/resources ("OAK" = tree.OAK, "biome.FOREST-OAK", wildcards like "tree.*_HUGE") or a path
 to a tree .xml file anywhere (its .root.xml next to it is used if present). Lists may be
 comma-separated.
 
@@ -32,8 +32,8 @@ Options:
   -h, --help
 
 Examples:
-  node scripts/tree-stats.mjs OAK OAK_SMALL
-  node scripts/tree-stats.mjs --seeds 1..20 --summary 'tree.*_SMALL'
+  node scripts/tree-stats.mjs OAK OAK_HUGE
+  node scripts/tree-stats.mjs --seeds 1..20 --summary 'tree.*_HUGE'
   node scripts/tree-stats.mjs -m --style mixed_stripped --seeds 12345 tree.DARK_OAK
   node scripts/tree-stats.mjs --format csv .temp/work/tree.FOO.xml > foo.csv
 `;
