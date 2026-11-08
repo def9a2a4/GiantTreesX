@@ -66,3 +66,17 @@ server-reset-world:
 .PHONY: clean-test-server
 clean-test-server:
 	rm -rf $(TEST_SERVER_DIR)
+
+# Integration test (what CI runs): a throwaway server in test-server/ci-<version>/ with a fresh
+# world, natural generation plus console-grown trees whose blocks are checked. See
+# tools/ci/server_test.py. Needs a built jar (run `make build` first, or let CI provide it).
+CI_SERVER_DIR := $(TEST_SERVER_DIR)/ci-$(MINECRAFT_VERSION)
+
+.PHONY: server-test
+server-test: $(SERVER_JAR)
+	rm -rf $(CI_SERVER_DIR)
+	mkdir -p $(CI_SERVER_DIR)/plugins
+	echo "eula=true" > $(CI_SERVER_DIR)/eula.txt
+	printf "server-port=25599\nonline-mode=false\nlevel-seed=gianttrees\n" > $(CI_SERVER_DIR)/server.properties
+	cp $$(ls target/GiantTrees-*.jar | grep -v original) $(CI_SERVER_DIR)/plugins/
+	python3 tools/ci/server_test.py --server-dir $(CI_SERVER_DIR) --server-jar $(SERVER_JAR) --java $(JAVA)

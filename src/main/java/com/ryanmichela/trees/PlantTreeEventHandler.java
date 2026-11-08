@@ -34,6 +34,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
@@ -178,12 +179,16 @@ public class PlantTreeEventHandler implements Listener {
 			return;
 		}
 
+		// the event fires once per hand; only handle the main hand so nothing runs twice
+		if (event.getHand() != EquipmentSlot.HAND) {
+			return;
+		}
+
 		Block clickedBlock = event.getClickedBlock();
 		ItemStack itemInMainHand = event.getPlayer().getInventory().getItemInMainHand();
 
 		boolean goodtogo = event.getAction().equals(Action.RIGHT_CLICK_BLOCK)
-				&& clickedBlock.getType().equals(this.coreblock) && itemInMainHand.getType().equals(Material.BONE_MEAL)
-				&& itemInMainHand.getAmount() == 64;
+				&& clickedBlock.getType().equals(this.coreblock) && itemInMainHand.getType().equals(Material.BONE_MEAL);
 		if (!goodtogo) {
 			return;
 		}
@@ -207,14 +212,19 @@ public class PlantTreeEventHandler implements Listener {
 
 		// pass block matrix to each recipe to see if it matches
 		boolean matched = false;
+		boolean grown = false;
 		ListIterator<PhysicalCraftingRecipe> rit = recipes.listIterator();
 		while (rit.hasNext() && !matched) {
 			PhysicalCraftingRecipe recipe = rit.next();
 			if (recipe.matches(worldblocks)) {
+				matched = true;
 				if (cost.isAffordable(event.getPlayer())) {
 //					if (stackIsCorrect(itemInHand)) {
 						final String treeType = recipe.getTreeName().toUpperCase();
-						final Random seed = new Random(clickedBlock.getWorld().getSeed());
+						// mix in the position so trees grown in the same world don't all share one shape
+						final Random seed = new Random(clickedBlock.getWorld().getSeed()
+								^ ((long) clickedBlock.getX() * 341873128712L)
+								^ ((long) clickedBlock.getZ() * 132897987541L));
 						final File treeFile = new File(plugin.getDataFolder(), "tree." + treeType + ".xml");
 						final File rootFile = new File(plugin.getDataFolder(), "tree." + treeType + ".root.xml");
 						event.setCancelled(true);
@@ -222,13 +232,15 @@ public class PlantTreeEventHandler implements Listener {
 						popup.sendPopup(event.getPlayer(), "Stand back! Generating a giant " + treeType + " tree!");
 						clearBlocks(clickedBlock);
 						renderer.renderTree(clickedBlock.getLocation(), treeFile, rootFile, seed.nextInt(), true);
-						matched = true;
+						grown = true;
 //					}
 				}
 			}
 		}
 		if (!matched) {
 			popup.sendPopup(event.getPlayer(), "Unable to match this pattern");
+		} else if (!grown) {
+			popup.sendPopup(event.getPlayer(), "You need " + boneMealConsumed + " bone meal to grow this tree");
 		}
 	}
 

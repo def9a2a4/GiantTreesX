@@ -40,7 +40,7 @@ public class JungleVinePopulator {
     final List<WorldChange> newChanges = new LinkedList<>();
 
     for (final WorldChange change : tracker.getChanges()) {
-      if (isLog(change.material)) {
+      if (change.kind == WorldChange.Kind.WOOD) {
         north.x = change.location.getBlockX();
         north.y = change.location.getBlockY();
         north.z = change.location.getBlockZ() - 1;
@@ -55,16 +55,16 @@ public class JungleVinePopulator {
         west.z = change.location.getBlockZ();
 
         if ((r.nextInt(3) > 0) && (tracker.getChange(north) == null)) {
-          newChanges.add(new WorldChange(north.toVector(), Material.VINE, orient(BlockFace.SOUTH)));
+          newChanges.add(new WorldChange(north.toVector(), Material.VINE, orient(BlockFace.SOUTH), WorldChange.Kind.VINE, -1));
         }
         if ((r.nextInt(3) > 0) && (tracker.getChange(south) == null)) {
-          newChanges.add(new WorldChange(south.toVector(), Material.VINE, orient(BlockFace.NORTH)));
+          newChanges.add(new WorldChange(south.toVector(), Material.VINE, orient(BlockFace.NORTH), WorldChange.Kind.VINE, -1));
         }
         if ((r.nextInt(3) > 0) && (tracker.getChange(east) == null)) {
-          newChanges.add(new WorldChange(east.toVector(), Material.VINE, orient(BlockFace.WEST)));
+          newChanges.add(new WorldChange(east.toVector(), Material.VINE, orient(BlockFace.WEST), WorldChange.Kind.VINE, -1));
         }
         if ((r.nextInt(3) > 0) && (tracker.getChange(west) == null)) {
-          newChanges.add(new WorldChange(west.toVector(), Material.VINE, orient(BlockFace.EAST)));
+          newChanges.add(new WorldChange(west.toVector(), Material.VINE, orient(BlockFace.EAST), WorldChange.Kind.VINE, -1));
         }
       }
     }
@@ -72,18 +72,6 @@ public class JungleVinePopulator {
     for (final WorldChange newChange : newChanges) {
       tracker.addChange(newChange, false);
     }
-  }
-
-  private static boolean isLog(Material material) {
-    return  material == Material.ACACIA_LOG ||
-            material == Material.BIRCH_LOG ||
-            material == Material.CHERRY_LOG ||
-            material == Material.DARK_OAK_LOG ||
-            material == Material.JUNGLE_LOG ||
-            material == Material.OAK_LOG ||
-            material == Material.MANGROVE_LOG ||
-            material == Material.MANGROVE_ROOTS ||
-            material == Material.SPRUCE_LOG;
   }
 
   private static UnaryOperator<BlockData> orient(BlockFace direction) {

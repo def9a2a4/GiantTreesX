@@ -130,6 +130,11 @@ public class TreeRenderer {
                         }
                         AbstractParam.loading = false;
 
+                        WoodStyler.apply(changeTracker,
+                                WoodStyle.fromConfig(TreeRenderer.this.plugin.getConfig(),
+                                        tree.params.WoodType, TreeRenderer.this.plugin.getLogger()),
+                                seed);
+
                         final long generationDelay = withDelay ? TreeRenderer.this.plugin.getConfig().getInt("generation-delay", 0) * 20 : 0;
 
                         if (plugin.isEnabled()) {
@@ -138,7 +143,7 @@ public class TreeRenderer {
                                     .runTaskLater(TreeRenderer.this.plugin,
                                             () -> {
                                                 try {
-                                                    d3d.applyChanges();
+                                                    d3d.applyChanges(TreeRenderer.this.plugin);
                                                 } catch (final Exception e) {
                                                     TreeRenderer.this.plugin.getLogger().severe("Error rendering tree: " + e.getMessage());
                                                 }

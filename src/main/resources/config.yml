@@ -88,7 +88,42 @@ generation-delay: 3
 
 # verbose-logging: true
 
+# How tree wood and leaves are turned into blocks.
+wood:
+  # all_log:        every wood block is a log (the look before GiantTrees 4.0)
+  # mixed:          wood blocks (bark on all sides) on the outside, logs in the core
+  # mixed_stripped: wood blocks on the outside, stripped logs in the core
+  style: mixed
+  # Percent chance (0-100) that a tree's trunk is hollow above the ground.
+  hollow_chance: 0
+  # Blocks of wall, bark included, left around a hollow trunk.
+  hollow_wall_thickness: 2
+
+# Per wood type overrides, keyed by the WoodType of the tree file:
+# Oak, Spruce, Birch, Cherry, Jungle, Acacia, Dark Oak, Mangrove, Mangrove_roots.
+# Any key from the wood section can be overridden, and "leaves" sets a weighted mix of
+# leaf blocks (default: the wood type's own leaves).
+wood_types: {}
+  # Oak:
+  #   hollow_chance: 10
+  #   leaves:
+  #     OAK_LEAVES: 9
+  #     FLOWERING_AZALEA_LEAVES: 1
+  # Dark Oak:
+  #   style: mixed_stripped
+  #   hollow_chance: 25
+
+# Trees never replace blocks with block entities (chests, spawners, signs, ...) or the blocks
+# listed below.
+protect_block_entities: true
+protected_blocks:
+  - BEDROCK
+  - BARRIER
+  - END_PORTAL_FRAME
+  - END_PORTAL
+  - NETHER_PORTAL
+  - REINFORCED_DEEPSLATE
+
 # Only change the settings below if you are having lag problems
-BLOCKS_PER_TICK: 1500       # The number of blocks to modify in a single tick
-TICK_DELAY: 1               # The delay in ticks between block modification actions
-SIMPLE_LIGHTING: false      # Disables the second lighting pass
+BLOCKS_PER_TICK: 1500       # The number of blocks to place in a single tick
+TICK_DELAY: 1               # The delay in ticks between batches of blocks

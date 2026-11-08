@@ -27,6 +27,7 @@ import org.bukkit.Location;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Orientable;
 import org.bukkit.block.data.type.Leaves;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 import org.bukkit.util.noise.NoiseGenerator;
 import org.bukkit.util.noise.SimplexNoiseGenerator;
@@ -69,8 +70,8 @@ public class Draw3d {
     this.renderOrientation = renderOrientation;
   }
 
-  public void applyChanges() {
-    changeTracker.applyChanges(refPoint);
+  public void applyChanges(final Plugin plugin) {
+    changeTracker.applyChanges(refPoint, plugin);
   }
 
   public void drawCone(final Vector l1, final double rad1, final Vector l2,
@@ -99,7 +100,7 @@ public class Draw3d {
                                       (l1.getBlockZ() - centerPoint.getBlockZ())
                                           + p.q),
                            treeType.woodMaterial,
-                    orient(orientation), true);
+                    orient(orientation), WorldChange.Kind.WOOD, level, true);
           }
           break;
         case yMajor:
@@ -114,7 +115,7 @@ public class Draw3d {
                                                     (l1.getBlockZ() - centerPoint.getBlockZ())
                                                         + p.q),
                                          treeType.woodMaterial,
-                    orient(orientation), true);
+                    orient(orientation), WorldChange.Kind.WOOD, level, true);
           }
           break;
         case zMajor:
@@ -129,7 +130,7 @@ public class Draw3d {
                                                         + p.q,
                                                     centerPoint.getBlockZ()),
                                          treeType.woodMaterial,
-                    orient(orientation), true);
+                    orient(orientation), WorldChange.Kind.WOOD, level, true);
           }
           break;
       }
@@ -140,14 +141,14 @@ public class Draw3d {
                               final double width) {
     for (final Vector loc : plotEllipsoid(pos, length, width, length, 0)) {
       changeTracker.addChange(loc, treeType.leafMaterial,
-                                   persist(), false);
+                                   persist(), WorldChange.Kind.LEAVES, -1, false);
     }
   }
 
   public void drawRootJunction(final Vector pos, final double r) {
     for (final Vector loc : plotDownwardHemisphere(pos, r)) {
       changeTracker.addChange(loc, treeType.woodMaterial,
-              orient(Orientation.yMajor), true);
+              orient(Orientation.yMajor), WorldChange.Kind.WOOD, 0, true);
     }
   }
 
@@ -155,7 +156,7 @@ public class Draw3d {
                              final Orientation orientation, final int level) {
     for (final Vector loc : plotSphere(pos, r, level)) {
       changeTracker.addChange(loc, treeType.woodMaterial,
-              orient(orientation), true);
+              orient(orientation), WorldChange.Kind.WOOD, level, true);
     }
   }
 
@@ -177,10 +178,11 @@ public class Draw3d {
     return blockData -> {
       if (blockData instanceof Orientable) {
         Orientable orientable = (Orientable) blockData;
+        // toMcVector maps Arbaro's up axis onto Minecraft's y, so yMajor is vertical
         switch (orientation) {
-          case xMajor: orientable.setAxis(Axis.X);
-          case yMajor: orientable.setAxis(Axis.Z);
-          case zMajor: orientable.setAxis(Axis.Y);
+          case xMajor: orientable.setAxis(Axis.X); break;
+          case yMajor: orientable.setAxis(Axis.Y); break;
+          case zMajor: orientable.setAxis(Axis.Z); break;
         }
       }
       return blockData;

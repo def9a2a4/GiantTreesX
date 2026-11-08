@@ -14,7 +14,7 @@ commands:
       description: Creates a giant tree.
       aliases: gt
       permission: gianttrees.create
-      usage: "Usage: /<command> [species]"
+      usage: "Usage: /<command> <species> [<world> <x> <z>]"
 
 permissions:
    gianttrees.create:

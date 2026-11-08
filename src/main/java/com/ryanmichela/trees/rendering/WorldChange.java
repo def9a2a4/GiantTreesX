@@ -25,14 +25,30 @@ import java.util.function.UnaryOperator;
 
 class WorldChange {
 
-  public final Material material;
+  /** What part of the tree a change belongs to; decides how {@link WoodStyler} treats it. */
+  enum Kind {
+    WOOD, LEAVES, VINE
+  }
+
+  public Material material;
   public final UnaryOperator<BlockData> blockDataMutator;
   public final Vector location;
+  public final Kind kind;
+  /** Arbaro stem level for wood (0 = trunk), -1 when not applicable. */
+  public final int level;
 
   WorldChange(final Vector location, final Material material,
               final UnaryOperator<BlockData> blockDataMutator) {
+    this(location, material, blockDataMutator, Kind.WOOD, -1);
+  }
+
+  WorldChange(final Vector location, final Material material,
+              final UnaryOperator<BlockData> blockDataMutator, final Kind kind,
+              final int level) {
     this.location = location;
     this.material = material;
     this.blockDataMutator = blockDataMutator;
+    this.kind = kind;
+    this.level = level;
   }
 }

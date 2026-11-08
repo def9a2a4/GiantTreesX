@@ -63,3 +63,6 @@ version.properties
 
 ### Local test server (see Makefile) ###
 test-server/
+
+### Python ###
+__pycache__/

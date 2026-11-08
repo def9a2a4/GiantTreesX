@@ -17,6 +17,29 @@ Jason Weber and Joseph Penn as implemented by Wolfram Diestel in Arbaro.
 * http://sourceforge.net/projects/arbaro/
 * http://ftp.cs.duke.edu/courses/fall02/cps124/resources/p119-weber.pdf
 
+## Version 4.0
+Runs on Paper 1.21.x and 26.1 through 26.3 (one jar).
+
+* **Wood styles.** The new `wood` config section picks how trunks and branches are built:
+  `all_log` (the old look), `mixed` (wood blocks with bark on all sides outside, logs in the
+  core; the default) or `mixed_stripped` (stripped logs in the core). `hollow_chance` gives some
+  trunks a hollow interior. `wood_types` overrides any of this per wood type and can set a
+  weighted mix of leaf blocks.
+* **Less lag.** Trees are placed in batches of `BLOCKS_PER_TICK` every `TICK_DELAY` ticks, from
+  the bottom up, instead of all at once.
+* **Safer.** Trees no longer replace chests, spawners or other block entities, or the blocks in
+  `protected_blocks`.
+* **Growing** a tree only needs the configured `bone-meal-consumed` amount in your inventory,
+  not exactly 64 in hand. Grown and `/gt` trees no longer all share one shape per world.
+* `tree-create <species> <world> <x> <z>` works from the console.
+
+Existing configs keep working: missing settings fall back to the defaults above.
+
+### Development
+`make server` builds the plugin and runs a local Paper test server in `test-server/` (gitignored;
+`MINECRAFT_VERSION=1.21.11` for another version). `make server-test` runs the integration test
+that CI runs on every push.
+
 ## IMPORTANT NOTES for version 3.2
 Custom trees can be added to a biome by naming the tree and root files as such:
 
