@@ -1,3 +1,6 @@
+# other
+
+.claude/**
 
 # Created by https://www.gitignore.io/api/eclipse,maven
 .idea
@@ -66,3 +69,6 @@ test-server/
 
 ### Python ###
 __pycache__/
+
+### Scratch space for tools and agents ###
+.temp/
