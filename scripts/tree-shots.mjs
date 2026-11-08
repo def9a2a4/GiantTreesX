@@ -23,10 +23,10 @@ const USAGE = `
 Usage: node scripts/tree-shots.mjs [options] TREE...
 
 Renders each tree for every seed, view and wood style with the viewer and saves the images. TREE
-is a name in src/main/resources ("OAK" = tree.OAK, "biome.FOREST-OAK", wildcards like
-"tree.*_HUGE") or a path to a tree .xml file anywhere (its .root.xml next to it is used if
-present). Tree files are served straight from src/main/resources (or --dir), so docs/trees/ does
-not need to be synced first. Lists may be comma-separated.
+is a name in src/main/resources ("OAK" = tree.OAK, wildcards like "tree.*_HUGE") or a path to a
+tree .xml file anywhere (its .root.xml next to it is used if present). Tree files are served
+straight from src/main/resources (or --dir), so docs/trees/ does not need to be synced first.
+Lists may be comma-separated.
 
 Options:
   -s, --seeds LIST     seeds: numbers and ranges, e.g. 12345,7 or 1..4 (default 12345)
@@ -105,7 +105,7 @@ try {
 
 // ---- static server: docs/, with /trees/ (the viewer's tree list) served from the tree files ----
 const treeFiles = new Map(); // file name in /trees/ -> path
-for (const f of readdirSync(o.dir).filter((f) => /^(tree|biome)\..*\.xml$/.test(f))) treeFiles.set(f, join(o.dir, f));
+for (const f of readdirSync(o.dir).filter((f) => /^tree\..*\.xml$/.test(f))) treeFiles.set(f, join(o.dir, f));
 for (const t of trees) {
   treeFiles.set(t.name + '.xml', t.file);
   if (t.rootFile) treeFiles.set(t.name + '.root.xml', t.rootFile);

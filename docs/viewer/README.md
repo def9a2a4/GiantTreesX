@@ -15,9 +15,10 @@ Online: **https://def9a2a4.github.io/GiantTreesX/** is the gallery, and
 
 - `docs/index.html`: the gallery page, built from `docs/gallery/gallery.json`.
 - `docs/viewer/`: this tool.
-- `docs/trees/`: copies of the plugin's tree files (`src/main/resources/{tree,biome}.*.xml`) and
-  `index.json`, the list the viewer loads. `make docs-trees` refreshes them; CI fails if they are
-  out of date.
+- `docs/trees/`: copies of the plugin's tree files (`src/main/resources/tree.*.xml`),
+  `index.json`, the list the viewer loads, and `natural-trees.json`, the biomes each tree spawns in
+  (read from the `natural-trees` block of `src/main/resources/config.yml` by
+  `scripts/natural-trees.mjs`). `make docs-trees` refreshes them; CI fails if they are out of date.
 - `docs/gallery/`: the gallery's pictures, made by `make gallery`.
 
 Locally, from the repo root:
@@ -34,27 +35,28 @@ the tree files are fetched from `docs/trees/`. Any static server works.
 ## Gallery
 
 `scripts/gallery.mjs` opens the viewer in headless Chromium (capture mode, `#...&capture=1`,
-shows only the 3D view) and renders every distinct tree file. The gallery page shows one card per
-tree type, grouped by name (`tree.OAK`, `tree.OAK_HUGE`, `tree.OAK_BIG` and any differing
-`biome.*-OAK*` copies; see `scripts/gallery-trees.mjs`): the giant's hero shot, and as smaller
-pictures the huge and big variants and a cut through the giant's trunk. So the giant (the type's
-"lead") gets `hero.jpg` and `cut.jpg`, each variant a square `view.jpg`. The angles live at the
-top of the script. It drives the viewer through `window.__treePreview.shot()` (camera angle,
+shows only the 3D view) and renders every tree file. The gallery page shows one card per tree
+file, i.e. per type and size (`tree.OAK`, `tree.OAK_HUGE` and `tree.OAK_BIG` are three cards; see
+`scripts/gallery-trees.mjs`), each with a hero shot (`hero.jpg`), a cut through the middle
+(`cut.jpg`) and a view from above (`top.jpg`), and the biomes the tree spawns in (`spawnsIn`, from
+`config.yml`'s `natural-trees`; "Planting only" when none). The page filters the cards by category
+(trees, fungi) and size, and groups them by type or size. The angles live at the top of the
+script. It drives the viewer through `window.__treePreview.shot()` (camera angle,
 zoom, view cut, toggles) and waits on `isIdle()`. Every picture on the gallery page links to its
 own tree and seed in the viewer. `--types OAK,BIRCH` renders just those types, `--trees` just
 those files, and `--out <dir>` writes somewhere other than `docs/gallery/` for trying changes.
 
-`make preview-check` (CI) runs `scripts/gallery-check.mjs`, which fails when a distinct tree has
-no gallery entry, an entry is left over for a tree that is gone, or an entry's content hash (each
-entry records a hash of its tree files) no longer matches the tree files. Re-run `make gallery`
-after adding, removing or editing tree files.
+`make preview-check` (CI) runs `scripts/gallery-check.mjs`, which fails when a tree file has no
+gallery entry, an entry is left over for a tree that is gone, an entry's `spawnsIn` no longer
+matches `config.yml`, or an entry's content hash (each entry records a hash of its tree files) no
+longer matches the tree files. Re-run `make gallery` after adding, removing or editing tree files
+or changing `natural-trees`.
 
 ## What it does
 
-- **Tree picker.** Lists every `tree.*.xml` and `biome.*.xml` in the plugin's `src/main/resources/`, fetched when the page loads. Byte-identical biome files
-  are folded into their tree (`tree.OAK (also FOREST-OAK)`) and are also listed separately, so
-  every name can still be selected. The header shows the resolved WoodType, the size and the
-  block count.
+- **Tree picker.** Lists every `tree.*.xml` in the plugin's `src/main/resources/`, fetched when
+  the page loads, with the biomes it spawns in (`tree.OAK  (Forest)`). The header shows the
+  resolved WoodType, the size and the block count.
 - **Seed.** The int seed passed to `renderTree`. *Random* picks a new one. The tree and seed are
   kept in the URL hash, so a link reopens the same tree.
 - **3D view.** Merged chunk meshes with hidden faces culled, placeholder block textures,

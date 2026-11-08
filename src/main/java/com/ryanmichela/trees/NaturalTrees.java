@@ -120,10 +120,15 @@ final class NaturalTrees {
       return new NaturalTrees(entries);
     }
     final File folder = plugin.getDataFolder();
+    // bundled biomes are not checked: DAPPLED_FOREST only exists from 26.3 on
+    final Configuration defaults = config.getDefaults();
+    final ConfigurationSection bundled = defaults == null
+        ? null : defaults.getConfigurationSection("natural-trees");
     for (final String key : section.getKeys(false)) {
       final String biome = biomeKey(key);
       final String where = "config.yml: natural-trees." + key;
-      if (knownBiomes != null && !LUSH_CAVES.equals(biome) && !knownBiomes.contains(biome)) {
+      if (knownBiomes != null && !LUSH_CAVES.equals(biome) && !knownBiomes.contains(biome)
+          && (bundled == null || !bundled.contains(key, true))) {
         log.warning(where + ": no biome of that name on this server");
       }
       final Object value = section.get(key, null);

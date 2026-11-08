@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// Shows, compares, edits and derives Arbaro param files (tree.*.xml / biome.*.xml), editing the
+// Shows, compares, edits and derives Arbaro param files (tree.*.xml), editing the
 // files in place so their formatting (comments, quoting, spacing) is kept.
-import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { cli, die, resolveAll, resolveTrees, splitList, RES } from './lib/common.mjs';
 import { PARAM_BY_NAME, PARAM_DEFS, parseParamXml, validateParam } from '../docs/viewer/src/params.js';
@@ -10,27 +10,23 @@ const USAGE = `
 Usage: node scripts/tree-params.mjs COMMAND [options] ARGS
 
 TREE is a name in src/main/resources ("OAK" = tree.OAK.xml, "OAK.root" = tree.OAK.root.xml,
-"biome.FOREST-OAK", wildcards like "tree.*_SMALL") or a path to an .xml file.
+wildcards like "tree.*_HUGE") or a path to an .xml file.
 
 Commands:
   show TREE...                 table of every param (one column per file); params a file does
                                not set show Arbaro's default in parentheses
   diff TREE TREE...            the same, only the params whose values differ (numerically:
                                70 and 70.0 are the same)
-  set TREE... NAME=VALUE...    set params in place (checked against Arbaro's ranges). Files in
-                               the same directory that are byte-identical to an edited file (the
-                               biome.* copies of a tree.* file) are listed; --copies edits them too
+  set TREE... NAME=VALUE...    set params in place (checked against Arbaro's ranges)
   derive BASE NEW [NAME=VALUE...]
                                write tree.NEW.xml and tree.NEW.root.xml as copies of BASE's with
-                               the params changed (in the tree file), plus biome copies (--biome)
-  copies TREE...               list the byte-identical copies of each file
+                               the params changed (in the tree file). To spawn it naturally, add
+                               NEW to a biome in config.yml's natural-trees
 
 Options:
   -p, --params LIST   show/diff: only these params (comma-separated)
-      --copies        set: also edit the byte-identical copies of each file
       --add           set/derive: add params the file does not have yet (after the other params
                       of the same level) instead of failing
-      --biome BIOME   derive: also write biome.BIOME-NEW(.root).xml (repeatable)
       --force         derive: overwrite existing files; set: allow names Arbaro does not know
   -n, --dry-run       set/derive: print what would change, write nothing
   -d, --dir DIR       where tree names are looked up (default src/main/resources)
@@ -41,18 +37,16 @@ website uses (docs/trees/).
 
 Examples:
   node scripts/tree-params.mjs show OAK.root
-  node scripts/tree-params.mjs diff OAK OAK_SMALL
-  node scripts/tree-params.mjs diff -p Scale,Ratio,1Branches 'tree.*_SMALL'
-  node scripts/tree-params.mjs set --copies OAK_SMALL Scale=28.0 1Branches=11
-  node scripts/tree-params.mjs set tree.ACACIA.root 0Length=0.4 --copies
-  node scripts/tree-params.mjs derive --biome FOREST OAK OAK_TALL Scale=70.0
+  node scripts/tree-params.mjs diff OAK OAK_HUGE
+  node scripts/tree-params.mjs diff -p Scale,Ratio,1Branches 'tree.*_HUGE'
+  node scripts/tree-params.mjs set OAK_HUGE Scale=28.0 1Branches=11
+  node scripts/tree-params.mjs set tree.ACACIA.root 0Length=0.4
+  node scripts/tree-params.mjs derive OAK OAK_TALL Scale=70.0
 `;
 
 const { values: o, positionals } = cli(USAGE, {
   params: { type: 'string', short: 'p' },
-  copies: { type: 'boolean' },
   add: { type: 'boolean' },
-  biome: { type: 'string', multiple: true, default: [] },
   force: { type: 'boolean' },
   'dry-run': { type: 'boolean', short: 'n' },
   dir: { type: 'string', short: 'd', default: RES },
@@ -114,13 +108,6 @@ function applyParams(text, assigns, file) {
   return text;
 }
 
-/** Other files in the same directory with exactly this content. */
-function copiesOf(file, text = readFileSync(file, 'utf8')) {
-  const dir = dirname(file);
-  return readdirSync(dir).filter((f) => f.endsWith('.xml')).map((f) => join(dir, f))
-    .filter((f) => f !== file && readFileSync(f, 'utf8') === text);
-}
-
 function write(file, text) {
   if (!o['dry-run']) writeFileSync(file, text);
 }
@@ -152,13 +139,6 @@ switch (cmd) {
     table(files, cmd === 'diff');
     break;
   }
-  case 'copies': {
-    for (const f of resolveAll(args, { dir: o.dir, allowRoot: true })) {
-      const c = copiesOf(f.file);
-      console.log(`${f.name}: ${c.length ? c.map((x) => rel(x)).join(', ') : 'no copies'}`);
-    }
-    break;
-  }
   case 'set': {
     const assigns = parseAssigns(args.filter((a) => a.includes('=')));
     const files = resolveAll(args.filter((a) => !a.includes('=')), { dir: o.dir, allowRoot: true });
@@ -166,20 +146,12 @@ switch (cmd) {
     const written = [];
     for (const f of files) {
       const before = readFileSync(f.file, 'utf8');
-      const copies = copiesOf(f.file, before);
       let after;
       try { after = applyParams(before, assigns, f.file); } catch (e) { die(`${f.name}: ${e.message}`); }
       if (after === before) { console.log(`${f.name}: unchanged`); continue; }
       write(f.file, after);
       written.push(f.file);
       console.log(`${f.name}: ${diffLine(before, after)}${dryTag()}`);
-      if (copies.length && o.copies) {
-        for (const c of copies) write(c, after);
-        written.push(...copies);
-        console.log(`  and its copies: ${copies.map(rel).join(', ')}`);
-      } else if (copies.length) {
-        console.log(`  NOT updated, identical copies (pass --copies to edit them too): ${copies.map(rel).join(', ')}`);
-      }
     }
     if (!o['dry-run']) reminder(written);
     break;
@@ -195,8 +167,7 @@ switch (cmd) {
     let tree = readFileSync(base.file, 'utf8');
     const root = readFileSync(base.rootFile, 'utf8');
     try { tree = applyParams(tree, parseAssigns(rest), base.file); } catch (e) { die(e.message); }
-    const targets = [`tree.${name}`, ...o.biome.map((b) => `biome.${b}-${name}`)];
-    const out = targets.flatMap((t) => [[join(dir, t + '.xml'), tree], [join(dir, t + '.root.xml'), root]]);
+    const out = [[join(dir, `tree.${name}.xml`), tree], [join(dir, `tree.${name}.root.xml`), root]];
     const exist = out.filter(([f]) => existsSync(f)).map(([f]) => rel(f));
     if (exist.length && !o.force) die(`already exist (--force to overwrite): ${exist.join(', ')}`);
     for (const [f, text] of out) write(f, text);

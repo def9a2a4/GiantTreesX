@@ -50,16 +50,16 @@ export function parseSeeds(spec) {
 /** Positional args may also be comma-separated lists. */
 export const splitList = (args) => args.flatMap((a) => a.split(',')).map((s) => s.trim()).filter(Boolean);
 
-/** Tree names (tree.X / biome.Y-X, no .xml, no .root) in a directory, tree.* first. */
+/** Tree names (tree.X, no .xml, no .root) in a directory, sorted. */
 export function treeNames(dir = RES) {
-  const names = readdirSync(dir).filter((f) => f.endsWith('.xml') && !f.endsWith('.root.xml')).map((f) => f.slice(0, -4));
-  return names.sort((a, b) => (a.startsWith('tree.') === b.startsWith('tree.') ? a.localeCompare(b) : a.startsWith('tree.') ? -1 : 1));
+  const names = readdirSync(dir).filter((f) => /^tree\..*\.xml$/.test(f) && !f.endsWith('.root.xml')).map((f) => f.slice(0, -4));
+  return names.sort((a, b) => a.localeCompare(b));
 }
 
 /**
  * Resolves a tree argument to its files: a path to an .xml file, or a name looked up in `dir`
- * ("OAK" = "tree.OAK", "biome.FOREST-OAK", "OAK.root" for a root file). Names may contain * as
- * a wildcard ("tree.*_HUGE", "*MANGROVE*"); those expand to every matching tree file.
+ * ("OAK" = "tree.OAK", "OAK.root" for a root file). Names may contain * as a wildcard
+ * ("tree.*_HUGE", "*MANGROVE*"); those expand to every matching tree file.
  * Returns [{name, file, rootFile|null}]; with allowRoot, ".root" names resolve to the root file itself.
  */
 export function resolveTrees(arg, { dir = RES, allowRoot = false } = {}) {
@@ -77,7 +77,7 @@ export function resolveTrees(arg, { dir = RES, allowRoot = false } = {}) {
     root = true;
     name = name.slice(0, -5);
   }
-  if (!/^(tree|biome)\./.test(name)) name = 'tree.' + name;
+  if (!name.startsWith('tree.')) name = 'tree.' + name;
   let names;
   if (name.includes('*')) {
     const re = new RegExp('^' + name.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$');

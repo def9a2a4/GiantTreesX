@@ -6,8 +6,7 @@ viewer (`npm install --prefix docs/viewer && npx --prefix docs/viewer playwright
 or let `make tree-shots` do it). Every script prints its full usage with `--help`.
 
 All three take trees the same way. A name is looked up in `src/main/resources/` (or `--dir`):
-`OAK` means `tree.OAK.xml`, `biome.FOREST-OAK` a biome file, `OAK.root` a root file (only for
-`tree-params`), and `*` is a wildcard (`'tree.*_HUGE'`; quote it in the shell). A path to an
+`OAK` means `tree.OAK.xml`, `OAK.root` a root file (only for `tree-params`), and `*` is a wildcard (`'tree.*_HUGE'`; quote it in the shell). A path to an
 `.xml` file anywhere also works, with its `.root.xml` next to it if there is one. Lists may be
 comma-separated. Seeds are numbers and ranges: `12345,7` or `1..10`.
 
@@ -64,18 +63,16 @@ against Arbaro's types and ranges.
 node scripts/tree-params.mjs show OAK.root                 # every param; unset ones show (default)
 node scripts/tree-params.mjs diff OAK OAK_HUGE            # only the params that differ
 node scripts/tree-params.mjs diff -p Scale,Ratio,1Branches 'tree.*_HUGE'
-node scripts/tree-params.mjs set OAK_HUGE Scale=28.0 1Branches=11 --copies
+node scripts/tree-params.mjs set OAK_HUGE Scale=28.0 1Branches=11
 node scripts/tree-params.mjs set --add CHERRY_HUGE Levels=3 2Branches=6   # add params the file lacks
 node scripts/tree-params.mjs set -n 'tree.*_HUGE' LeafScale=8.0    # dry run
-node scripts/tree-params.mjs copies OAK OAK.root           # list byte-identical copies
-node scripts/tree-params.mjs derive --biome FOREST OAK OAK_TALL Scale=70.0 ScaleV=5.0
+node scripts/tree-params.mjs derive OAK OAK_TALL Scale=70.0 ScaleV=5.0
 ```
 
-Most `tree.*` files have byte-identical `biome.<BIOME>-<NAME>` copies, which the plugin uses for
-natural generation. `set` lists the copies of every file it edits and updates them too with
-`--copies` (otherwise they stay as they were and are no longer copies). Root files are separate:
-edit `NAME.root` to change the roots. `derive` writes `tree.NEW.xml` and `tree.NEW.root.xml` from
-an existing tree with some params changed, plus `biome.BIOME-NEW` copies for each `--biome`.
+Root files are separate: edit `NAME.root` to change the roots. `derive` writes `tree.NEW.xml` and
+`tree.NEW.root.xml` from an existing tree with some params changed. Which trees spawn naturally,
+and in which biomes, is set in `natural-trees` in `src/main/resources/config.yml`, not by file
+names: add `NEW` to a biome there to have it spawn.
 
 After changing files in `src/main/resources/`, run `make docs-trees` so the website's copies in
 `docs/trees/` match (CI checks this), and `make gallery` to re-render the gallery.

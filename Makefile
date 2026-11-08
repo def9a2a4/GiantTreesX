@@ -86,7 +86,8 @@ server-test: $(SERVER_JAR)
 PREVIEW_PORT ?= 8000
 VIEWER := docs/viewer
 
-# Copy src/main/resources/{tree,biome}.*.xml into docs/trees/ (CI checks they are in sync).
+# Copy src/main/resources/tree.*.xml into docs/trees/, with natural-trees.json from config.yml
+# (CI checks they are in sync).
 .PHONY: docs-trees
 docs-trees:
 	node $(VIEWER)/scripts/sync-trees.mjs

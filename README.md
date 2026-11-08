@@ -36,8 +36,7 @@ Runs on Paper 1.21.x and 26.1 through 26.3 (one jar).
   not exactly 64 in hand. Grown and `/gt` trees no longer all share one shape per world.
 * `tree-create <species> <world> <x> <z>` works from the console.
 * **Three tree sizes.** Every tree type comes as a giant, a huge and a big tree, all of which
-  work with `tree-create`; trees with biome files spawn naturally in all three sizes
-  (`biome.<BIOME>-<NAME>.xml`, `..._HUGE.xml`, `..._BIG.xml`):
+  work with `tree-create` and spawn naturally:
 
   | Size  | Tree file              | Height      | Trunk radius | Sapling pattern                  | Bone meal                      |
   |-------|------------------------|-------------|--------------|----------------------------------|--------------------------------|
@@ -49,11 +48,25 @@ Runs on Paper 1.21.x and 26.1 through 26.3 (one jar).
   alone when the tree grows). The most specific pattern that fits wins: a 5x5 ring before the
   3x3 ring inside it, a full 3x3 ring before a plus. Mixed patterns (mesapuzzle, cottonwood,
   swamp oak, azalea) have mixed 3x3 rings and pluses too; see `config.yml`.
-* **Weighted natural spawning.** `natural-tree-weights` sets how often each biome tree is
-  picked, keyed by the `<name>` part of `biome.<BIOME>-<name>.xml`; the defaults, `"*_HUGE": 2`
-  and `"*_BIG": 4`, make a biome grow 4 big and 2 huge trees for every giant. Unlisted trees
-  weigh `default` (1), so custom biome files keep spawning as before.
-* **Azalea trees grow above lush caves**, like vanilla: `biome.LUSH_CAVES-*.xml` trees spawn on
+* **Natural trees are set in `config.yml`**, not by copies of tree files. `natural-trees` lists
+  the trees of each biome (`FOREST: [OAK, COTTONWOOD]`); a name grows every size of that tree.
+  `natural-tree-sizes` sets how often each size is picked (by default 4 big and 2 huge trees for
+  every giant), and a biome can set its own chance, tree weights and sizes:
+  ```yaml
+  natural-trees:
+    PLAINS:
+      chance: 0.2                 # percent per chunk, instead of treeGrowthPercentChance
+      trees: {OAK: 3, BIRCH: 1}   # 3 oaks for every birch
+      sizes: {giant: 0}           # no giant trees here
+  ```
+  Biome variants share an entry unless they have their own (`FOREST` also covers
+  `FLOWER_FOREST`; the list is in `config.yml`). To add a custom tree, put `tree.<NAME>.xml` (and
+  `tree.<NAME>.root.xml`) in the plugin folder, name in capitals, and list `<NAME>` under a biome;
+  it also works with `tree-create`. To tune a tree for one biome only, give it its own file
+  (`tree.OAK_PLAINS.xml`) and list that. New tree files spawn without a restart; config changes
+  need one. Unknown tree and biome names are logged at startup. Natural trees grow only on
+  soil, never on or in another tree, and in water only in swamps.
+* **Azalea trees grow above lush caves**, like vanilla: `LUSH_CAVES` trees spawn on
   soil in any biome, but only where there is a lush cave somewhere below. An azalea tree (natural,
   grown or `tree-create`) gets vanilla's root system: a column of rooted dirt under its trunk,
   down toward the cave (at most 20 blocks, through stone and soil only), with hanging roots where
@@ -68,17 +81,22 @@ Runs on Paper 1.21.x and 26.1 through 26.3 (one jar).
   protrusions instead of smooth spheres and discs (mushroom and fungus caps keep their smooth
   domes). Huge crimson fungi grow weeping vines hanging from under the cap.
 
-Existing configs keep working: missing settings fall back to the defaults above. An older
+Existing configs keep working: missing settings fall back to the defaults above (a config
+without `natural-trees` grows the bundled trees). An older
 `planting-patterns` section has neither the 3x3 patterns nor the new trees' patterns; copy them
 from the bundled `config.yml` to grow those from saplings.
 
+**Upgrading: `biome.*.xml` files are no longer read.** Natural trees come from `natural-trees`
+in `config.yml` and the `tree.*.xml` files. The plugin never deletes files, and warns at
+startup while `biome.*.xml` files are still in its folder: delete them. If you edited or added
+one, rename it to `tree.<NAME>.xml` (and its `.root.xml`) and list `<NAME>` under its biome in
+`natural-trees`. `natural-tree-weights` is gone too (`natural-tree-sizes` and per-biome
+weights replace it); an old one is ignored with a warning.
+
 Upgrading from an earlier 4.0 build with small trees: the `*_SMALL` trees are now `*_HUGE`, and the
-`-2` variants (`ACACIA-2`, `BIRCH-2`, `DARK_OAK-2`) and `biome.MEADOW-AZALEA` are gone. The plugin
-never deletes tree files, so remove the old `*_SMALL` and `*-2*` files from the plugin folder (or
-they keep spawning next to the new ones; `biome.MEADOW-*` files are simply ignored now), and
-rename `*_small` planting patterns and the `"*_SMALL"` weight to `*_huge` / `"*_HUGE"`. An old
-`bone-meal-consumed-small` still sets the huge cost; an old `"*_SMALL"` weight just matches
-nothing once those files are gone.
+`-2` variants (`ACACIA-2`, `BIRCH-2`, `DARK_OAK-2`) are gone. Remove the old `tree.*_SMALL*` and
+`tree.*-2*` files from the plugin folder and rename `*_small` planting patterns to `*_huge`. An old
+`bone-meal-consumed-small` still sets the huge cost.
 
 ### Development
 `make server` builds the plugin and runs a local Paper test server in `test-server/` (gitignored;
@@ -92,26 +110,9 @@ Pages) and `make gallery` re-renders the gallery; see `docs/viewer/README.md`.
 screenshots and contact sheets, and showing, diffing and editing params; see `scripts/README.md`.
 
 ## IMPORTANT NOTES for version 3.2
-Custom trees can be added to a biome by naming the tree and root files as such:
-
-biome.&lt;biome&gt;-&lt;name&gt;.xml<br>
-biome.&lt;biome&gt;-&lt;name&gt;.root.xml
-
-Where &lt;biome&gt; is the biome in question - FOREST, BIRCH_FOREST, CHERRY_GROVE, DARK_FOREST, PALE_GARDEN, SWAMP, MANGROVE_SWAMP, JUNGLE, BADLANDS, SAVANNA, TAIGA, MUSHROOM_FIELDS, DAPPLED_FOREST (26.3+) and LUSH_CAVES (azalea trees: these spawn above lush caves, whatever the surface biome),<br>
-hyphen separator between biome and tree name is required,<br>
-and &lt;name&gt; is anything you want to call the tree using lowercase and uppercase letters, numbers, underscore or hyphen.
-
-For example. to have Oak, Cottonwood, and Bramble Wood trees spawn naturally in the FOREST biome, the file names could be something like this:
-
-biome.FOREST-BrambleWood.xml (along with .root.xml file)<br>
-biome.FOREST-COTTONWOOD.xml (along with .root.xml file)<br>
-biome.FOREST-Oak.xml (along with .root.xml file)<br>
-
-The base set of biome tree files that come with the plugin have been renamed to include the tree name in the filename. So biome.FOREST.xml and biome.FOREST.root.xml were just copies of tree.OAK.xml and tree.OAK.root.xml, so are now called biome.FOREST-OAK.xml and biome.FOREST-OAK.root.xml. Additional tree types you create should follow this naming convention.
-
-When a tree is going to be generated the tree files are read from the plugin directory for the biome in question, and a tree chosen at random from the selection. New trees can be placed in the folder and will be included in future selections. No restart or reload is required to get a new tree into a biome.
-
-You might want to remove the biome tree files from the plugin directory if upgrading from older versions, but given they don't follow the naming convention they will not be used.
+Version 3.2 added custom biome trees as `biome.<biome>-<name>.xml` files. Since 4.0 these files
+are no longer read: list trees under their biome in `natural-trees` in `config.yml` instead (see
+above).
 
 Feel free to send in your trees for inclusion in the plugin!
 

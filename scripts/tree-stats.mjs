@@ -10,9 +10,8 @@ const USAGE = `
 Usage: node scripts/tree-stats.mjs [options] TREE...
 
 Generates each tree for every seed and prints its block counts and size. TREE is a name in
-src/main/resources ("OAK" = tree.OAK, "biome.FOREST-OAK", wildcards like "tree.*_HUGE") or a path
-to a tree .xml file anywhere (its .root.xml next to it is used if present). Lists may be
-comma-separated.
+src/main/resources ("OAK" = tree.OAK, wildcards like "tree.*_HUGE") or a path to a tree .xml
+file anywhere (its .root.xml next to it is used if present). Lists may be comma-separated.
 
 Columns: blocks placed (after the wood style; hollow trunks remove blocks), wood / leaf / vine
 (vines + hanging moss) / root blocks, height above the ground, crown width (largest x or z extent
