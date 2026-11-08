@@ -14,6 +14,8 @@ Exit status is non-zero on any failure; every problem is printed.
 """
 
 import argparse
+import json
+import json
 import queue
 import re
 import subprocess
@@ -224,6 +226,16 @@ def phase_placement(args) -> list[str]:
     # covers real terrain), and flat chunks generate fast enough not to stall the server
     set_property(args.server_dir, "level-name", PLACEMENT_WORLD)
     set_property(args.server_dir, "level-type", "minecraft\\:flat")
+    # explicit layers (26.x refuses a flat world without them); deep stone leaves room for roots
+    set_property(args.server_dir, "generator-settings", json.dumps({
+        "layers": [{"block": "minecraft:bedrock", "height": 1}, {"block": "minecraft:stone", "height": 60},
+                   {"block": "minecraft:dirt", "height": 3}, {"block": "minecraft:grass_block", "height": 1}],
+        "biome": "minecraft:plains"}, separators=(",", ":")))
+    # explicit layers (26.x refuses a flat world without them); deep stone leaves room for roots
+    set_property(args.server_dir, "generator-settings", json.dumps({
+        "layers": [{"block": "minecraft:bedrock", "height": 1}, {"block": "minecraft:stone", "height": 60},
+                   {"block": "minecraft:dirt", "height": 3}, {"block": "minecraft:grass_block", "height": 1}],
+        "biome": "minecraft:plains"}, separators=(",", ":")))
     server = Server(args.server_dir, args.server_jar, args.java, args.server_dir / "placement.log")
     failures = []
     try:
