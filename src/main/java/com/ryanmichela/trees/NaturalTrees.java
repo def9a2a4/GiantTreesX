@@ -258,7 +258,7 @@ final class NaturalTrees {
     if (value instanceof Number n) {
       return n.doubleValue();
     }
-    log.warning(where + ": " + value + " is not a number; using " + fallback);
+    log.warning(where + ": \"" + value + "\" is not a number; using " + fallback);
     return fallback;
   }
 

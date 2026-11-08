@@ -171,7 +171,7 @@ switch (cmd) {
     const exist = out.filter(([f]) => existsSync(f)).map(([f]) => rel(f));
     if (exist.length && !o.force) die(`already exist (--force to overwrite): ${exist.join(', ')}`);
     for (const [f, text] of out) write(f, text);
-    console.log(`wrote ${out.map(([f]) => rel(f)).join(', ')}${dryTag()}`);
+    console.log(`${o['dry-run'] ? 'would write' : 'wrote'} ${out.map(([f]) => rel(f)).join(', ')}${dryTag()}`);
     if (rest.length) console.log(`  ${diffLine(readFileSync(base.file, 'utf8'), tree)}`);
     if (!o['dry-run']) reminder(out.map(([f]) => f));
     break;

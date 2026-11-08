@@ -34,11 +34,11 @@ natural-tree-sizes:
 # form needs trees: a biome without them grows nothing.
 #
 # Keys are biome names (PLAINS, FLOWER_FOREST, ...; any case; a namespace such as "minecraft:"
-# is optional and ignored, so datapack biomes go by their name alone). Some
-# names also cover their variants unless the variant has its own entry: FOREST covers
-# FLOWER_FOREST and WINDSWEPT_FOREST, BIRCH_FOREST covers OLD_GROWTH_BIRCH_FOREST, JUNGLE
-# covers SPARSE_JUNGLE, TAIGA covers SNOWY_TAIGA, SAVANNA covers SAVANNA_PLATEAU and
-# WINDSWEPT_SAVANNA, BADLANDS covers ERODED_BADLANDS and WOODED_BADLANDS.
+# is optional and ignored, so datapack biomes go by their name alone). Some names also cover
+# their variants unless the variant has its own entry: FOREST covers FLOWER_FOREST and
+# WINDSWEPT_FOREST, BIRCH_FOREST covers OLD_GROWTH_BIRCH_FOREST, JUNGLE covers SPARSE_JUNGLE,
+# TAIGA covers SNOWY_TAIGA, SAVANNA covers SAVANNA_PLATEAU and WINDSWEPT_SAVANNA, BADLANDS
+# covers ERODED_BADLANDS and WOODED_BADLANDS.
 # LUSH_CAVES trees grow on soil in any biome, but only above a lush cave. There they join the
 # surface biome's trees; the surface biome's chance applies, or LUSH_CAVES's where it has none.
 #

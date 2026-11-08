@@ -106,9 +106,11 @@ try {
 // ---- static server: docs/, with /trees/ (the viewer's tree list) served from the tree files ----
 const treeFiles = new Map(); // file name in /trees/ -> path
 for (const f of readdirSync(o.dir).filter((f) => /^tree\..*\.xml$/.test(f))) treeFiles.set(f, join(o.dir, f));
+// the viewer only lists tree.* files, so a path named otherwise (my-oak.xml) is served as tree.<name>
+const served = (t) => (t.name.startsWith('tree.') ? t.name : 'tree.' + t.name);
 for (const t of trees) {
-  treeFiles.set(t.name + '.xml', t.file);
-  if (t.rootFile) treeFiles.set(t.name + '.root.xml', t.rootFile);
+  treeFiles.set(served(t) + '.xml', t.file);
+  if (t.rootFile) treeFiles.set(served(t) + '.root.xml', t.rootFile);
 }
 const DOCS = join(REPO, 'docs');
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.xml': 'application/xml', '.png': 'image/png' };
@@ -160,7 +162,7 @@ const images = []; // { file, tree, seed, view, style }
 for (const t of trees) {
   for (const seed of seeds) {
     await page.goto('about:blank');
-    await page.goto(`${base}#tree=${encodeURIComponent(t.name)}&seed=${seed}&capture=1`);
+    await page.goto(`${base}#tree=${encodeURIComponent(served(t))}&seed=${seed}&capture=1`);
     // idle, or an error (a tree that fails to load or generate never becomes idle)
     await page.waitForFunction(() => window.__treePreview?.isIdle() || !document.getElementById('error')?.hidden, null, { timeout: 180000 });
     let err = await viewerError();
