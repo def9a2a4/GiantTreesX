@@ -59,6 +59,11 @@ final class NaturalTrees {
       this.files = files;
     }
 
+    /** Whether any listed file has a positive weight (whether or not it exists). */
+    boolean hasTrees() {
+      return this.files.values().stream().anyMatch(w -> w > 0);
+    }
+
     /** The files that exist in {@code folder} and have a positive weight. */
     List<Candidate> candidates(final File folder) {
       final List<Candidate> out = new ArrayList<>();
@@ -106,30 +111,58 @@ final class NaturalTrees {
                   + " in natural-trees and the sizes in natural-tree-sizes (see the bundled"
                   + " config.yml)");
     }
-    final double defaultChance = clampChance(config.getDouble("treeGrowthPercentChance"),
-                                             "treeGrowthPercentChance", log);
+    final double defaultChance = clampChance(
+        number(config.get("treeGrowthPercentChance"), 0.0, "treeGrowthPercentChance", log),
+        "config.yml: treeGrowthPercentChance", log);
+    final Configuration defaults = config.getDefaults();
+
+    // the bundled sizes, then the ones this config sets (a partial section keeps the rest)
     final Map<String, Double> sizes = new LinkedHashMap<>();
-    final ConfigurationSection sizeSection = ownOrDefault(config, "natural-tree-sizes");
     for (final String size : SIZES) {
-      sizes.put(size, sizeSection == null ? 1.0 : sizeSection.getDouble(size, 1.0));
+      sizes.put(size, 1.0);
+    }
+    if (defaults != null) {
+      readSizes(defaults.getConfigurationSection("natural-tree-sizes"), sizes,
+                "bundled natural-tree-sizes", log);
+    }
+    if (config.get("natural-tree-sizes", null) instanceof ConfigurationSection own) {
+      readSizes(own, sizes, "config.yml: natural-tree-sizes", log);
     }
 
     final Map<String, Entry> entries = new LinkedHashMap<>();
-    final ConfigurationSection section = ownOrDefault(config, "natural-trees");
+    final Object own = config.get("natural-trees", null);
+    final ConfigurationSection section;
+    if (own instanceof ConfigurationSection ownSection) {
+      section = ownSection;
+    } else {
+      if (own != null) {
+        log.warning("config.yml: natural-trees must be a map of biomes to trees; no natural trees"
+                    + " grow (\"natural-trees: {}\" says that without this warning)");
+        return new NaturalTrees(entries);
+      }
+      // no section in this config (an older one): the bundled trees
+      section = defaults == null ? null : defaults.getConfigurationSection("natural-trees");
+    }
     if (section == null) {
       return new NaturalTrees(entries);
     }
     final File folder = plugin.getDataFolder();
     // bundled biomes are not checked: DAPPLED_FOREST only exists from 26.3 on
-    final Configuration defaults = config.getDefaults();
-    final ConfigurationSection bundled = defaults == null
+    final Set<String> bundled = new HashSet<>();
+    final ConfigurationSection bundledSection = defaults == null
         ? null : defaults.getConfigurationSection("natural-trees");
+    if (bundledSection != null) {
+      bundledSection.getKeys(false).forEach(k -> bundled.add(biomeKey(k)));
+    }
     for (final String key : section.getKeys(false)) {
       final String biome = biomeKey(key);
       final String where = "config.yml: natural-trees." + key;
       if (knownBiomes != null && !LUSH_CAVES.equals(biome) && !knownBiomes.contains(biome)
-          && (bundled == null || !bundled.contains(key, true))) {
+          && !bundled.contains(biome)) {
         log.warning(where + ": no biome of that name on this server");
+      }
+      if (entries.containsKey(biome)) {
+        log.warning(where + ": " + biome + " is listed twice; using this one");
       }
       final Object value = section.get(key, null);
       double chance = defaultChance;
@@ -137,20 +170,14 @@ final class NaturalTrees {
       final Map<String, Double> ownSizes = new LinkedHashMap<>(sizes);
       if (value instanceof ConfigurationSection biomeSection) {
         trees = biomeSection.get("trees", null);
+        if (trees == null) {
+          log.warning(where + ": no trees listed, so none grow here (add trees: [...])");
+        }
         if (biomeSection.contains("chance", true)) {
-          chance = clampChance(biomeSection.getDouble("chance"), key + ".chance", log);
+          chance = clampChance(number(biomeSection.get("chance"), defaultChance,
+                                      where + ".chance", log), where + ".chance", log);
         }
-        final ConfigurationSection s = biomeSection.getConfigurationSection("sizes");
-        if (s != null) {
-          for (final String size : s.getKeys(false)) {
-            final String name = size.toLowerCase(Locale.ROOT);
-            if (SIZES.contains(name)) {
-              ownSizes.put(name, s.getDouble(size));
-            } else {
-              log.warning(where + ".sizes: unknown size " + size + " (giant, huge or big)");
-            }
-          }
-        }
+        readSizes(biomeSection.getConfigurationSection("sizes"), ownSizes, where + ".sizes", log);
       }
       final Map<String, Double> files = new LinkedHashMap<>();
       for (final Map.Entry<String, Double> tree : treeWeights(trees, where, log).entrySet()) {
@@ -159,13 +186,36 @@ final class NaturalTrees {
           log.warning(where + ": no tree file for " + tree.getKey() + " (looked for "
                       + String.join(", ", names) + ")");
         }
+        // a sized name (OAK_HUGE: 10) sets that file's weight even when OAK is listed too
+        final boolean sized = names.size() == 1;
         for (final String name : names) {
-          files.putIfAbsent(name, tree.getValue() * ownSizes.get(sizeOf(name)));
+          final double weight = tree.getValue() * ownSizes.get(sizeOf(name));
+          if (sized) {
+            files.put(name, weight);
+          } else {
+            files.putIfAbsent(name, weight);
+          }
         }
       }
       entries.put(biome, new Entry(biome, chance, files));
     }
     return new NaturalTrees(entries);
+  }
+
+  /** Puts the giant/huge/big weights of {@code section} (if any) into {@code sizes}. */
+  private static void readSizes(final ConfigurationSection section, final Map<String, Double> sizes,
+                                final String where, final Logger log) {
+    if (section == null) {
+      return;
+    }
+    for (final String size : section.getKeys(false)) {
+      final String name = size.toLowerCase(Locale.ROOT);
+      if (SIZES.contains(name)) {
+        sizes.put(name, weight(section.get(size), sizes.get(name), where + "." + size, log));
+      } else {
+        log.warning(where + ": unknown size " + size + " (giant, huge or big)");
+      }
+    }
   }
 
   /** Tree name -> weight from a list ([OAK, BIRCH], weight 1 each), a name, or a map. */
@@ -177,7 +227,7 @@ final class NaturalTrees {
     }
     if (trees instanceof ConfigurationSection map) {
       for (final String name : map.getKeys(false)) {
-        out.put(name.toUpperCase(Locale.ROOT), map.getDouble(name));
+        out.put(name.toUpperCase(Locale.ROOT), weight(map.get(name), 0.0, where + "." + name, log));
       }
     } else if (trees instanceof List<?> list) {
       for (final Object name : list) {
@@ -189,6 +239,27 @@ final class NaturalTrees {
       log.warning(where + ": expected a list of tree names, a name or a map of names to weights");
     }
     return out;
+  }
+
+  /** A weight: a number of 0 or more, else {@code fallback} with a warning. */
+  private static double weight(final Object value, final double fallback, final String where,
+                               final Logger log) {
+    final double w = number(value, fallback, where, log);
+    if (w < 0) {
+      log.warning(where + ": " + value + " is negative; using 0");
+      return 0.0;
+    }
+    return w;
+  }
+
+  /** A number from the config, else {@code fallback} with a warning (getDouble would give 0). */
+  private static double number(final Object value, final double fallback, final String where,
+                               final Logger log) {
+    if (value instanceof Number n) {
+      return n.doubleValue();
+    }
+    log.warning(where + ": " + value + " is not a number; using " + fallback);
+    return fallback;
   }
 
   /**
@@ -216,27 +287,13 @@ final class NaturalTrees {
     return GIANT;
   }
 
-  /** FLOWER_FOREST from "flower_forest", "minecraft:flower_forest", ... */
-  static String biomeKey(final String key) {
-    String k = key.trim();
-    if (k.regionMatches(true, 0, "minecraft:", 0, "minecraft:".length())) {
-      k = k.substring("minecraft:".length());
-    }
-    return k.toUpperCase(Locale.ROOT);
-  }
-
   /**
-   * A section as written in the server's config.yml, or the bundled one when that config has
-   * none (getConfigurationSection would return an empty section there, and get with a key would
-   * fill in bundled values for keys the admin removed).
+   * FLOWER_FOREST from "flower_forest", "minecraft:flower_forest", ... Any namespace is dropped,
+   * as the populator and the biome registry list go by the name alone.
    */
-  private static ConfigurationSection ownOrDefault(final Configuration config, final String path) {
-    final Object own = config.get(path, null);
-    if (own instanceof ConfigurationSection) {
-      return (ConfigurationSection) own;
-    }
-    final Configuration defaults = config.getDefaults();
-    return defaults == null ? null : defaults.getConfigurationSection(path);
+  static String biomeKey(final String key) {
+    final String k = key.trim();
+    return k.substring(k.indexOf(':') + 1).toUpperCase(Locale.ROOT);
   }
 
   private static double clampChance(final double chance, final String name, final Logger log) {

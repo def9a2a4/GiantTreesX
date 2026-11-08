@@ -12,7 +12,8 @@ worlds:
 # How often each size is picked when a tree grows naturally, relative to each other. Trees come
 # in three sizes: giant (tree.OAK.xml, 40-60 blocks tall), huge (tree.OAK_HUGE.xml, 25-40) and
 # big (tree.OAK_BIG.xml, about 14-24). With these, a biome grows 2 huge and 4 big trees for
-# every giant. 0 stops a size spawning. A biome in natural-trees can set its own sizes.
+# every giant (jungle and spruce have no big tree). 0 stops a size spawning. Sizes left out
+# keep these values. A biome in natural-trees can set its own sizes.
 natural-tree-sizes:
   giant: 1
   huge: 2
@@ -20,16 +21,20 @@ natural-tree-sizes:
 
 # Which trees grow naturally in each biome. A name grows that tree in every size it has a file
 # for: OAK grows tree.OAK.xml, tree.OAK_HUGE.xml and tree.OAK_BIG.xml (whichever exist), and
-# nothing else (not tree.OAK_PLAINS.xml). OAK_HUGE grows only tree.OAK_HUGE.xml.
+# nothing else (not tree.OAK_PLAINS.xml). OAK_HUGE grows only tree.OAK_HUGE.xml. Names are
+# the file names' capitals (tree.MY_TREE.xml is MY_TREE).
 #
 # A biome can also set its own chance, tree weights and sizes:
 #   PLAINS:
 #     chance: 0.2                 # percent per chunk, instead of treeGrowthPercentChance
 #     trees: {OAK: 3, BIRCH: 1}   # 3 oaks for every birch ([OAK, BIRCH] weighs each 1)
 #     sizes: {giant: 0}           # no giant trees here; huge and big keep natural-tree-sizes
-# A tree file is picked by its tree's weight times its size's weight.
+# A tree file is picked by its tree's weight times its size's weight. A sized name sets its own
+# weight even next to its tree: {OAK: 1, OAK_HUGE: 0} grows giant and big oaks only. The map
+# form needs trees: a biome without them grows nothing.
 #
-# Keys are biome names (PLAINS, FLOWER_FOREST, ...; any case, "minecraft:" optional). Some
+# Keys are biome names (PLAINS, FLOWER_FOREST, ...; any case; a namespace such as "minecraft:"
+# is optional and ignored, so datapack biomes go by their name alone). Some
 # names also cover their variants unless the variant has its own entry: FOREST covers
 # FLOWER_FOREST and WINDSWEPT_FOREST, BIRCH_FOREST covers OLD_GROWTH_BIRCH_FOREST, JUNGLE
 # covers SPARSE_JUNGLE, TAIGA covers SNOWY_TAIGA, SAVANNA covers SAVANNA_PLATEAU and
@@ -37,7 +42,8 @@ natural-tree-sizes:
 # LUSH_CAVES trees grow on soil in any biome, but only above a lush cave. There they join the
 # surface biome's trees; the surface biome's chance applies, or LUSH_CAVES's where it has none.
 #
-# Remove a biome (or give it []) to stop trees there; "natural-trees: {}" stops all of them.
+# Remove a biome (or give it []) to stop its own trees there (LUSH_CAVES trees still grow
+# above lush caves); "natural-trees: {}" stops all of them.
 # Deleting the whole section brings back these defaults. Unknown tree or biome names are
 # logged at startup. Keep this bundled list in the one-line [A, B] form: the website reads it.
 natural-trees:

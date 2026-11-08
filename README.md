@@ -35,8 +35,9 @@ Runs on Paper 1.21.x and 26.1 through 26.3 (one jar).
 * **Growing** a tree only needs the configured `bone-meal-consumed` amount in your inventory,
   not exactly 64 in hand. Grown and `/gt` trees no longer all share one shape per world.
 * `tree-create <species> <world> <x> <z>` works from the console.
-* **Three tree sizes.** Every tree type comes as a giant, a huge and a big tree, all of which
-  work with `tree-create` and spawn naturally:
+* **Three tree sizes.** Tree types come as a giant, a huge and a big tree (jungle and spruce
+  have no big tree: vanilla's 2x2 trees fill that size), all of which work with `tree-create`
+  and spawn naturally:
 
   | Size  | Tree file              | Height      | Trunk radius | Sapling pattern                  | Bone meal                      |
   |-------|------------------------|-------------|--------------|----------------------------------|--------------------------------|

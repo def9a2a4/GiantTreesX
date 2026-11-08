@@ -67,25 +67,24 @@ public class TreePopulator extends BlockPopulator {
 
       // the surface biome's trees, plus the LUSH_CAVES (azalea) trees when the column has a
       // lush cave below: like vanilla, they grow above lush caves in any biome. The surface
-      // biome's chance applies, or LUSH_CAVES's where the surface biome grows no trees.
+      // biome's chance applies, or LUSH_CAVES's where the surface biome grows no trees. Files
+      // are only looked for after the roll, as most chunks grow nothing.
       final NaturalTrees.Entry surface = this.natural.forBiome(biome);
       final NaturalTrees.Entry lush = ground.soil() && !ground.underFluid()
           ? this.natural.lushCaves() : null;
+      final NaturalTrees.Entry chanceOf = surface != null && surface.hasTrees() ? surface : lush;
+      if (chanceOf == null || random.nextDouble() * 100.0 >= chanceOf.chance) {
+        return;
+      }
       final File folder = this.plugin.getDataFolder();
       final List<NaturalTrees.Candidate> candidates = new ArrayList<>();
       if (surface != null) {
         candidates.addAll(surface.candidates(folder));
       }
-      final List<NaturalTrees.Candidate> lushTrees = lush == null
-          ? List.of() : lush.candidates(folder);
-      final NaturalTrees.Entry chanceOf = surface != null && !candidates.isEmpty() ? surface : lush;
-      if (chanceOf == null || random.nextDouble() * 100.0 >= chanceOf.chance) {
-        return;
-      }
-      // checked after the roll: it samples the biome all the way down
-      if (!lushTrees.isEmpty() && hasLushCaveBelow(world, refPoint.getBlockX(), refPoint.getBlockY(),
-                                                   refPoint.getBlockZ())) {
-        candidates.addAll(lushTrees);
+      // checked after the roll too: it samples the biome all the way down
+      if (lush != null && lush.hasTrees() && hasLushCaveBelow(world, refPoint.getBlockX(),
+                                                              refPoint.getBlockY(), refPoint.getBlockZ())) {
+        candidates.addAll(lush.candidates(folder));
       }
       // picked with the chunk's random from lists in config order, so a world seed always grows
       // the same trees
@@ -94,7 +93,9 @@ public class TreePopulator extends BlockPopulator {
         return;
       }
       if (this.plugin.getConfig().getBoolean("verbose-logging", false)) {
-        this.plugin.getLogger().info("Natural tree " + pick.fileName() + " in " + pick.biome());
+        // the entry it came from, and the biome there when that differs (FOREST (FLOWER_FOREST))
+        this.plugin.getLogger().info("Natural tree " + pick.fileName() + " in " + pick.biome()
+                                     + (pick.biome().equals(biome) ? "" : " (" + biome + ")"));
       }
       final File treeFile = new File(folder, pick.fileName());
       final File rootFile = new File(folder, pick.fileName().substring(0, pick.fileName().length() - 4)
