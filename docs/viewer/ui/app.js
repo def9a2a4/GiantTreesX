@@ -304,7 +304,7 @@ function colorForFn(mode, d) {
     return (i) => {
       const k = d.kind[i];
       if (k === 2) return KIND_COLORS.leaf;
-      if (k === 3) return KIND_COLORS.vine;
+      if (k >= 3) return KIND_COLORS.vine;
       const l = d.level[i];
       return LEVEL_COLORS[Math.max(0, Math.min(LEVEL_COLORS.length - 1, l))];
     };
@@ -435,7 +435,7 @@ function updateStats() {
   if (!d) return;
   const counts = new Map();
   let air = 0;
-  const kinds = [0, 0, 0, 0];
+  const kinds = [0, 0, 0, 0, 0];
   const parts = [0, 0, 0];
   let topY = -Infinity;
   for (let i = 0; i < d.n; i++) {
@@ -456,7 +456,7 @@ function updateStats() {
     ${rows}
     <tr class="sep"><td class="k">Total blocks</td><td class="num">${total.toLocaleString()}</td></tr>
     ${air ? `<tr><td class="k">Hollowed out (air)</td><td class="num">${air.toLocaleString()}</td></tr>` : ''}
-    <tr><td class="k">Wood / leaves / vines</td><td class="num">${kinds[1].toLocaleString()} / ${kinds[2].toLocaleString()} / ${kinds[3].toLocaleString()}</td></tr>
+    <tr><td class="k">Wood / leaves / vines + moss</td><td class="num">${kinds[1].toLocaleString()} / ${kinds[2].toLocaleString()} / ${(kinds[3] + (kinds[4] || 0)).toLocaleString()}</td></tr>
     <tr><td class="k">Tree / roots / junction</td><td class="num">${parts[0].toLocaleString()} / ${parts[1].toLocaleString()} / ${parts[2].toLocaleString()}</td></tr>
     <tr class="sep"><td class="k">Bounding box (x × y × z)</td><td class="num">${bb.maxX - bb.minX + 1} × ${bb.maxY - bb.minY + 1} × ${bb.maxZ - bb.minZ + 1}</td></tr>
     <tr><td class="k">X range / Z range</td><td class="num">${bb.minX}..${bb.maxX} / ${bb.minZ}..${bb.maxZ}</td></tr>
@@ -507,8 +507,19 @@ function pick(e) {
   const hits = raycaster.intersectObjects(meshGroup.children, false);
   if (!hits.length) { $('hover').textContent = ''; return; }
   const h = hits[0];
-  const n = h.face.normal;
-  const X = Math.floor(h.point.x - n.x * 0.5), Y = Math.floor(h.point.y - n.y * 0.5), Z = Math.floor(h.point.z - n.z * 0.5);
+  let X, Y, Z;
+  if (h.object.material === cutMat) {
+    // vine cards cross diagonally through their own cell, so the hit triangle's centre lies inside
+    // it (stepping back along the diagonal normal, as for block faces, can land in a neighbour)
+    const p = h.object.geometry.attributes.position;
+    const { a, b, c } = h.face;
+    X = Math.floor((p.getX(a) + p.getX(b) + p.getX(c)) / 3);
+    Y = Math.floor((p.getY(a) + p.getY(b) + p.getY(c)) / 3);
+    Z = Math.floor((p.getZ(a) + p.getZ(b) + p.getZ(c)) / 3);
+  } else {
+    const n = h.face.normal;
+    X = Math.floor(h.point.x - n.x * 0.5); Y = Math.floor(h.point.y - n.y * 0.5); Z = Math.floor(h.point.z - n.z * 0.5);
+  }
   const i = voxelAt(m, X, Y, Z);
   if (i < 0) { $('hover').textContent = ''; return; }
   const kind = ['', 'wood', 'leaf', 'vine'][d.kind[i]];
@@ -643,7 +654,7 @@ function updateSlicePlane() {
 // ---------------------------------------------------------------------------------------------
 // Wood style panel
 // ---------------------------------------------------------------------------------------------
-const LEAF_MATS = Object.keys(BLOCK_COLORS).filter((n) => n.endsWith('_LEAVES'));
+const LEAF_MATS = Object.keys(BLOCK_COLORS).filter((n) => n.endsWith('_LEAVES') || n.endsWith('_WART_BLOCK') || n.endsWith('_MUSHROOM_BLOCK') || n === 'SHROOMLIGHT');
 $('leafMaterials').innerHTML = LEAF_MATS.map((n) => `<option value="${n}">`).join('');
 
 $('woodStyle').addEventListener('change', () => { S.style.style = $('woodStyle').value; requestMaterials(); });

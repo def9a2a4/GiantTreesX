@@ -1191,4 +1191,4 @@ export const PARAM_DEFS = [
  }
 ];
 
-export const ENUMS = {"shape":["conical","spherical","hemispherical","cylindrical","tapered cylindrical","flame","inverse conical","tend flame","envelope"],"leafShape":["disc","disc1","disc2","disc3","disc4","disc5","disc6","disc7","disc8","disc9","square","sphere"],"woodType":["Oak","Spruce","Birch","Cherry","Jungle","Acacia","Dark Oak","Mangrove","Mangrove_roots"]};
+export const ENUMS = {"shape":["conical","spherical","hemispherical","cylindrical","tapered cylindrical","flame","inverse conical","tend flame","envelope"],"leafShape":["disc","disc1","disc2","disc3","disc4","disc5","disc6","disc7","disc8","disc9","square","sphere"],"woodType":["Oak","Spruce","Birch","Cherry","Jungle","Acacia","Dark Oak","Mangrove","Mangrove_roots","Pale Oak","Swamp Oak","Poplar","Azalea","Red Mushroom","Brown Mushroom","Crimson","Warped"]};

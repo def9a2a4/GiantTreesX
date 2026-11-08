@@ -40,6 +40,11 @@ The angles live at the top of the script. It drives the viewer through
 `window.__treePreview.shot()` (camera angle, zoom, view cut, toggles) and waits on `isIdle()`.
 Every picture on the gallery page links to that tree and seed in the viewer.
 
+`make preview-check` (CI) runs `scripts/gallery-check.mjs`, which fails when a distinct tree has
+no gallery entry, an entry is left over for a tree that is gone, or an entry's content hash (each
+entry records a hash of its tree files) no longer matches the tree files. Re-run `make gallery`
+after adding, removing or editing tree files.
+
 ## What it does
 
 - **Tree picker.** Lists every `tree.*.xml` and `biome.*.xml` in the plugin's `src/main/resources/`, fetched when the page loads. Byte-identical biome files
@@ -92,7 +97,9 @@ Every picture on the gallery page links to that tree and seed in the viewer.
 - `ui/mesher.js`: voxels to chunk meshes with hidden faces culled (no three.js dependency).
 - `ui/trees.js`: finds and fetches the plugin's tree files.
 - `ui/textures.js`: procedural placeholder textures (one atlas per tree).
-- `scripts/gallery.mjs`: renders `docs/gallery/`; `scripts/sync-trees.mjs`: refreshes `docs/trees/`.
+- `scripts/gallery.mjs`: renders `docs/gallery/`; `scripts/gallery-check.mjs`: checks it is up to
+  date; `scripts/gallery-trees.mjs`: the distinct trees both use; `scripts/sync-trees.mjs`:
+  refreshes `docs/trees/`.
 - `package.json`: Playwright, a dev dependency of the gallery script only.
 - `src/`: the port of the plugin's generator; `harness/` and `scripts/`: the check that keeps it
   in step with the Java code (see `harness/README.md`).

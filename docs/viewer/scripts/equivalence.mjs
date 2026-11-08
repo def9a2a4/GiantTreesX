@@ -24,7 +24,7 @@ import { bundledTrees } from './bundled.mjs';
 import { renderTree } from '../src/render.js';
 import { Draw3d } from '../src/draw3d.js';
 import { treeTypeMaterials, makeVoxelView, MaterialTable, woodStyleAssign } from '../src/materials.js';
-import { KIND_WOOD, KIND_LEAF, KIND_VINE, packKey } from '../src/voxels.js';
+import { KIND_WOOD, KIND_LEAF, KIND_VINE, KIND_HANGING, packKey } from '../src/voxels.js';
 import { javaBin } from './env.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -53,7 +53,7 @@ const refs = opt('ref', quick ? '0,64,0' : '0,64,0;123,70,-456').split(';').map(
 const treeFilter = opt('trees', null)?.split(',');
 const styles = flag('no-styles') ? [] : opt('styles', DEFAULT_STYLES.join(';')).split(';').filter(Boolean);
 
-function styleOpts(spec, seed) {
+function styleOpts(spec, seed, hasMaterial) {
   const [style, hollow, wall, leaves] = spec.split('/');
   return {
     style,
@@ -61,6 +61,7 @@ function styleOpts(spec, seed) {
     hollowWallThickness: Number(wall),
     leaves: leaves === '-' ? null : Object.fromEntries(leaves.split('+').map((kv) => { const [m, w] = kv.split(':'); return [m, Number(w)]; })),
     seed,
+    hasMaterial,
   };
 }
 
@@ -112,20 +113,20 @@ P.drawRootJunction = function (pos, r) { digest.calls++; mixI(4); mixV(pos); mix
 
 const AXIS = ['X', 'Y', 'Z']; // Draw3d.orient(): xMajor->X, yMajor->Y, zMajor->Z
 const FACE = ['SOUTH', 'NORTH', 'WEST', 'EAST'];
-const KIND = { [KIND_WOOD]: 'WOOD', [KIND_LEAF]: 'LEAVES', [KIND_VINE]: 'VINE' };
+const KIND = { [KIND_WOOD]: 'WOOD', [KIND_LEAF]: 'LEAVES', [KIND_VINE]: 'VINE', [KIND_HANGING]: 'HANGING' };
 
-function jsRun(job) {
+function jsRun(job, hasMaterial) {
   digest.h = 17;
   digest.calls = 0;
-  const r = renderTree({ treeXml: job.t.treeXml, rootXml: job.t.rootXml, seed: job.seed, refPoint: job.ref, treeName: job.t.name + '.xml' });
+  const r = renderTree({ treeXml: job.t.treeXml, rootXml: job.t.rootXml, seed: job.seed, refPoint: job.ref, treeName: job.t.name + '.xml', hasMaterial });
   const s = r.store;
   const map = new Map();
   for (let i = 0; i < s.n; i++) {
     const k = s.kind[i];
-    const wt = r.woodTypes[s.wood[i]];
-    const mat = k === KIND_WOOD ? treeTypeMaterials(wt).wood : k === KIND_LEAF ? treeTypeMaterials(wt).leaf : 'VINE';
+    const tt = treeTypeMaterials(r.woodTypes[s.wood[i]], hasMaterial);
+    const mat = k === KIND_WOOD ? tt.wood : k === KIND_LEAF ? tt.leaf : k === KIND_HANGING ? tt.hanging : 'VINE';
     const axis = k === KIND_WOOD ? AXIS[s.orient[i]] : '-';
-    const face = k === KIND_VINE ? FACE[s.orient[i]] : '-';
+    const face = k === KIND_VINE ? FACE[s.orient[i]] : k === KIND_HANGING && s.orient[i] === 1 ? 'TIP' : '-';
     const level = k === KIND_WOOD ? s.level[i] : -1;
     map.set(`${s.x[i]},${s.y[i]},${s.z[i]}`, `${KIND[k]},${level},${mat},${axis},${face}`);
   }
@@ -138,8 +139,11 @@ for (const job of jobs) {
   const jf = join(work, job.id + '.json');
   if (!existsSync(jf)) { rows.push({ job, err: 'no java output' }); continue; }
   const java = JSON.parse(readFileSync(jf, 'utf8'));
+  // the Java side runs against the paper-api the plugin compiles with, which may lack newer blocks
+  const absent = new Set(java.absentMaterials || []);
+  const hasMaterial = (name) => !absent.has(name);
   let js, jsErr = null;
-  try { js = jsRun(job); } catch (e) { jsErr = String(e); }
+  try { js = jsRun(job, hasMaterial); } catch (e) { jsErr = String(e); }
   if (java.error || jsErr) {
     const same = !!java.error && !!jsErr;
     rows.push({ job, err: `java: ${java.error ?? 'ok'} | js: ${jsErr ?? 'ok'}`, same });
@@ -171,7 +175,7 @@ for (const job of jobs) {
     const jsIndex = jkeys.map((k) => { const [x, y, z] = k.split(',').map(Number); return s.index.get(packKey(x, y, z)); });
     for (const st of java.styles) {
       const table = new MaterialTable();
-      const mats = woodStyleAssign(view, styleOpts(st.spec, job.seed), table);
+      const mats = woodStyleAssign(view, styleOpts(st.spec, job.seed, hasMaterial), table);
       let bad = 0;
       for (let i = 0; i < jkeys.length; i++) {
         if (jsIndex[i] === undefined) continue;

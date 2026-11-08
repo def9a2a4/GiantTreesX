@@ -2,7 +2,7 @@
 
 The browser preview (`docs/viewer/src/`) is a JavaScript port of the plugin's tree
 generator: Arbaro (`src/arbaro/java`), the Minecraft exporters, `Draw3d`, `WorldChangeTracker`,
-`JungleVinePopulator` and `WoodStyler` (`src/main/java/.../rendering`). The port has to match the
+`JungleVinePopulator`, `LeafDecorator` and `WoodStyler` (`src/main/java/.../rendering`). The port has to match the
 plugin block for block, up to a tiny floating-point tolerance (see "Java math"). This directory
 holds the Java side of the check.
 
@@ -75,7 +75,8 @@ Keep three things in step: the Java code, `GeometryHarness.run()` and the JS por
 | `WorldChangeTracker.addChange` overwrite rules, `WorldChange` fields | `VoxelStore.add()` in `src/voxels.js` (and the voxel line format in both harness files if new fields matter) |
 | `JungleVinePopulator` | `populateVines()` in `src/render.js`; HashMap iteration order lives in `src/javamap.js` |
 | `WoodStyler` / `WoodStyle` | `woodStyleAssign()` and helpers in `src/materials.js`; add a style spec to `DEFAULT_STYLES` in `equivalence.mjs` if there is a new knob (and teach `GeometryHarness.parseStyle` about it) |
-| `TreeType` (new wood types) | `treeTypeMaterials()` in `src/materials.js`, plus `BLOCK_COLORS` |
+| `LeafDecorator` | `decorateLeaves()` in `src/render.js` |
+| `TreeType` (new wood types, fallbacks, leaf mixes, decorations, `capLevel`) | `TREE_TYPES` / `treeTypeMaterials()` in `src/materials.js`, plus `BLOCK_COLORS` (and a tile in `ui/textures.js` for new kinds of block). The harness runs against the paper-api the plugin compiles with and reports which `TreeType` blocks it lacks (`absentMaterials`), so wood types newer than that API are checked in their fallback form |
 | Arbaro (`src/arbaro/java`) | `src/tree.js`, `src/params.js`, `src/transformation.js`; parameter definitions via `scripts/gen-param-defs.mjs` |
 | New math functions in Arbaro | use the JS `Math` equivalent in the port; the tolerance covers last-bit differences |
 

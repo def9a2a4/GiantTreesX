@@ -12,6 +12,7 @@ import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node
 import { join, extname, normalize } from 'node:path';
 import { chromium } from 'playwright';
 import { REPO } from './bundled.mjs';
+import { galleryTrees } from './gallery-trees.mjs';
 
 const DOCS = join(REPO, 'docs');
 const OUT = join(DOCS, 'gallery');
@@ -29,17 +30,7 @@ const SMALL = [
 ];
 
 // ---- distinct tree files (same grouping as ui/trees.js) ----
-const files = JSON.parse(readFileSync(join(DOCS, 'trees', 'index.json'), 'utf8'));
-const names = files.filter((f) => !f.endsWith('.root.xml')).map((f) => f.slice(0, -4))
-  .sort((a, b) => (a.startsWith('tree.') === b.startsWith('tree.') ? a.localeCompare(b) : a.startsWith('tree.') ? -1 : 1));
-const read = (f) => (existsSync(join(DOCS, 'trees', f)) ? readFileSync(join(DOCS, 'trees', f), 'utf8') : '');
-const groups = new Map(); // identity -> { name, aliases }
-for (const name of names) {
-  const key = read(name + '.xml') + '\0' + read(name + '.root.xml') + (name.includes('MANGROVE') ? 'M' : '');
-  if (groups.has(key)) groups.get(key).aliases.push(name);
-  else groups.set(key, { name, aliases: [] });
-}
-const trees = [...groups.values()].filter((t) => !only || only.includes(t.name));
+const trees = galleryTrees(DOCS).filter((t) => !only || only.includes(t.name));
 
 // ---- static server for docs/ ----
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.xml': 'application/xml' };
@@ -84,15 +75,17 @@ for (const t of trees) {
     await page.screenshot({ path: join(dir, s.file), type: 'jpeg', quality: 85 });
     images[s.file.replace('.jpg', '')] = { src: `gallery/${t.name}/${s.file}`, caption: s.caption };
   }
-  entries.push({ name: t.name, aliases: t.aliases, seed: SEED, ...info, viewer: `viewer/#tree=${encodeURIComponent(t.name)}&seed=${SEED}`, images });
+  // hash: the tree files' content, so gallery-check.mjs can tell when an entry is out of date
+  entries.push({ name: t.name, aliases: t.aliases, hash: t.hash, seed: SEED, ...info, viewer: `viewer/#tree=${encodeURIComponent(t.name)}&seed=${SEED}`, images });
   console.log(`${info.blocks} blocks`);
 }
 await browser.close();
 server.close();
 
 if (only && existsSync(join(OUT, 'gallery.json'))) {
-  // partial run: replace just these entries
-  const old = JSON.parse(readFileSync(join(OUT, 'gallery.json'), 'utf8')).trees;
+  // partial run: replace just these entries (and drop entries for trees that no longer exist)
+  const exist = new Set(galleryTrees(DOCS).map((t) => t.name));
+  const old = JSON.parse(readFileSync(join(OUT, 'gallery.json'), 'utf8')).trees.filter((o) => exist.has(o.name));
   for (const e of entries) {
     const i = old.findIndex((o) => o.name === e.name);
     if (i >= 0) old[i] = e; else old.push(e);

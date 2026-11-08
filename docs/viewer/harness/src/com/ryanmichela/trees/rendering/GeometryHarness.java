@@ -28,12 +28,14 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.MultipleFacing;
 import org.bukkit.block.data.Orientable;
+import org.bukkit.block.data.type.HangingMoss;
 import org.bukkit.block.data.type.Leaves;
 import org.bukkit.util.Vector;
 
 /**
  * Equivalence harness for docs/viewer: runs the plugin's real tree generation code
- * (Arbaro + Draw3d + exporters + JungleVinePopulator + WoodStyler) without a server and dumps
+ * (Arbaro + Draw3d + exporters + JungleVinePopulator + LeafDecorator + WoodStyler) without a
+ * server and dumps
  * every WorldChange as JSON.
  *
  * It mirrors the orchestration in TreeRenderer.renderTree() (which itself is not callable
@@ -51,7 +53,8 @@ import org.bukkit.util.Vector;
  *     is '-' or MATERIAL:weight+MATERIAL:weight (e.g. mixed_stripped/100/2/OAK_LEAVES:3+AZALEA_LEAVES:1)
  *   writes <out-dir>/<id>.json :
  *   {"id":..,"seed":..,"refHash":..,"scaleTree":..,"drawCalls":..,"drawDigest":..,
- *    "voxels":["x,y,z,KIND,level,MATERIAL,axis,face",...],
+ *    "absentMaterials":[TreeType block names this API version lacks],
+ *    "voxels":["x,y,z,KIND,level,MATERIAL,axis,face",...],  (face: TIP or - for HANGING)
  *    "matNames":[...],"styles":[{"spec":..,"mats":[index into matNames per voxel]}]}
  *   voxel order = tracker.getChanges() iteration order (the styled passes keep that order).
  */
@@ -77,6 +80,9 @@ public final class GeometryHarness {
             face = String.valueOf(args[0]);
           }
           return null;
+        case "setTip":
+          face = Boolean.TRUE.equals(args[0]) ? "TIP" : "-";
+          return null;
         case "hashCode":
           return System.identityHashCode(p);
         case "equals":
@@ -95,7 +101,7 @@ public final class GeometryHarness {
   static Recorder record(final java.util.function.UnaryOperator<BlockData> mutator) {
     final Recorder r = new Recorder();
     r.proxy = (BlockData) Proxy.newProxyInstance(GeometryHarness.class.getClassLoader(),
-        new Class<?>[] {Orientable.class, MultipleFacing.class, Leaves.class}, r);
+        new Class<?>[] {Orientable.class, MultipleFacing.class, Leaves.class, HangingMoss.class}, r);
     mutator.apply(r.proxy);
     return r;
   }
@@ -185,8 +191,11 @@ public final class GeometryHarness {
     };
   }
 
-  /** Parses mode/hollowChance/wallThickness/leaves (see class comment). */
-  static WoodStyle parseStyle(final String spec) {
+  /**
+   * Parses mode/hollowChance/wallThickness/leaves (see class comment). '-' leaves means the wood
+   * type's own leaves, as WoodStyle.fromConfig resolves them (its default mix, if any).
+   */
+  static WoodStyle parseStyle(final String spec, final String woodType) {
     final String[] p = spec.split("/");
     final Map<Material, Integer> leaves = new LinkedHashMap<>();
     if (!"-".equals(p[3])) {
@@ -194,6 +203,8 @@ public final class GeometryHarness {
         final String[] e = kv.split(":");
         leaves.put(Material.valueOf(e[0]), Integer.parseInt(e[1]));
       }
+    } else {
+      leaves.putAll(new TreeType(woodType).leafMix);
     }
     return new WoodStyle(WoodStyle.Mode.valueOf(p[0].toUpperCase(Locale.ROOT)),
         Double.parseDouble(p[1]), Integer.parseInt(p[2]), leaves);
@@ -202,7 +213,7 @@ public final class GeometryHarness {
   /** Mirrors TreeRenderer.renderTree() up to (not including) WoodStyler / applyChanges. */
   static WorldChangeTracker run(final File treeFile, final File rootFile, final int seed,
                                 final Location refPoint, final double[] scaleOut,
-                                final Digest dg) throws Exception {
+                                final String[] woodTypeOut, final Digest dg) throws Exception {
     AbstractParam.loading = true;
     final WorldChangeTracker changeTracker = new WorldChangeTracker();
     final Tree tree = loadTree(treeFile, seed);
@@ -214,7 +225,7 @@ public final class GeometryHarness {
     final Draw3d d3d = recordingDraw3d(refPoint, tree.params.Smooth, treeType, changeTracker,
         Draw3d.RenderOrientation.NORMAL, dg);
     new MinecraftExporter(tree, d3d).write();
-    if (tree.params.WoodType.equals("Jungle") || tree.params.WoodType.equals("Mangrove")) {
+    if (treeType.decoration == TreeType.Decoration.TRUNK_VINES) {
       JungleVinePopulator.populate(changeTracker, new Random(seed));
     }
     d3d.drawRootJunction(d3d.toMcVector(((Segment) ((Stem) tree.trunks.get(0)).stemSegments()
@@ -230,7 +241,9 @@ public final class GeometryHarness {
       new MinecraftExporter(root, d3dInverted).write();
     }
     AbstractParam.loading = false;
+    LeafDecorator.populate(changeTracker, treeType, seed);
     scaleOut[0] = tree.params.scale_tree;
+    woodTypeOut[0] = tree.params.WoodType;
     return changeTracker;
   }
 
@@ -268,7 +281,8 @@ public final class GeometryHarness {
         final List<String> matNames = new ArrayList<>();
         final List<int[]> styled = new ArrayList<>();
         try {
-          tracker = run(treeFile, rootFile, seed, ref, scale, dg);
+          final String[] woodType = new String[1];
+          tracker = run(treeFile, rootFile, seed, ref, scale, woodType, dg);
           order.addAll(tracker.getChanges());
           // WoodStyler mutates WorldChange.material in place: snapshot and restore per style
           final Map<WorldChange, Material> original = new IdentityHashMap<>();
@@ -276,7 +290,7 @@ public final class GeometryHarness {
             original.put(c, c.material);
           }
           for (final String spec : styleSpecs) {
-            WoodStyler.apply(tracker, parseStyle(spec), seed);
+            WoodStyler.apply(tracker, parseStyle(spec, woodType[0]), seed);
             final int[] mats = new int[order.size()];
             for (int i = 0; i < mats.length; i++) {
               final String name = order.get(i).material.name();
@@ -301,6 +315,16 @@ public final class GeometryHarness {
           out.print("{\"id\":" + jsonStr(id) + ",\"seed\":" + seed + ",\"refHash\":" + ref.hashCode()
               + ",\"scaleTree\":" + scale[0] + ",\"ms\":" + ms
               + ",\"drawCalls\":" + dg.calls + ",\"drawDigest\":" + dg.h);
+          // TreeType blocks this API version lacks (the JS port needs them to pick the same fallbacks)
+          out.print(",\"absentMaterials\":[");
+          boolean firstAbsent = true;
+          for (final String name : TreeType.candidateMaterialNames()) {
+            if (Material.getMaterial(name) == null) {
+              out.print((firstAbsent ? "" : ",") + jsonStr(name));
+              firstAbsent = false;
+            }
+          }
+          out.print("]");
           if (error != null) {
             out.print(",\"error\":" + jsonStr(error));
           }

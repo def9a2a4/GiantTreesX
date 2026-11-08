@@ -1,10 +1,11 @@
 // Port of TreeRenderer.renderTree orchestration (minus scheduling / world application),
 // MinecraftExporter / MinecraftStemExporter / MinecraftSegmentExporter / MinecraftLeafExporter,
-// and JungleVinePopulator.
+// JungleVinePopulator and LeafDecorator.
 import { Tree } from './tree.js';
 import { ParamDB } from './params.js';
 import { Draw3d, orient } from './draw3d.js';
-import { VoxelStore, KIND_WOOD, KIND_VINE, PART_TREE, PART_ROOT } from './voxels.js';
+import { VoxelStore, KIND_WOOD, KIND_LEAF, KIND_VINE, KIND_HANGING, PART_TREE, PART_ROOT } from './voxels.js';
+import { treeTypeMaterials, DECORATION_TRUNK_VINES, DECORATION_LEAF_VINES, DECORATION_HANGING } from './materials.js';
 import { locationHashCode, SimplexNoiseGenerator } from './noise.js';
 import { hashMapIterationOrder } from './javamap.js';
 import { JavaRandom } from './jrandom.js';
@@ -82,6 +83,69 @@ function populateVines(store, seed) {
   return { treeified };
 }
 
+// ---- LeafDecorator ----
+const VINE_ONE_IN = 5, VINE_MIN = 2, VINE_MAX = 12;
+const HANGING_ONE_IN = 4, HANGING_MIN = 1, HANGING_MAX = 6;
+const SIDES = [[0, -1], [0, 1], [1, 0], [-1, 0]]; // N, S, E, W; vine face index = side index
+const GOLD32 = 0x9e3779b1 | 0;
+
+/** LeafDecorator.hash: 32-bit position hash (Java int arithmetic). */
+export function decoHash(seed, x, y, z, salt) {
+  let h = seed | 0;
+  h = (Math.imul(h, GOLD32) + x) | 0;
+  h = (Math.imul(h, GOLD32) + y) | 0;
+  h = (Math.imul(h, GOLD32) + z) | 0;
+  h = (Math.imul(h, GOLD32) + salt) | 0;
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b | 0);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35 | 0);
+  h ^= h >>> 16;
+  return h | 0;
+}
+const floorMod = (a, n) => ((a % n) + n) % n;
+
+/** LeafDecorator.populate: vines down leaf sides or hanging blocks below leaves. */
+function decorateLeaves(store, decoration, seed) {
+  const n = store.n; // only blocks the tree had before decorating are tested
+  if (decoration === DECORATION_LEAF_VINES) {
+    const cells = new Map(); // "x,y,z" -> [x, y, z, face]; where strands meet the lower face wins
+    for (let i = 0; i < n; i++) {
+      if (store.kind[i] !== KIND_LEAF) continue;
+      const x = store.x[i], y = store.y[i], z = store.z[i];
+      for (let s = 0; s < 4; s++) {
+        const h = decoHash(seed, x, y, z, s);
+        if (floorMod(h, VINE_ONE_IN) !== 0) continue;
+        const vx = x + SIDES[s][0], vz = z + SIDES[s][1];
+        const length = VINE_MIN + floorMod(h >>> 8, VINE_MAX - VINE_MIN + 1);
+        for (let vy = y; vy > y - length && vy >= 1; vy--) {
+          if (store.has(vx, vy, vz)) break;
+          const key = `${vx},${vy},${vz}`;
+          const old = cells.get(key);
+          if (!old || s < old[3]) cells.set(key, [vx, vy, vz, s]);
+        }
+      }
+    }
+    for (const [vx, vy, vz, s] of cells.values()) store.add(vx, vy, vz, KIND_VINE, -1, s, PART_TREE, 0, false);
+  } else if (decoration === DECORATION_HANGING) {
+    const added = [];
+    for (let i = 0; i < n; i++) {
+      if (store.kind[i] !== KIND_LEAF) continue;
+      const x = store.x[i], y = store.y[i], z = store.z[i];
+      const h = decoHash(seed, x, y, z, 4);
+      if (floorMod(h, HANGING_ONE_IN) !== 0) continue;
+      const length = HANGING_MIN + floorMod(h >>> 8, HANGING_MAX - HANGING_MIN + 1);
+      let bottom = y;
+      for (let vy = y - 1; vy >= y - length && vy >= 1; vy--) {
+        if (store.has(x, vy, z)) break;
+        bottom = vy;
+      }
+      for (let vy = y - 1; vy >= bottom; vy--) added.push(x, vy, z, vy === bottom ? 1 : 0);
+    }
+    for (let j = 0; j < added.length; j += 4) store.add(added[j], added[j + 1], added[j + 2], KIND_HANGING, -1, added[j + 3], PART_TREE, 0, false);
+  }
+}
+
 /**
  * Render a tree exactly like TreeRenderer.renderTree, up to (not including) WoodStyler: the
  * store holds the tracker's changes with their raw TreeType materials. Run woodStyleAssign
@@ -95,6 +159,7 @@ function populateVines(store, seed) {
  * @param {{x:number,y:number,z:number}} [o.refPoint]  Location (world null) - default 0,64,0
  * @param {string} [o.treeName]      file name; "MANGROVE" in it raises refPoint by 18 like the plugin
  * @param {number} [o.worldHash]     World.hashCode() contribution to Location.hashCode (0 = null world)
+ * @param {(name: string) => boolean} [o.hasMaterial]  blocks the server has (TreeType fallbacks)
  */
 export function renderTree(o) {
   const t0 = (typeof performance !== 'undefined' ? performance : Date).now();
@@ -118,11 +183,13 @@ export function renderTree(o) {
   tree.make();
   const tTree = (typeof performance !== 'undefined' ? performance : Date).now();
   const noise = new SimplexNoiseGenerator(ref.hash);
+  const treeType = treeTypeMaterials(tree.params.WoodType, o.hasMaterial || undefined);
   const d3d = new Draw3d(ref, tree.params.Smooth, woodIndex(tree.params.WoodType), store, false, PART_TREE, noise);
+  d3d.capLevel = treeType.capLevel;
   exportTree(tree, d3d);
 
   let vineInfo = null;
-  if (tree.params.WoodType === 'Jungle' || tree.params.WoodType === 'Mangrove') {
+  if (treeType.decoration === DECORATION_TRUNK_VINES) {
     vineInfo = populateVines(store, seed);
   }
 
@@ -139,8 +206,10 @@ export function renderTree(o) {
     root.make();
     const d3dInv = new Draw3d(ref, root.params.Smooth, woodIndex(root.params.WoodType), store, true, PART_ROOT, noise);
     d3dInv.cache = d3d.cache; // same generator -> same values
+    d3dInv.capLevel = treeTypeMaterials(root.params.WoodType, o.hasMaterial || undefined).capLevel;
     exportTree(root, d3dInv);
   }
+  decorateLeaves(store, treeType.decoration, seed);
   const t1 = (typeof performance !== 'undefined' ? performance : Date).now();
   return {
     store,

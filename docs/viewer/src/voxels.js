@@ -4,7 +4,8 @@
 export const KIND_WOOD = 1;
 export const KIND_LEAF = 2;
 export const KIND_VINE = 3;
-export const KIND_NAMES = { 1: 'wood', 2: 'leaf', 3: 'vine' };
+export const KIND_HANGING = 4; // WorldChange.Kind.HANGING (pale hanging moss); orient 1 = tip
+export const KIND_NAMES = { 1: 'wood', 2: 'leaf', 3: 'vine', 4: 'hanging' };
 
 export const PART_TREE = 0;
 export const PART_ROOT = 1;
@@ -36,7 +37,7 @@ export class VoxelStore {
     this.z = grow(this.z, Int32Array);
     this.kind = grow(this.kind, Uint8Array);
     this.level = grow(this.level, Int8Array);
-    this.orient = grow(this.orient, Int8Array);   // Orientation enum for wood, face for vines
+    this.orient = grow(this.orient, Int8Array);   // Orientation enum for wood, face for vines, 1 = tip for hanging
     this.part = grow(this.part, Uint8Array);
     this.wood = grow(this.wood, Uint8Array);      // index into woodTypes[]
     this.cap = cap;

@@ -132,12 +132,13 @@ export function mesh(data, opts) {
   const pl = opts.plane || null;
   let visible = 0;
   const vines = []; // vines are not solid: they never hide or shade neighbouring faces
+  const vineCells = new Map(); // grid cell -> vine index + 1, for voxelAt (vines are not in `grid`)
   for (let i = 0; i < n; i++) {
     const m = info[mat[i]];
     if (!m || m.air) continue;
     const k = kind[i];
     if (k === 2 && !opts.showLeaves) continue;
-    if (k === 3 && !opts.showVines) continue;
+    if (k >= 3 && !opts.showVines) continue; // vines and hanging moss
     if (part[i] === 1 && !opts.showRoots) continue;
     const Y = y[i] + yOff;
     if (Y > yCapHi || Y < yCapLo) continue;
@@ -146,7 +147,8 @@ export function mesh(data, opts) {
       if (keepUpper ? c < slicePos : c > slicePos) continue;
     }
     if (pl && pl.nx * (x[i] + 0.5) + pl.ny * (Y + 0.5) + pl.nz * (z[i] + 0.5) + pl.d < 0) continue;
-    if (k === 3) { vines.push(i); visible++; continue; }
+    // vines (3) and hanging blocks such as pale moss (4) are cards, not solid blocks
+    if (k >= 3) { vines.push(i); vineCells.set((x[i] - ox) + (Y - oy) * sx + (z[i] - oz) * sxy, i + 1); visible++; continue; }
     grid[(x[i] - ox) + (Y - oy) * sx + (z[i] - oz) * sxy] = i + 1;
     if (opts.translucent && m.translucent) trans[i] = 1;
     visible++;
@@ -282,14 +284,15 @@ export function mesh(data, opts) {
   }
   const t1 = (typeof performance !== 'undefined' ? performance : Date).now();
   return {
-    chunks, grid, dims: [sx, sy, sz], origin: [ox, oy, oz], faces, visible,
+    chunks, grid, vineCells, dims: [sx, sy, sz], origin: [ox, oy, oz], faces, visible,
     bbox: { minX, minY, minZ, maxX, maxY, maxZ }, ms: t1 - t0,
   };
 }
 
-/** Voxel index at display coords (or -1), using a mesh() result's grid. */
+/** Voxel index at display coords (or -1), using a mesh() result's grid (and its vine cells). */
 export function voxelAt(m, X, Y, Z) {
   const gx = X - m.origin[0], gy = Y - m.origin[1], gz = Z - m.origin[2];
   if (gx < 0 || gy < 0 || gz < 0 || gx >= m.dims[0] || gy >= m.dims[1] || gz >= m.dims[2]) return -1;
-  return m.grid[gx + gy * m.dims[0] + gz * m.dims[0] * m.dims[1]] - 1;
+  const cell = gx + gy * m.dims[0] + gz * m.dims[0] * m.dims[1];
+  return (m.grid[cell] || (m.vineCells && m.vineCells.get(cell)) || 0) - 1;
 }

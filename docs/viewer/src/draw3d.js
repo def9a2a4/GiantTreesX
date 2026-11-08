@@ -71,6 +71,7 @@ export class Draw3d {
     this.wood = woodIndex;
     this.inverted = inverted;
     this.part = part;
+    this.capLevel = Infinity; // TreeType.capLevel, set by render.js
     this.cache = new Map();
   }
 
@@ -94,8 +95,10 @@ export class Draw3d {
     return (this.rawNoise(x, y, z) + 1) * this.noiseIntensity * multiplier * levelScale;
   }
 
+  /** Draw3d.addWood: from capLevel on (TreeType.capLevel) stems are leaf blocks that never overwrite. */
   addWood(x, y, z, orientation, level, part = this.part) {
-    this.store.add(x, y, z, KIND_WOOD, level, orientation, part, this.wood, true);
+    if (level >= this.capLevel) this.store.add(x, y, z, KIND_LEAF, -1, -1, part, this.wood, false);
+    else this.store.add(x, y, z, KIND_WOOD, level, orientation, part, this.wood, true);
   }
 
   drawCone(l1, rad1, l2, rad2, level) {
