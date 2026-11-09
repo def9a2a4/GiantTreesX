@@ -278,10 +278,14 @@ def phase_placement(args) -> list[str]:
         ]
         for species, x, z, wood, core, max_height in trees:
             server.drain()
-            server.send(f"tree-create {species} {PLACEMENT_WORLD} {x} {z}")
+            # tree.OAK_HUGE -> /gt grow oak huge
+            name = species.removeprefix("tree.")
+            size = next((s for s in ("huge", "big") if name.endswith("_" + s.upper())), "giant")
+            tree_type = name.removesuffix("_" + size.upper()).lower()
+            server.send(f"gt grow {tree_type} {size} {x} {z} {PLACEMENT_WORLD}")
             grow = server.wait_for(rf"Growing {re.escape(species)} at {PLACEMENT_WORLD} (-?\d+) (-?\d+) (-?\d+)", 60)
             if not grow:
-                failures.append(f"placement: tree-create {species} did not start")
+                failures.append(f"placement: gt grow {tree_type} {size} did not start")
                 continue
             bx, by, bz = map(int, grow.groups())
             # the tree's base must be the soil surface (not leaves, plants, snow or air). Checked

@@ -65,8 +65,7 @@ public class TreePlugin extends JavaPlugin {
       this.getServer().getPluginManager().registerEvents(new WorldInitListener(), this);
     }
 
-    this.getCommand("tree-edit").setExecutor(new EditTreeCommand(this, this.getFile()));
-    this.getCommand("tree-create").setExecutor(new CreateTreeCommand(this));
+    this.getCommand("gianttrees").setExecutor(new TreeCommand(this, this.getFile()));
   }
 
   @Override

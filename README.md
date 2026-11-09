@@ -70,20 +70,23 @@ By default each biome grows 4 big and 2 huge trees for every giant. Natural tree
 
 ## Commands
 
-| Command                                     | Description                                                                 | Permission                         |
-| ------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------- |
-| `/gt <tree>`                                | Grow a tree where you stand, e.g. `/gt tree.OAK_HUGE`                       | `gianttrees.create` (default: op)  |
-| `/gt <tree> <world> <x> <z>`                | Grow a tree at a position; works from the console                           | `gianttrees.create` (default: op)  |
-| `/tree-edit <tree>`                         | Open a tree file in the old Arbaro desktop editor (console only, needs a display) | console                     |
-| *(right-click a planted pattern with bone meal)* | Grow a tree from saplings                                              | `gianttrees.grow` (default: everyone) |
+`/gianttrees`, or `/gt` for short. Every argument tab-completes, and leaving one out shows clickable choices: `/gt grow` lists the tree types, clicking one lists its sizes, and clicking a size grows it where you stand.
 
-`/gt` is short for `/tree-create`. Tree names are the files in the plugin folder without `.xml`.
+| Command                                      | Description                                                              | Permission                            |
+| -------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------- |
+| `/gt help`                                   | List the commands, with links to the gallery, GitHub and Discord         | everyone                              |
+| `/gt grow <type> <size>`                     | Grow a tree where you stand, e.g. `/gt grow pale_oak huge`               | `gianttrees.create` (default: op)     |
+| `/gt grow <type> <size> <x> <z> [world]`     | Grow a tree at a position; from the console, give the world too          | `gianttrees.create` (default: op)     |
+| `/gt edit <type> <size> [root]`              | Open a tree file in the Arbaro desktop editor (console only, needs a display) | console                          |
+| *(right-click a sapling pattern with bone meal)* | Grow a tree from saplings                                            | `gianttrees.grow` (default: everyone) |
+
+Types are the tree files in the plugin folder (`tree.PALE_OAK_HUGE.xml` is type `pale_oak`, size `huge`); sizes are `giant`, `huge` and `big`.
 
 ## Custom Trees
 
 Trees are [Arbaro](https://arbaro.sourceforge.net/) parameter files: `tree.<NAME>.xml` for the tree and an optional `tree.<NAME>.root.xml` for its roots, which grow upside down below it.
 
-The easiest way to make one is the **[web viewer](https://def9a2a4.github.io/GiantTreesX/viewer/)**. Start from any bundled tree, change its parameters and watch it regenerate as Minecraft blocks, then *Download XML*. Put the file in `plugins/GiantTrees/` with a name in capitals, and it works with `/gt` straight away. To make it spawn, list its name under a biome in `natural.trees`; to grow it from saplings, add a pattern to `planting.patterns`. To tune a tree for one biome only, give it its own file (`tree.OAK_PLAINS.xml`) and list that.
+The easiest way to make one is the **[web viewer](https://def9a2a4.github.io/GiantTreesX/viewer/)**. Start from any bundled tree, change its parameters and watch it regenerate as Minecraft blocks, then *Download XML*. Put the file in `plugins/GiantTrees/` with a name in capitals, and it works with `/gt grow` straight away. To make it spawn, list its name under a biome in `natural.trees`; to grow it from saplings, add a pattern to `planting.patterns`. To tune a tree for one biome only, give it its own file (`tree.OAK_PLAINS.xml`) and list that.
 
 
 # Installation
@@ -119,7 +122,7 @@ Everything is in `plugins/GiantTrees/config.yml`, and every setting is explained
 
 - **Natural spawning** (`natural:`): `enabled`, `worlds`, `chance`, `sizes` (how often each size spawns; 0 turns one off) and `trees` (per biome)
 - **Growing from saplings** (`planting:`): `enabled`, `sizes` (`false` turns a size off), `bone-meal` (cost per size), `core` and `patterns`
-- `generation-delay`: seconds before a grown or `/gt` tree appears
+- `generation-delay`: seconds before a tree grown from saplings or with `/gt grow` appears
 - **Looks**: `wood` (`style`: `all_log`, `mixed` or `mixed_stripped`; `hollow_chance`; `hollow_wall_thickness`) and `wood_types` (the same per wood type, plus a weighted `leaves` mix)
 - **Safety**: `protect_block_entities`, `protected_blocks`
 - **Performance**: `BLOCKS_PER_TICK`, `TICK_DELAY`

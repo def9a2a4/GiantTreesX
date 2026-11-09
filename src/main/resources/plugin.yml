@@ -9,18 +9,14 @@ main: io.github.def9a2a4.gianttreesx.TreePlugin
 load: STARTUP
 
 commands:
-   tree-edit:
-      description: Opens the giant tree editor. Can only be called from the server console.
-      usage: "Usage: tree-edit species"
-   tree-create:
-      description: Creates a giant tree.
-      aliases: gt
-      permission: gianttrees.create
-      usage: "Usage: /<command> <species> [<world> <x> <z>]"
+   gianttrees:
+      description: Grow giant trees, and help and links for GiantTreesX.
+      aliases: [gt]
+      usage: "Usage: /<command> help"
 
 permissions:
    gianttrees.create:
-      description: Allows the creation of a giant tree using the tree-create command.
+      description: Allows growing a giant tree with /gianttrees grow.
       default: op
    gianttrees.grow:
       description: Allows a player to grow a giant tree by fertilizing a grid of saplings.
