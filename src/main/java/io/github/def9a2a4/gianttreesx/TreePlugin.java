@@ -110,7 +110,7 @@ public class TreePlugin extends JavaPlugin {
 
   /** Whether data folder file {@code name} is byte for byte a bundled tree file. */
   private boolean sameAsBundled(final String name) {
-    final URL bundled = this.trees.isBundled(name) ? this.getClassLoader().getResource(name) : null;
+    final URL bundled = this.trees.bundled(name);
     if (bundled == null) {
       return false;
     }

@@ -31,16 +31,16 @@ GiantTreesX is maintained by [def9a2a4](https://github.com/def9a2a4). It is a fo
 ## Growing Trees
 
 1. Clear a 5x5 area of dirt or grass.
-2. Put the core block (an emerald block by default) in the middle.
-3. Plant saplings around it in the tree's pattern. The pattern's shape picks the size.
+2. Put the core block in the middle: an emerald block for a giant or huge tree, a bone block for a big one.
+3. Plant saplings around it in the tree's pattern.
 4. Right-click the core block with bone meal in your inventory.
 5. Stand back: the tree starts growing after 3 seconds.
 
-| Size  | Pattern around the core                     | Bone meal | Tree file              |
-| ----- | ------------------------------------------- | --------- | ---------------------- |
-| giant | two full rings (5x5)                        | 64        | `tree.<NAME>.xml`      |
-| huge  | one full ring (3x3)                         | 32        | `tree.<NAME>_HUGE.xml` |
-| big   | a plus: saplings north, east, south and west | 16        | `tree.<NAME>_BIG.xml`  |
+| Size  | Core block    | Saplings around it   | Bone meal | Tree file              |
+| ----- | ------------- | -------------------- | --------- | ---------------------- |
+| giant | emerald block | two full rings (5x5) | 64        | `tree.<NAME>.xml`      |
+| huge  | emerald block | one full ring (3x3)  | 32        | `tree.<NAME>_HUGE.xml` |
+| big   | bone block    | one full ring (3x3)  | 16        | `tree.<NAME>_BIG.xml`  |
 
 Most trees use their own sapling all round. Mixed patterns (mesa puzzle: acacia and oak; cottonwood: birch and oak; swamp oak: oak with blue orchids; azalea: azalea and flowering azalea), the mushrooms and the fungi are listed with every pattern in [`config.yml`](src/main/resources/config.yml). Patterns match in any rotation. Server owners can change the bone meal costs (0 makes a size free), turn a size off (a 5x5 ring then grows the huge tree of its inner ring), or turn growing from saplings off altogether, in the `planting:` section of `config.yml`.
 
@@ -121,9 +121,9 @@ Tree files are no longer unpacked into the plugin folder, and the old `tree.*.xm
 Everything is in `plugins/GiantTrees/config.yml`, and every setting is explained in the [bundled copy](src/main/resources/config.yml). Restart the server after changing it.
 
 - **Natural spawning** (`natural:`): `enabled`, `worlds`, `chance`, `sizes` (how often each size spawns; 0 turns one off) and `trees` (per biome)
-- **Growing from saplings** (`planting:`): `enabled`, `sizes` (`false` turns a size off), `bone-meal` (cost per size), `core` and `patterns`
+- **Growing from saplings** (`planting:`): `enabled`, `sizes` (`false` turns a size off), `particles` (shown while the tree is on its way), `bone-meal` (cost per size), `core` (the middle block per size) and `patterns`
 - `generation-delay`: seconds before a tree grown from saplings or with `/gt grow` appears
-- **Looks**: `wood` (`style`: `all_log`, `mixed` or `mixed_stripped`; `hollow_chance`; `hollow_wall_thickness`) and `wood_types` (the same per wood type, plus a weighted `leaves` mix)
+- **Looks**: `wood` (`style`: `all_log`, `mixed` or `mixed_log`; `hollow_chance`; `hollow_wall_thickness`) and `wood_types` (the same per wood type, plus a weighted `leaves` mix)
 - **Safety**: `protect_block_entities`, `protected_blocks`
 - **Performance**: `BLOCKS_PER_TICK`, `TICK_DELAY`
 
@@ -149,7 +149,7 @@ What it includes or uses:
 | --- | --- | --- |
 | GiantTrees (Ryan Michela, Ronald Jack Jenkins Jr., Capri205 and others) | the plugin's code | GPLv3+ |
 | Arbaro (Wolfram Diestel), modified | `src/arbaro/`, inside the plugin jar | GPLv2+; this modified copy is redistributed under GPLv3+ (see [`NOTICE`](src/main/resources/NOTICE)) |
-| Tree parameter files | `src/main/resources/tree.*.xml`, inside the plugin jar | GPLv3+, from GiantTrees and Arbaro |
+| Tree parameter files | `src/main/resources/tree/`, inside the plugin jar | GPLv3+, from GiantTrees and Arbaro |
 | [bStats](https://bstats.org/) Metrics | inside the plugin jar (relocated) | MIT |
 | [three.js](https://threejs.org/) r160 and its OrbitControls | `docs/viewer/vendor/`, the website only | MIT (see [`docs/viewer/vendor/LICENSE`](docs/viewer/vendor/LICENSE)) |
 | [Paper API](https://papermc.io/) | compiled against, not included | GPLv3 / MIT |

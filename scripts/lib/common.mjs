@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
 export const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-export const RES = join(REPO, 'src', 'main', 'resources');
+/** The plugin's tree files. */
+export const RES = join(REPO, 'src', 'main', 'resources', 'tree');
 export const VIEWER = join(REPO, 'docs', 'viewer');
 export const TEMP = join(REPO, '.temp');
 

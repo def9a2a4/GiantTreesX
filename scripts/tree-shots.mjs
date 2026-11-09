@@ -24,9 +24,9 @@ const USAGE = `
 Usage: node scripts/tree-shots.mjs [options] TREE...
 
 Renders each tree for every seed, view and wood style with the viewer and saves the images. TREE
-is a name in src/main/resources ("OAK" = tree.OAK, wildcards like "tree.*_HUGE") or a path to a
+is a name in src/main/resources/tree ("OAK" = tree.OAK, wildcards like "tree.*_HUGE") or a path to a
 tree .xml file anywhere (its .root.xml next to it is used if present). Tree files are served
-straight from src/main/resources (or --dir), so docs/trees/ does not need to be synced first.
+straight from src/main/resources/tree (or --dir), so docs/trees/ does not need to be synced first.
 Lists may be comma-separated.
 
 Options:
@@ -44,7 +44,7 @@ Options:
       --sheet FILE     also write a contact sheet of all images (one row per tree, captioned)
       --cols N         contact sheet columns (default: the images per tree, at most 8)
       --thumb N        contact sheet image width in pixels (default 240)
-  -d, --dir DIR        where tree names are looked up (default src/main/resources)
+  -d, --dir DIR        where tree names are looked up (default src/main/resources/tree)
   -h, --help
 
 Images are named <prefix><tree>_<seed>_<view>[_<style>][_hollow].jpg. Needs Playwright:

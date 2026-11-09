@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { renderTree } from '../src/render.js';
-const res = new URL('../../../src/main/resources/', import.meta.url).pathname;
+const res = new URL('../../../src/main/resources/tree/', import.meta.url).pathname;
 const name = process.argv[2] || 'tree.OAK';
 const seed = Number(process.argv[3] || 12345);
 const t = Date.now();

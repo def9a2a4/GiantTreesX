@@ -6,15 +6,15 @@ natural:
   worlds:
     - world
   # percent chance that a new chunk in one of the biomes below grows a tree (a biome can set its own)
-  chance: 0.5
+  chance: 4
   # How often each size is picked, relative to each other. Trees come in three sizes: giant
   # (tree.OAK.xml, 40-60 blocks tall), huge (tree.OAK_HUGE.xml, 25-40) and big (tree.OAK_BIG.xml,
   # about 14-24). With these, a biome grows 2 huge and 4 big trees for every giant (jungle and
   # spruce have no big tree). 0 stops a size spawning; sizes left out keep these values.
   sizes:
     giant: 1
-    huge: 2
-    big: 4
+    huge: 4
+    big: 16
   # Which trees grow in each biome. A name grows that tree in every size it has a file for: OAK
   # grows tree.OAK.xml, tree.OAK_HUGE.xml and tree.OAK_BIG.xml (whichever exist), and nothing
   # else (not tree.OAK_PLAINS.xml). OAK_HUGE grows only tree.OAK_HUGE.xml. Names are the file

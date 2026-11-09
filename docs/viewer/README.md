@@ -15,7 +15,7 @@ Online: **https://def9a2a4.github.io/GiantTreesX/** is the gallery, and
 
 - `docs/index.html`: the gallery page, built from `docs/gallery/gallery.json`.
 - `docs/viewer/`: this tool.
-- `docs/trees/`: copies of the plugin's tree files (`src/main/resources/tree.*.xml`),
+- `docs/trees/`: copies of the plugin's tree files (`src/main/resources/tree/tree.*.xml`),
   `index.json`, the list the viewer loads, and `natural-trees.json`, the biomes each tree spawns in
   (read from `natural.trees` in `src/main/resources/config.yml` by
   `scripts/natural-trees.mjs`). `make docs-trees` refreshes them; CI fails if they are out of date.
@@ -54,7 +54,7 @@ or changing `natural.trees`.
 
 ## What it does
 
-- **Tree picker.** Lists every `tree.*.xml` in the plugin's `src/main/resources/`, fetched when
+- **Tree picker.** Lists every `tree.*.xml` in the plugin's `src/main/resources/tree/`, fetched when
   the page loads, with the biomes it spawns in (`tree.OAK  (Forest)`). The header shows the
   resolved WoodType, the size and the block count.
 - **Seed.** The int seed passed to `renderTree`. *Random* picks a new one. The tree and seed are

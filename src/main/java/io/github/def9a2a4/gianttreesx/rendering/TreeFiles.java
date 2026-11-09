@@ -13,13 +13,16 @@ import java.util.regex.Pattern;
 
 /**
  * Where tree files (tree.OAK.xml, tree.OAK.root.xml) come from: the plugin folder's tree/
- * subfolder first, so a server can add trees or replace bundled ones, then the plugin jar. Nothing
- * is unpacked; the user folder is read on every lookup, so new files work without a restart.
+ * subfolder first, so a server can add trees or replace bundled ones, then the jar's tree/ folder
+ * (src/main/resources/tree). Nothing is unpacked; the user folder is read on every lookup, so new
+ * files work without a restart.
  */
 public final class TreeFiles {
 
-  /** Tree files at the root of the jar: tree.X.xml and tree.X.root.xml. */
+  /** A tree file name: tree.X.xml or tree.X.root.xml. */
   private static final Pattern TREE_FILE = Pattern.compile("tree\\.[^/]+\\.xml");
+  /** The jar folder the bundled tree files are in. */
+  private static final String JAR_DIR = "tree/";
 
   private final File userDir;
   private final ClassLoader loader;
@@ -37,9 +40,9 @@ public final class TreeFiles {
     try (JarFile jarFile = new JarFile(jar)) {
       final Enumeration<JarEntry> entries = jarFile.entries();
       while (entries.hasMoreElements()) {
-        final String name = entries.nextElement().getName();
-        if (TREE_FILE.matcher(name).matches()) {
-          this.bundled.add(name);
+        final String path = entries.nextElement().getName();
+        if (path.startsWith(JAR_DIR) && TREE_FILE.matcher(path.substring(JAR_DIR.length())).matches()) {
+          this.bundled.add(path.substring(JAR_DIR.length()));
         }
       }
     }
@@ -55,15 +58,16 @@ public final class TreeFiles {
         throw new IllegalStateException(e);
       }
     }
-    return this.bundled.contains(name) ? this.loader.getResource(name) : null;
+    return this.bundled(name);
+  }
+
+  /** The bundled tree file called {@code name}, or null. */
+  public URL bundled(final String name) {
+    return this.bundled.contains(name) ? this.loader.getResource(JAR_DIR + name) : null;
   }
 
   public boolean exists(final String name) {
     return this.find(name) != null;
-  }
-
-  public boolean isBundled(final String name) {
-    return this.bundled.contains(name);
   }
 
   /** Where the server's own copy of {@code name} goes (it may not exist). */

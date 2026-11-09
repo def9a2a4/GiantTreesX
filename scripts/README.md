@@ -1,11 +1,11 @@
 # Tree tools
 
-Command-line helpers for tuning the tree files in `src/main/resources/`. They run from any
+Command-line helpers for tuning the tree files in `src/main/resources/tree/`. They run from any
 directory and need only Node (20+); `tree-shots.mjs` also needs Playwright, a dev dependency of the
 viewer (`npm install --prefix docs/viewer && npx --prefix docs/viewer playwright install chromium`,
 or let `make tree-shots` do it). Every script prints its full usage with `--help`.
 
-All three take trees the same way. A name is looked up in `src/main/resources/` (or `--dir`):
+All three take trees the same way. A name is looked up in `src/main/resources/tree/` (or `--dir`):
 `OAK` means `tree.OAK.xml`, `OAK.root` a root file (only for `tree-params`), and `*` is a wildcard (`'tree.*_HUGE'`; quote it in the shell). A path to an
 `.xml` file anywhere also works, with its `.root.xml` next to it if there is one. Lists may be
 comma-separated. Seeds are numbers and ranges: `12345,7` or `1..10`.
@@ -34,7 +34,7 @@ make tree-stats TREES=OAK,OAK_HUGE SEEDS=1..10
 
 Renders trees with the viewer in headless Chromium (like `make gallery`) and saves one image per
 tree, seed, view and wood style to `.temp/shots/` (`--out`). Tree files are served straight from
-`src/main/resources/`, so there is no need to run `make docs-trees` first.
+`src/main/resources/tree/`, so there is no need to run `make docs-trees` first.
 
 Views: `hero`, `side`, `low`, `top`, `cut` (cut through the trunk), `base` (trunk base and roots,
 no leaves), `wood` (no leaves); `--view JSON` adds a custom one from the viewer's `shot()` options
@@ -74,5 +74,5 @@ Root files are separate: edit `NAME.root` to change the roots. `derive` writes `
 and in which biomes, is set in `natural.trees` in `src/main/resources/config.yml`, not by file
 names: add `NEW` to a biome there to have it spawn.
 
-After changing files in `src/main/resources/`, run `make docs-trees` so the website's copies in
+After changing files in `src/main/resources/tree/`, run `make docs-trees` so the website's copies in
 `docs/trees/` match (CI checks this), and `make gallery` to re-render the gallery.

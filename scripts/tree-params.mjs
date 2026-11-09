@@ -9,7 +9,7 @@ import { PARAM_BY_NAME, PARAM_DEFS, parseParamXml, validateParam } from '../docs
 const USAGE = `
 Usage: node scripts/tree-params.mjs COMMAND [options] ARGS
 
-TREE is a name in src/main/resources ("OAK" = tree.OAK.xml, "OAK.root" = tree.OAK.root.xml,
+TREE is a name in src/main/resources/tree ("OAK" = tree.OAK.xml, "OAK.root" = tree.OAK.root.xml,
 wildcards like "tree.*_HUGE") or a path to an .xml file.
 
 Commands:
@@ -29,10 +29,10 @@ Options:
                       of the same level) instead of failing
       --force         derive: overwrite existing files; set: allow names Arbaro does not know
   -n, --dry-run       set/derive: print what would change, write nothing
-  -d, --dir DIR       where tree names are looked up (default src/main/resources)
+  -d, --dir DIR       where tree names are looked up (default src/main/resources/tree)
   -h, --help
 
-After changing files in src/main/resources, run \`make docs-trees\` to update the copies the
+After changing files in src/main/resources/tree, run \`make docs-trees\` to update the copies the
 website uses (docs/trees/).
 
 Examples:

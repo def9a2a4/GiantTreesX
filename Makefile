@@ -89,7 +89,7 @@ server-test: $(SERVER_JAR)
 PREVIEW_PORT ?= 8000
 VIEWER := docs/viewer
 
-# Copy src/main/resources/tree.*.xml into docs/trees/, with natural-trees.json from config.yml's natural.trees
+# Copy src/main/resources/tree/tree.*.xml into docs/trees/, with natural-trees.json from config.yml's natural.trees
 # (CI checks they are in sync).
 .PHONY: docs-trees
 docs-trees:
@@ -118,7 +118,7 @@ preview-check:
 	node $(VIEWER)/scripts/gallery-check.mjs
 
 # Tree tuning tools in scripts/ (see scripts/README.md). TREES is a comma-separated list of names
-# in src/main/resources (OAK = tree.OAK, wildcards like 'tree.*_HUGE'), SEEDS e.g. 12345,7 or 1..10.
+# in src/main/resources/tree (OAK = tree.OAK, wildcards like 'tree.*_HUGE'), SEEDS e.g. 12345,7 or 1..10.
 #   make tree-stats TREES=OAK,OAK_HUGE [SEEDS=1..10]       block counts and sizes over seeds
 #   make tree-shots TREES=OAK [SEEDS=1..4] [VIEWS=hero,cut]  images + sheet.jpg in .temp/shots/
 .PHONY: tree-stats

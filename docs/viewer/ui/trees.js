@@ -1,4 +1,4 @@
-// Loads every tree the plugin ships from docs/trees/ (copies of src/main/resources, kept in sync by
+// Loads every tree the plugin ships from docs/trees/ (copies of src/main/resources/tree, kept in sync by
 // `make docs-trees`; index.json lists the files, natural-trees.json the biomes each spawns in).
 
 export const TREES = new URL('../../trees/', import.meta.url);
