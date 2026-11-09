@@ -45,6 +45,8 @@ const HANGING_SHAPES = { 'Crimson': [6, 1, 9] };
 const GROUND_WOODS = { 'Mangrove_roots': 'MUDDY_MANGROVE_ROOTS' };
 /** TreeType.noisyLeaves: false keeps the plain (Smooth-noised) ellipsoid leaf clusters. */
 const PLAIN_LEAVES = new Set(['Red Mushroom', 'Brown Mushroom', 'Crimson', 'Warped']);
+/** TreeType.leafDroop: leaf clusters sink this many blocks per block outward from the trunk. */
+const LEAF_DROOPS = { 'Spruce': 0.6 };
 export const WOOD_TYPES = Object.freeze(Object.keys(TREE_TYPES));
 /** Every block TreeType can produce (GeometryHarness reports which of them its API lacks). */
 export const TREE_TYPE_MATERIALS = Object.freeze([...new Set([
@@ -81,6 +83,7 @@ export function treeTypeMaterials(woodType, hasMaterial = ALL_MATERIALS) {
     hanging: isHanging ? hanging : null, hangingTip: isHanging ? hangingTip : null,
     hangingShape: HANGING_SHAPES[name] ?? [4, 1, 6],
     capLevel, noisyLeaves: !PLAIN_LEAVES.has(name), type: name,
+    leafDroop: LEAF_DROOPS[name] ?? 0,
     groundWood: GROUND_WOODS[name] && hasMaterial(GROUND_WOODS[name]) ? GROUND_WOODS[name] : null,
   };
 }
@@ -205,30 +208,82 @@ export function strippedOf(log) {
   return log;
 }
 
-const GOLDEN = 0x9e3779b97f4a7c15n;
-const MIX = 0xbf58476d1ce4e5b9n;
-const s64 = (v) => BigInt.asIntN(64, v);
+// WoodStyler.LeafMix: leaves come in patches. Space is split into jittered Voronoi cells
+// LEAF_CELL blocks apart (about a leaf cluster); each cell gets one primary leaf picked with the
+// mix weights, and up to LEAF_MAX_BLEND percent of its blocks (a per-cell amount) take a leaf next
+// to the primary in the mix order. Leaves weighing at most a tenth of the mix are accents, never
+// a primary, sprinkled over single blocks at their weight.
+const LEAF_CELL = 7;
+const LEAF_MAX_BLEND = 10;
+const SALT_POINT = 1, SALT_CELL = 2, SALT_ACCENT = 3, SALT_BLEND = 4;
+
+const rotl13 = (v) => (v << 13) | (v >>> 19);
+/** WoodStyler.LeafMix.hash: 32-bit int hash (Java int arithmetic). */
+export function leafHash(seed, a, b, c, salt) {
+  let h = (seed | 0) ^ Math.imul(salt, 0x9e3779b9);
+  h = (Math.imul(rotl13(h ^ Math.imul(a | 0, 0xcc9e2d51)), 5) + 0xe6546b64) | 0;
+  h = (Math.imul(rotl13(h ^ Math.imul(b | 0, 0xcc9e2d51)), 5) + 0xe6546b64) | 0;
+  h = (Math.imul(rotl13(h ^ Math.imul(c | 0, 0xcc9e2d51)), 5) + 0xe6546b64) | 0;
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return h;
+}
 
 /**
- * WoodStyler.pickLeaf: position-hashed weighted pick.
+ * WoodStyler.LeafMix: position-hashed leaf pick in patches.
  * @param {[string, number][]} entries  [material, weight] in config (LinkedHashMap) order, weights > 0
- * @param {number} total  sum of weights (Java int)
+ * @returns {(x: number, y: number, z: number, seed: number) => string}
  */
-export function pickLeaf(entries, total, x, y, z, seed) {
-  let h = BigInt(seed | 0);
-  h = s64(h * GOLDEN + BigInt(x | 0));
-  h = s64(h * GOLDEN + BigInt(y | 0));
-  h = s64(h * GOLDEN + BigInt(z | 0));
-  h = s64(h ^ (BigInt.asUintN(64, h) >> 31n));
-  h = s64(h * MIX);
-  h = s64(h ^ (BigInt.asUintN(64, h) >> 29n));
-  const t = BigInt(total);
-  let roll = Number(((h % t) + t) % t); // Math.floorMod(h, (long) total)
-  for (const [m, w] of entries) {
-    roll -= w;
-    if (roll < 0) return m;
-  }
-  return entries[0][0];
+export function makeLeafMix(entries) {
+  let total = 0;
+  for (const [, w] of entries) total = (total + w) | 0;
+  let primaries = entries.filter(([, w]) => w * 10 > total);
+  if (!primaries.length) primaries = entries;
+  const accents = entries.filter((e) => !primaries.includes(e));
+  const primaryTotal = primaries.reduce((t, [, w]) => (t + w) | 0, 0);
+  const pm = primaries.map(([m]) => m), pw = primaries.map(([, w]) => w);
+  return (x, y, z, seed) => {
+    if (pm.length === 1 && !accents.length) return pm[0];
+    if (accents.length) {
+      let roll = (leafHash(seed, x, y, z, SALT_ACCENT) >>> 1) % total;
+      for (const [m, w] of accents) {
+        roll -= w;
+        if (roll < 0) return m;
+      }
+    }
+    if (pm.length === 1) return pm[0];
+    const C = LEAF_CELL;
+    const cx = Math.floor(x / C), cy = Math.floor(y / C), cz = Math.floor(z / C);
+    const bx = ((x - cx * C) << 8) + 128, by = ((y - cy * C) << 8) + 128, bz = ((z - cz * C) << 8) + 128;
+    let best = 0x7fffffff, wx = 0, wy = 0, wz = 0;
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dz = -1; dz <= 1; dz++) {
+          const h = leafHash(seed, cx + dx, cy + dy, cz + dz, SALT_POINT);
+          const ex = bx - (dx * C * 256 + (h & 0xff) * C);
+          const ey = by - (dy * C * 256 + ((h >>> 8) & 0xff) * C);
+          const ez = bz - (dz * C * 256 + ((h >>> 16) & 0xff) * C);
+          const d = ex * ex + ey * ey + ez * ez;
+          if (d < best) { best = d; wx = cx + dx; wy = cy + dy; wz = cz + dz; }
+        }
+      }
+    }
+    const ch = leafHash(seed, wx, wy, wz, SALT_CELL);
+    let roll = (ch >>> 1) % primaryTotal;
+    let idx = 0;
+    while (roll >= pw[idx]) roll -= pw[idx++];
+    const blend = (ch >>> 24) % (LEAF_MAX_BLEND + 1);
+    const bh = leafHash(seed, x, y, z, SALT_BLEND);
+    if ((bh >>> 1) % 100 < blend) {
+      if (idx === 0) idx = 1;
+      else if (idx === pm.length - 1 || (bh & 1) === 0) idx--;
+      else idx++;
+    }
+    return pm[idx];
+  };
 }
 
 /** The tree-level hollow roll: new Random(seed).nextDouble() * 100 < hollowChance */
@@ -310,8 +365,7 @@ export function woodStyleAssign(voxels, opts, table) {
     // woodTypes[0] is the tree file's WoodType (render.js registers it first)
     leafEntries = treeTypeMaterials(voxels.woodTypes[0], o.hasMaterial || undefined).leafMix || [];
   }
-  let leafTotal = 0;
-  for (const [, w] of leafEntries) leafTotal = (leafTotal + w) | 0;
+  const leafMix = leafEntries.length ? makeLeafMix(leafEntries) : null;
 
   const out = defaultAssignMaterials(voxels, opts, table);
   const hollow = !!o.forceHollow || rollHollow(seed, hollowChance);
@@ -335,7 +389,7 @@ export function woodStyleAssign(voxels, opts, table) {
   for (let i = 0; i < voxels.n; i++) {
     const k = voxels.kind[i];
     if (k === KIND_LEAF) {
-      if (leafIds) out[i] = leafIds.get(pickLeaf(leafEntries, leafTotal, voxels.x[i], voxels.y[i], voxels.z[i], seed));
+      if (leafIds) out[i] = leafIds.get(leafMix(voxels.x[i], voxels.y[i], voxels.z[i], seed));
       continue;
     }
     if (k === KIND_WOOD && groundIds && voxels.y[i] <= o.groundY && groundIds[voxels.wood[i]] >= 0) {

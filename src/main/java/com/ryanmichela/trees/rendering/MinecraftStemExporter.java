@@ -17,8 +17,12 @@
  */
 package com.ryanmichela.trees.rendering;
 
+import java.util.Enumeration;
+
 import net.sourceforge.arbaro.tree.Leaf;
+import net.sourceforge.arbaro.tree.Segment;
 import net.sourceforge.arbaro.tree.Stem;
+import net.sourceforge.arbaro.tree.Subsegment;
 import net.sourceforge.arbaro.tree.TraversalException;
 import net.sourceforge.arbaro.tree.Tree;
 import net.sourceforge.arbaro.tree.TreeTraversal;
@@ -41,6 +45,15 @@ public class MinecraftStemExporter implements TreeTraversal {
       final MinecraftSegmentExporter exporter = new MinecraftSegmentExporter(
                                                                              this.d3d);
       stem.traverseStem(exporter);
+      // the stem's end, for Draw3d.coverBranches
+      Segment last = null;
+      for (final Enumeration<?> e = stem.stemSegments(); e.hasMoreElements();) {
+        last = (Segment) e.nextElement();
+      }
+      if (last != null) {
+        final Subsegment end = (Subsegment) last.subsegments.lastElement();
+        this.d3d.markStemEnd(this.d3d.toMcVector(end.pos), last.lpar.level);
+      }
     }
     return true;
   }

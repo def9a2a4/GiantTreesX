@@ -45,6 +45,12 @@ function exportTree(tree, d3d) {
             return false;
           },
         });
+        // MinecraftStemExporter: the stem's end, for Draw3d.coverBranches
+        const segs = stem.segments;
+        if (segs.length > 0) {
+          const last = segs[segs.length - 1];
+          d3d.markStemEnd(d3d.toMcVector(last.subsegments[last.subsegments.length - 1].pos), last.lpar.level);
+        }
       }
       return true;
     },
@@ -60,6 +66,7 @@ function exportTree(tree, d3d) {
         return true;
       },
     });
+    d3d.coverBranches();
   }
 }
 
@@ -189,6 +196,7 @@ export function renderTree(o) {
   const d3d = new Draw3d(ref, tree.params.Smooth, woodIndex(tree.params.WoodType), store, false, PART_TREE, noise);
   d3d.capLevel = treeType.capLevel;
   d3d.noisyLeaves = treeType.noisyLeaves;
+  d3d.leafDroop = treeType.leafDroop;
   exportTree(tree, d3d);
 
   let vineInfo = null;

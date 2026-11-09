@@ -57,6 +57,7 @@ public class TreeType {
     final String fallback;
     int capLevel = Integer.MAX_VALUE;
     boolean noisyLeaves = true;
+    double leafDroop;
     /** Bottom block of a hanging strand; null for {@link #hanging} with its tip state set. */
     String hangingTip;
     /** A leaf bottom grows a strand one in this many times; strand length range. */
@@ -88,6 +89,8 @@ public class TreeType {
   static {
     add("Oak", "OAK_LOG", "OAK_LEAVES", Decoration.NONE, null);
     add("Spruce", "SPRUCE_LOG", "SPRUCE_LEAVES", Decoration.NONE, "Oak");
+    // drooping boughs
+    SPECS.get("Spruce").leafDroop = 0.6;
     add("Birch", "BIRCH_LOG", "BIRCH_LEAVES", Decoration.NONE, "Oak");
     add("Cherry", "CHERRY_LOG", "CHERRY_LEAVES", Decoration.NONE, "Oak");
     add("Jungle", "JUNGLE_LOG", "JUNGLE_LEAVES", Decoration.TRUNK_VINES, "Oak");
@@ -150,6 +153,8 @@ public class TreeType {
   public final int capLevel;
   /** Leaf clusters get an uneven, lumpy surface (Draw3d); false keeps plain ellipsoids. */
   public final boolean noisyLeaves;
+  /** Leaf clusters sink this many blocks per block outward from the trunk (Draw3d); 0 for none. */
+  public final double leafDroop;
   /** {@link #woodMaterial} blocks placed into solid ground become this block when the tree is
    *  placed (TreeRenderer); null to leave them as they are. */
   public final Material groundWoodMaterial;
@@ -196,6 +201,7 @@ public class TreeType {
     this.hangingMax = spec.hangingMax;
     this.capLevel = spec.capLevel;
     this.noisyLeaves = spec.noisyLeaves;
+    this.leafDroop = spec.leafDroop;
     this.groundWoodMaterial = spec.groundWood == null ? null : lookup(spec.groundWood);
   }
 

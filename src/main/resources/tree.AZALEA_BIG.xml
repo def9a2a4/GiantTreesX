@@ -15,10 +15,10 @@
     <param name='Lobes' value='0' />
     <param name='LobeDepth' value='0.0' />
     <param name='Smooth' value='0.15' />
-    <param name='Leaves' value='5' />
+    <param name='Leaves' value='7' />
     <param name='LeafShape' value='disc' />
-    <param name='LeafScale' value='5.0' />
-    <param name='LeafScaleX' value='0.6' />
+    <param name='LeafScale' value='4.6' />
+    <param name='LeafScaleX' value='0.8' />
     <param name='LeafQuality' value='1.0' />
     <param name='LeafStemLen' value='0.0' />
     <param name='LeafDistrib' value='4' />
@@ -41,7 +41,7 @@
     <param name='0BranchDist' value='0.0' />
     <param name='0Length' value='1.0' />
     <param name='0LengthV' value='0.0' />
-    <param name='0Taper' value='1.2' />
+    <param name='0Taper' value='1.0' />
     <param name='0SegSplits' value='0.0' />
     <param name='0SplitAngle' value='0.0' />
     <param name='0SplitAngleV' value='0.0' />
@@ -50,15 +50,15 @@
     <param name='0CurveBack' value='-30.0' />
     <param name='0CurveV' value='20.0' />
     <!-- level 1 -->
-    <param name='1DownAngle' value='60.0' />
-    <param name='1DownAngleV' value='10.0' />
+    <param name='1DownAngle' value='65' />
+    <param name='1DownAngleV' value='-20' />
     <param name='1Rotate' value='140.0' />
     <param name='1RotateV' value='20.0' />
     <param name='1Branches' value='10' />
     <param name='1BranchDist' value='1.0' />
     <param name='1Length' value='0.6' />
     <param name='1LengthV' value='0.0' />
-    <param name='1Taper' value='1.2' />
+    <param name='1Taper' value='1.0' />
     <param name='1SegSplits' value='0.0' />
     <param name='1SplitAngle' value='0.0' />
     <param name='1SplitAngleV' value='0.0' />

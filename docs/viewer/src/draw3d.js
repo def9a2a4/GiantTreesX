@@ -1,7 +1,7 @@
 // Port of com.ryanmichela.trees.rendering.Draw3d + Orientation (geometry only).
 import { blockFloor, roundToInt } from './jmath.js';
 import { SimplexNoiseGenerator, positionHash } from './noise.js';
-import { KIND_WOOD, KIND_LEAF, PART_JUNCTION } from './voxels.js';
+import { KIND_WOOD, KIND_LEAF, PART_JUNCTION, packKey } from './voxels.js';
 
 export const X_MAJOR = 0, Y_MAJOR = 1, Z_MAJOR = 2;
 
@@ -13,6 +13,14 @@ export const LEAF_FULL_RADIUS = 2.0;
 // cluster length (LeafScale / 2): no noise up to LEAF_CLEAN_SIZE, full from LEAF_FULL_SIZE
 export const LEAF_CLEAN_SIZE = 2.5, LEAF_FULL_SIZE = 8.0;
 const LEAF_REACH = LEAF_LUMP + LEAF_FINE + LEAF_JITTER / 2;
+
+// Draw3d.coverBranches: branch wood within COVER_REACH_BRANCH blocks (Chebyshev) of leaves gets
+// leaves on its top and sides, trunk wood within COVER_REACH_TRUNK on its top
+export const COVER_REACH_BRANCH = 3, COVER_REACH_TRUNK = 1;
+// a branch end with no leaves within TIP_REACH blocks gets a leaf cluster TIP_SCALE times the size
+// of the tree's own
+export const TIP_REACH = 2, TIP_SCALE = 0.7;
+const COVER_SIDES = [[0, 1, 0], [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1]];
 
 /** Orientation.orient(l1, l2) on Bukkit vectors */
 export function orient(l1, l2) {
@@ -82,8 +90,13 @@ export class Draw3d {
     this.part = part;
     this.capLevel = Infinity; // TreeType.capLevel, set by render.js
     this.noisyLeaves = false; // TreeType.noisyLeaves, set by render.js
+    this.leafDroop = 0; // TreeType.leafDroop, set by render.js
     this.cache = new Map();
     this.leafCache = new Map();
+    this.branchWood = new Set(); // packed keys of trunk and branch wood drawn (insertion order), see coverBranches
+    this.stemEnds = []; // [x, y, z] of branch ends, see markStemEnd
+    this.leafLength = 0; // size of the last leaf cluster drawn
+    this.leafWidth = 0;
   }
 
   toMcVector(v) {
@@ -122,7 +135,95 @@ export class Draw3d {
   /** Draw3d.addWood: from capLevel on (TreeType.capLevel) stems are leaf blocks that never overwrite. */
   addWood(x, y, z, orientation, level, part = this.part) {
     if (level >= this.capLevel) this.store.add(x, y, z, KIND_LEAF, -1, -1, part, this.wood, false);
-    else this.store.add(x, y, z, KIND_WOOD, level, orientation, part, this.wood, true);
+    else {
+      this.store.add(x, y, z, KIND_WOOD, level, orientation, part, this.wood, true);
+      if (!this.inverted && part !== PART_JUNCTION) {
+        this.branchWood.add(packKey(x, y, z));
+      }
+    }
+  }
+
+  /**
+   * Draw3d.coverBranches, after the leaves: a branch should have leaves atop it and at its ends.
+   * 1. Each branch end (markStemEnd) with no leaves within TIP_REACH gets a leaf cluster.
+   * 2. Branch wood (not roots) within COVER_REACH_BRANCH of leaves gets leaves in the empty blocks
+   *    above and beside it; trunk wood within COVER_REACH_TRUNK only above it (where it ends in
+   *    the crown). Bare limbs well below the canopy stay bare.
+   * 3. Wood still showing amid leaves (two or more leaf faces) gets leaves above and beside it.
+   * Off for plain-leaved types (mushrooms, fungi).
+   */
+  coverBranches() {
+    if (!this.noisyLeaves || this.inverted) return;
+    const tipLength = this.leafLength * TIP_SCALE, tipWidth = this.leafWidth * TIP_SCALE;
+    if (tipLength > 0) {
+      for (const end of this.stemEnds) {
+        if (!this.leafWithin(blockFloor(end.x), blockFloor(end.y), blockFloor(end.z), TIP_REACH)) {
+          this.drawLeafCluster(end, tipLength, tipWidth);
+        }
+      }
+    }
+    // near the canopy: the trunk only on top (where it ends in the crown), branches on top and sides
+    this.coverPass((x, y, z, level) => {
+      if (level === 0) return this.leafWithin(x, y, z, COVER_REACH_TRUNK) ? 1 : 0;
+      return this.leafWithin(x, y, z, COVER_REACH_BRANCH) ? COVER_SIDES.length : 0;
+    });
+    // wood the first pass left showing amid leaves (two or more leaf faces): top and sides
+    this.coverPass((x, y, z) => (this.leafFaces(x, y, z) >= 2 ? COVER_SIDES.length : 0));
+  }
+
+  /**
+   * Leaves in the empty blocks of the first sides(x, y, z, level) of COVER_SIDES (up, then the
+   * four horizontal sides) around each trunk and branch block, decided for all blocks first.
+   */
+  coverPass(sides) {
+    const store = this.store;
+    const cover = new Set();
+    for (const key of this.branchWood) {
+      const i = store.index.get(key);
+      if (store.kind[i] !== KIND_WOOD) continue;
+      const x = store.x[i], y = store.y[i], z = store.z[i];
+      const n = sides(x, y, z, store.level[i]);
+      for (let k = 0; k < n; k++) {
+        const [dx, dy, dz] = COVER_SIDES[k];
+        if (!store.has(x + dx, y + dy, z + dz)) cover.add(packKey(x + dx, y + dy, z + dz));
+      }
+    }
+    for (const key of cover) {
+      const x = Math.floor(key / 4294967296) - 32768;
+      const y = (Math.floor(key / 65536) % 65536) - 32768;
+      const z = (key % 65536) - 32768;
+      store.add(x, y, z, KIND_LEAF, -1, -1, this.part, this.wood, false);
+    }
+  }
+
+  /** Leaf blocks among a block's six face neighbours. */
+  leafFaces(x, y, z) {
+    const store = this.store;
+    let n = 0;
+    for (const [dx, dy, dz] of [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]) {
+      const i = store.index.get(packKey(x + dx, y + dy, z + dz));
+      if (i !== undefined && store.kind[i] === KIND_LEAF) n++;
+    }
+    return n;
+  }
+
+  /** Draw3d.markStemEnd: a stem's last point; branch ends (level 1 up) get covered by coverBranches. */
+  markStemEnd(pos, level) {
+    if (level >= 1 && level < this.capLevel && !this.inverted) this.stemEnds.push(pos);
+  }
+
+  /** Whether a leaf block lies within reach (Chebyshev distance) of a block. */
+  leafWithin(x, y, z, reach) {
+    const store = this.store;
+    for (let dx = -reach; dx <= reach; dx++) {
+      for (let dy = -reach; dy <= reach; dy++) {
+        for (let dz = -reach; dz <= reach; dz++) {
+          const i = store.index.get(packKey(x + dx, y + dy, z + dz));
+          if (i !== undefined && store.kind[i] === KIND_LEAF) return true;
+        }
+      }
+    }
+    return false;
   }
 
   drawCone(l1, rad1, l2, rad2, level) {
@@ -131,29 +232,31 @@ export class Draw3d {
     const dx = l1.x - l2.x, dy = l1.y - l2.y, dz = l1.z - l2.z;
     const h = Math.sqrt(dx * dx + dy * dy + dz * dz); // Vector.distance (square() == x*x)
     const ht = (-rad1 * h) / (rad2 - rad1);
-    const l1bx = blockFloor(l1.x), l1by = blockFloor(l1.y), l1bz = blockFloor(l1.z);
     const n = line.length / 3;
     for (let i = 0; i < n; i++) {
       const cx = line[i * 3], cy = line[i * 3 + 1], cz = line[i * 3 + 2];
-      const r = roundToInt((rad1 * (ht - i)) / ht);
+      // the centre line can have more blocks than the cone is long (it ends past l2's block
+      // boundary): clamp there instead of extrapolating the taper, which for a cone shorter than a
+      // block (Taper 1-2 ends) gave huge negative radii, drawn as wide discs
+      const r = roundToInt((rad1 * (ht - Math.min(i, h))) / ht);
       let pts;
       switch (orientation) {
         case X_MAJOR:
           pts = this.plotCircle(cy, cz, cx, r, level);
           for (let p = 0; p < pts.length; p += 2) {
-            this.addWood(cx, (l1by - cy + pts[p]) | 0, (l1bz - cz + pts[p + 1]) | 0, orientation, level);
+            this.addWood(cx, pts[p], pts[p + 1], orientation, level);
           }
           break;
         case Y_MAJOR:
           pts = this.plotCircle(cx, cz, cy, r, level);
           for (let p = 0; p < pts.length; p += 2) {
-            this.addWood((l1bx - cx + pts[p]) | 0, cy, (l1bz - cz + pts[p + 1]) | 0, orientation, level);
+            this.addWood(pts[p], cy, pts[p + 1], orientation, level);
           }
           break;
         case Z_MAJOR:
           pts = this.plotCircle(cx, cy, cz, r, level);
           for (let p = 0; p < pts.length; p += 2) {
-            this.addWood((l1bx - cx + pts[p]) | 0, (l1by - cy + pts[p + 1]) | 0, cz, orientation, level);
+            this.addWood(pts[p], pts[p + 1], cz, orientation, level);
           }
           break;
       }
@@ -161,17 +264,21 @@ export class Draw3d {
   }
 
   drawLeafCluster(pos, length, width) {
+    this.leafLength = length;
+    this.leafWidth = width;
     if (this.noisyLeaves) { this.drawNoisyLeafCluster(pos, length, width); return; }
-    // plotEllipsoid(pos, length, width, length, 0)
+    // plotEllipsoid(pos, length, width, length, 0), sheared by leafDroop
     const a = length, b = width, c = length;
     const halfSize = (Math.ceil(Math.max(Math.max(a, b), c)) | 0) + 2;
     const px = blockFloor(pos.x), py = blockFloor(pos.y), pz = blockFloor(pos.z);
     const aa = a * a, bb = b * b, cc = c * c;
     const store = this.store;
+    const [dropX, dropZ, ext] = this.droop(pos, halfSize);
     for (let x = -halfSize; x <= halfSize; x++) {
-      for (let y = -halfSize; y <= halfSize; y++) {
+      for (let y = -halfSize - ext; y <= halfSize + ext; y++) {
         for (let z = -halfSize; z <= halfSize; z++) {
-          const left = (x * x) / aa + (y * y) / bb + (z * z) / cc;
+          const yy = y + dropX * x + dropZ * z;
+          const left = (x * x) / aa + (yy * yy) / bb + (z * z) / cc;
           const noiseOffset = this.calculateNoiseOffset(x + px, y + py, z + pz, 1, 0);
           if (left <= 1 + noiseOffset) {
             // new Vector(x,y,z).add(pos) -> block coords via floor
@@ -199,12 +306,15 @@ export class Draw3d {
     // calculateNoiseOffset(.., 1, 0) <= 2 * Smooth (simplex noise stays within [-1, 1])
     const tMax = 1 + 2.5 * this.noiseIntensity;
     const clusterAmp = Math.min(1, Math.max(0, (a - LEAF_CLEAN_SIZE) / (LEAF_FULL_SIZE - LEAF_CLEAN_SIZE)));
+    const [dropX, dropZ, ext] = this.droop(pos, halfSize);
     for (let x = -halfSize; x <= halfSize; x++) {
-      for (let y = -halfSize; y <= halfSize; y++) {
+      for (let y = -halfSize - ext; y <= halfSize + ext; y++) {
         for (let z = -halfSize; z <= halfSize; z++) {
           const bx = x + px, by = y + py, bz = z + pz;
-          const left = (x * x) / aa + (y * y) / bb + (z * z) / cc;
-          const r2 = x * x + y * y + z * z;
+          // the shape is tested at the sheared height yy (leafDroop), the noise at the block
+          const yy = y + dropX * x + dropZ * z;
+          const left = (x * x) / aa + (yy * yy) / bb + (z * z) / cc;
+          const r2 = x * x + yy * yy + z * z;
           // far outside even for the largest Smooth offset: skip the noise lookups
           if (left > 0 && Math.sqrt(r2) * (1 - Math.sqrt(tMax / left)) > LEAF_REACH) continue;
           const q = left / (1 + this.calculateNoiseOffset(bx, by, bz, 1, 0));
@@ -233,6 +343,17 @@ export class Draw3d {
         }
       }
     }
+  }
+
+  /**
+   * Draw3d.droop: leafDroop shear of a leaf cluster at pos. A block x, z off the cluster's centre
+   * is tested at height y + dropX * x + dropZ * z, so the cluster sinks leafDroop blocks per block
+   * away from the trunk (the y axis); ext = blocks the y range grows by. All 0 without droop.
+   */
+  droop(pos, halfSize) {
+    const len = Math.sqrt(pos.x * pos.x + pos.z * pos.z);
+    if (this.leafDroop <= 0 || len === 0) return [0, 0, 0];
+    return [(this.leafDroop * pos.x) / len, (this.leafDroop * pos.z) / len, Math.ceil(this.leafDroop * halfSize) | 0];
   }
 
   drawRootJunction(pos, r) {
@@ -299,21 +420,20 @@ export class Draw3d {
     const l1x = blockFloor(l1.x), l1y = blockFloor(l1.y), l1z = blockFloor(l1.z);
     const l2x = blockFloor(l2.x), l2y = blockFloor(l2.y), l2z = blockFloor(l2.z);
     if (orientation === X_MAJOR) {
-      // NB: Java passes l2.getBlockZ() as the y end point here (upstream bug, replicated)
-      const xy = plotLine2d(l1x, l1y, l2x, l2z);
+      const xy = plotLine2d(l1x, l1y, l2x, l2y);
       const xz = plotLine2d(l1x, l1z, l2x, l2z);
       const n = Math.min(xy.length, xz.length) / 2;
-      for (let i = 0; i < n; i++) out.push(l1x + i, xy[i * 2 + 1], xz[i * 2 + 1]);
+      for (let i = 0; i < n; i++) out.push(xy[i * 2], xy[i * 2 + 1], xz[i * 2 + 1]);
     } else if (orientation === Y_MAJOR) {
       const yx = plotLine2d(l1y, l1x, l2y, l2x);
       const yz = plotLine2d(l1y, l1z, l2y, l2z);
       const n = Math.min(yx.length, yz.length) / 2;
-      for (let i = 0; i < n; i++) out.push(yx[i * 2 + 1], l1y + i, yz[i * 2 + 1]);
+      for (let i = 0; i < n; i++) out.push(yx[i * 2 + 1], yx[i * 2], yz[i * 2 + 1]);
     } else if (orientation === Z_MAJOR) {
       const zx = plotLine2d(l1z, l1x, l2z, l2x);
       const zy = plotLine2d(l1z, l1y, l2z, l2y);
       const n = Math.min(zx.length, zy.length) / 2;
-      for (let i = 0; i < n; i++) out.push(zx[i * 2 + 1], zy[i * 2 + 1], l1z + i);
+      for (let i = 0; i < n; i++) out.push(zx[i * 2 + 1], zy[i * 2 + 1], zx[i * 2]);
     }
     return out;
   }

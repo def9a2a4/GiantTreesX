@@ -365,6 +365,9 @@ wood:
 # Any key from the wood section can be overridden, and "leaves" sets a weighted mix of
 # leaf blocks (default: the wood type's own leaves; Poplar mixes yellow, orange and red poplar
 # leaves, Azalea plain and flowering azalea leaves, Crimson and Warped add some shroomlights).
+# A mix grows in patches about a leaf cluster wide, each mostly one leaf picked by weight, with up
+# to 10% of the leaves next to it in this list mixed in (yellow, orange, red: yellow patches get
+# only orange). Leaves weighing at most a tenth of the mix are scattered over single blocks.
 wood_types: {}
   # Oak:
   #   hollow_chance: 10

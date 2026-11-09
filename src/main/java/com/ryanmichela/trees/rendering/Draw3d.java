@@ -17,8 +17,11 @@
  */
 package com.ryanmichela.trees.rendering;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
@@ -55,6 +58,19 @@ public class Draw3d {
   static final double LEAF_FULL_SIZE = 8.0;
   private static final double LEAF_REACH = LEAF_LUMP + LEAF_FINE + LEAF_JITTER / 2;
 
+  // coverBranches; kept in sync with docs/viewer/src/draw3d.js
+  /** Branch wood within this many blocks (Chebyshev) of leaves gets leaves on its top and sides. */
+  static final int COVER_REACH_BRANCH = 3;
+  /** Trunk wood within this many blocks of leaves gets leaves on its top. */
+  static final int COVER_REACH_TRUNK = 1;
+  /** A branch end with no leaves within TIP_REACH blocks gets a leaf cluster TIP_SCALE times the
+   *  size of the tree's own. */
+  static final int TIP_REACH = 2;
+  static final double TIP_SCALE = 0.7;
+  /** Up, then the four horizontal sides. */
+  private static final int[][] COVER_SIDES = {{0, 1, 0}, {1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1}};
+  private static final int[][] FACES = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
+
   public class Point2D {
 
     public int p;
@@ -78,6 +94,14 @@ public class Draw3d {
   private final RenderOrientation  renderOrientation;
 
   private final TreeType           treeType;
+
+  /** Trunk and branch wood drawn (not roots), in drawing order; see {@link #coverBranches}. */
+  private final Set<WorldChangeKey> branchWood = new LinkedHashSet<>();
+  /** Branch ends, see {@link #markStemEnd}. */
+  private final List<Vector>        stemEnds = new ArrayList<>();
+  /** Size of the last leaf cluster drawn. */
+  private double                    leafLength;
+  private double                    leafWidth;
 
   public Draw3d(final Location refPoint, final double noiseIntensity,
                 final TreeType treeType,
@@ -105,7 +129,10 @@ public class Draw3d {
     final double ht = (-rad1 * h) / (rad2 - rad1);
     for (int i = 0; i < centerLine.size(); i++) {
       final Vector centerPoint = centerLine.get(i);
-      final int r = (int) Math.round((rad1 * (ht - i)) / ht);
+      // the centre line can have more blocks than the cone is long (it ends past l2's block
+      // boundary): clamp there instead of extrapolating the taper, which for a cone shorter than a
+      // block (Taper 1-2 ends) gave huge negative radii, drawn as wide discs
+      final int r = (int) Math.round((rad1 * (ht - Math.min(i, h))) / ht);
 
       List<Point2D> circle2d;
       switch (orientation) {
@@ -114,12 +141,7 @@ public class Draw3d {
                                      centerPoint.getBlockZ(),
                                      centerPoint.getBlockX(), r, level);
           for (final Point2D p : circle2d) {
-            addWood(new Vector(
-                                      centerPoint.getBlockX(),
-                                      (l1.getBlockY() - centerPoint.getBlockY())
-                                          + p.p,
-                                      (l1.getBlockZ() - centerPoint.getBlockZ())
-                                          + p.q), orientation, level);
+            addWood(new Vector(centerPoint.getBlockX(), p.p, p.q), orientation, level);
           }
           break;
         case yMajor:
@@ -127,12 +149,7 @@ public class Draw3d {
                                      centerPoint.getBlockZ(),
                                      centerPoint.getBlockY(), r, level);
           for (final Point2D p : circle2d) {
-            addWood(new Vector(
-                                                    (l1.getBlockX() - centerPoint.getBlockX())
-                                                        + p.p,
-                                                    centerPoint.getBlockY(),
-                                                    (l1.getBlockZ() - centerPoint.getBlockZ())
-                                                        + p.q), orientation, level);
+            addWood(new Vector(p.p, centerPoint.getBlockY(), p.q), orientation, level);
           }
           break;
         case zMajor:
@@ -140,12 +157,7 @@ public class Draw3d {
                                      centerPoint.getBlockY(),
                                      centerPoint.getBlockZ(), r, level);
           for (final Point2D p : circle2d) {
-            addWood(new Vector(
-                                                    (l1.getBlockX() - centerPoint.getBlockX())
-                                                        + p.p,
-                                                    (l1.getBlockY() - centerPoint.getBlockY())
-                                                        + p.q,
-                                                    centerPoint.getBlockZ()), orientation, level);
+            addWood(new Vector(p.p, p.q, centerPoint.getBlockZ()), orientation, level);
           }
           break;
       }
@@ -154,6 +166,8 @@ public class Draw3d {
 
   public void drawLeafCluster(final Vector pos, final double length,
                               final double width) {
+    this.leafLength = length;
+    this.leafWidth = width;
     final List<Vector> points = treeType.noisyLeaves
         ? plotNoisyEllipsoid(pos, length, width, length)
         : plotEllipsoid(pos, length, width, length, 0);
@@ -187,7 +201,130 @@ public class Draw3d {
     } else {
       changeTracker.addChange(loc, treeType.woodMaterial, orient(orientation), WorldChange.Kind.WOOD,
                               level, true);
+      if (renderOrientation == RenderOrientation.NORMAL) {
+        branchWood.add(new WorldChangeKey(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
+      }
     }
+  }
+
+  /** A stem's last point; branch ends (level 1 up) get covered by {@link #coverBranches}. */
+  public void markStemEnd(final Vector pos, final int level) {
+    if (level >= 1 && level < treeType.capLevel && renderOrientation == RenderOrientation.NORMAL) {
+      stemEnds.add(pos);
+    }
+  }
+
+  /** Decides how many of {@link #COVER_SIDES} to cover around a wood block. */
+  private interface CoverSides {
+    int count(int x, int y, int z, int level);
+  }
+
+  /**
+   * After the leaves: a branch should have leaves atop it and at its ends.
+   * <ol>
+   * <li>Each branch end ({@link #markStemEnd}) with no leaves within {@link #TIP_REACH} gets a
+   * leaf cluster.</li>
+   * <li>Branch wood (not roots) within {@link #COVER_REACH_BRANCH} of leaves gets leaves in the
+   * empty blocks above and beside it; trunk wood within {@link #COVER_REACH_TRUNK} only above it
+   * (where it ends in the crown). Bare limbs well below the canopy stay bare.</li>
+   * <li>Wood still showing amid leaves (two or more leaf faces) gets leaves above and beside
+   * it.</li>
+   * </ol>
+   * Off for plain-leaved types (mushrooms, fungi).
+   */
+  public void coverBranches() {
+    if (!treeType.noisyLeaves || renderOrientation != RenderOrientation.NORMAL) {
+      return;
+    }
+    final double tipLength = leafLength * TIP_SCALE;
+    final double tipWidth = leafWidth * TIP_SCALE;
+    if (tipLength > 0) {
+      for (final Vector end : stemEnds) {
+        if (!leafWithin(end.getBlockX(), end.getBlockY(), end.getBlockZ(), TIP_REACH)) {
+          drawLeafCluster(end, tipLength, tipWidth);
+        }
+      }
+    }
+    // near the canopy: the trunk only on top (where it ends in the crown), branches on top and sides
+    coverPass((x, y, z, level) -> {
+      if (level == 0) {
+        return leafWithin(x, y, z, COVER_REACH_TRUNK) ? 1 : 0;
+      }
+      return leafWithin(x, y, z, COVER_REACH_BRANCH) ? COVER_SIDES.length : 0;
+    });
+    // wood the first pass left showing amid leaves (two or more leaf faces): top and sides
+    coverPass((x, y, z, level) -> leafFaces(x, y, z) >= 2 ? COVER_SIDES.length : 0);
+  }
+
+  /** Leaves in the empty blocks of the first sides.count(..) of COVER_SIDES around each trunk and
+   *  branch block, decided for all blocks first. */
+  private void coverPass(final CoverSides sides) {
+    final Set<WorldChangeKey> cover = new LinkedHashSet<>();
+    for (final WorldChangeKey key : branchWood) {
+      final WorldChange change = changeTracker.getChange(key);
+      if (change.kind != WorldChange.Kind.WOOD) {
+        continue;
+      }
+      final int n = sides.count(key.x, key.y, key.z, change.level);
+      for (int k = 0; k < n; k++) {
+        final WorldChangeKey side = new WorldChangeKey(key.x + COVER_SIDES[k][0],
+                                                       key.y + COVER_SIDES[k][1],
+                                                       key.z + COVER_SIDES[k][2]);
+        if (changeTracker.getChange(side) == null) {
+          cover.add(side);
+        }
+      }
+    }
+    for (final WorldChangeKey key : cover) {
+      changeTracker.addChange(key.toVector(), treeType.leafMaterial, persist(),
+                              WorldChange.Kind.LEAVES, -1, false);
+    }
+  }
+
+  /** Leaf blocks among a block's six face neighbours. */
+  private int leafFaces(final int x, final int y, final int z) {
+    int n = 0;
+    for (final int[] f : FACES) {
+      if (isLeaf(x + f[0], y + f[1], z + f[2])) {
+        n++;
+      }
+    }
+    return n;
+  }
+
+  /** Whether a leaf block lies within reach (Chebyshev distance) of a block. */
+  private boolean leafWithin(final int x, final int y, final int z, final int reach) {
+    for (int dx = -reach; dx <= reach; dx++) {
+      for (int dy = -reach; dy <= reach; dy++) {
+        for (int dz = -reach; dz <= reach; dz++) {
+          if (isLeaf(x + dx, y + dy, z + dz)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  private boolean isLeaf(final int x, final int y, final int z) {
+    final WorldChange c = changeTracker.getChange(new WorldChangeKey(x, y, z));
+    return c != null && c.kind == WorldChange.Kind.LEAVES;
+  }
+
+  /**
+   * leafDroop shear of a leaf cluster at pos: a block x, z off the cluster's centre is tested at
+   * height y + drop[0] * x + drop[1] * z, so the cluster sinks {@link TreeType#leafDroop} blocks per
+   * block away from the trunk (the y axis); drop[2] = blocks the y range grows by. All 0 without
+   * droop.
+   */
+  private double[] droop(final Vector pos, final int halfSize) {
+    final double len = Math.sqrt((pos.getX() * pos.getX()) + (pos.getZ() * pos.getZ()));
+    if (treeType.leafDroop <= 0 || len == 0) {
+      return new double[] {0, 0, 0};
+    }
+    return new double[] {(treeType.leafDroop * pos.getX()) / len,
+                         (treeType.leafDroop * pos.getZ()) / len,
+                         Math.ceil(treeType.leafDroop * halfSize)};
   }
 
   public Vector
@@ -288,11 +425,15 @@ public class Draw3d {
     final List<Vector> points = new LinkedList<>();
 
     final int halfSize = (int) Math.ceil(Math.max(Math.max(a, b), c)) + 2;
+    final double[] drop = droop(pos, halfSize);
+    final int ext = (int) drop[2];
 
     for (int x = -halfSize; x <= halfSize; x++) {
-      for (int y = -halfSize; y <= halfSize; y++) {
+      for (int y = -halfSize - ext; y <= (halfSize + ext); y++) {
         for (int z = -halfSize; z <= halfSize; z++) {
-          final double left = ((x * x) / (a * a)) + ((y * y) / (b * b))
+          // the shape is tested at the sheared height yy (leafDroop), the noise at the block
+          final double yy = y + (drop[0] * x) + (drop[1] * z);
+          final double left = ((x * x) / (a * a)) + ((yy * yy) / (b * b))
                               + ((z * z) / (c * c));
           final double noiseOffset = calculateNoiseOffset((x + pos.getBlockX()),
                                                                (y + pos.getBlockY()),
@@ -328,14 +469,18 @@ public class Draw3d {
     final double tMax = 1 + (2.5 * noiseIntensity);
     final double clusterAmp = Math.min(1, Math.max(0, (a - LEAF_CLEAN_SIZE)
                                                       / (LEAF_FULL_SIZE - LEAF_CLEAN_SIZE)));
+    final double[] drop = droop(pos, halfSize);
+    final int ext = (int) drop[2];
     for (int x = -halfSize; x <= halfSize; x++) {
-      for (int y = -halfSize; y <= halfSize; y++) {
+      for (int y = -halfSize - ext; y <= (halfSize + ext); y++) {
         for (int z = -halfSize; z <= halfSize; z++) {
           final int bx = x + px;
           final int by = y + py;
           final int bz = z + pz;
-          final double left = ((x * x) / (a * a)) + ((y * y) / (b * b)) + ((z * z) / (c * c));
-          final int r2 = (x * x) + (y * y) + (z * z);
+          // the shape is tested at the sheared height yy (leafDroop), the noise at the block
+          final double yy = y + (drop[0] * x) + (drop[1] * z);
+          final double left = ((x * x) / (a * a)) + ((yy * yy) / (b * b)) + ((z * z) / (c * c));
+          final double r2 = (x * x) + (yy * yy) + (z * z);
           // far outside even for the largest Smooth offset: skip the noise lookups
           if ((left > 0) && ((Math.sqrt(r2) * (1 - Math.sqrt(tMax / left))) > LEAF_REACH)) {
             continue;
@@ -446,11 +591,11 @@ public class Draw3d {
     if (orientation == Orientation.xMajor) /* x dominant */
     {
       final List<Point2D> xy = plotLine2d(l1.getBlockX(), l1.getBlockY(),
-                                               l2.getBlockX(), l2.getBlockZ());
+                                               l2.getBlockX(), l2.getBlockY());
       final List<Point2D> xz = plotLine2d(l1.getBlockX(), l1.getBlockZ(),
                                                l2.getBlockX(), l2.getBlockZ());
       for (int i = 0; i < Math.min(xy.size(), xz.size()); i++) {
-        locations.add(new Vector(l1.getBlockX() + i, xy.get(i).q, xz.get(i).q));
+        locations.add(new Vector(xy.get(i).p, xy.get(i).q, xz.get(i).q));
       }
     } else if (orientation == Orientation.yMajor) /* y dominant */
     {
@@ -459,7 +604,7 @@ public class Draw3d {
       final List<Point2D> yz = plotLine2d(l1.getBlockY(), l1.getBlockZ(),
                                                l2.getBlockY(), l2.getBlockZ());
       for (int i = 0; i < Math.min(yx.size(), yz.size()); i++) {
-        locations.add(new Vector(yx.get(i).q, l1.getBlockY() + i, yz.get(i).q));
+        locations.add(new Vector(yx.get(i).q, yx.get(i).p, yz.get(i).q));
       }
     } else if (orientation == Orientation.zMajor) /* z dominant */
     {
@@ -468,7 +613,7 @@ public class Draw3d {
       final List<Point2D> zy = plotLine2d(l1.getBlockZ(), l1.getBlockY(),
                                                l2.getBlockZ(), l2.getBlockY());
       for (int i = 0; i < Math.min(zx.size(), zy.size()); i++) {
-        locations.add(new Vector(zx.get(i).q, zy.get(i).q, l1.getBlockZ() + i));
+        locations.add(new Vector(zx.get(i).q, zy.get(i).q, zx.get(i).p));
       }
     }
 

@@ -45,6 +45,8 @@ public class MinecraftExporter extends Exporter {
         final MinecraftLeafExporter lexporter = new MinecraftLeafExporter(
                                                                           this.d3d);
         this.tree.traverseTree(lexporter);
+        // leaves atop and at the ends of the branches
+        this.d3d.coverBranches();
       }
     } catch (final TraversalException e) {
       e.printStackTrace();
