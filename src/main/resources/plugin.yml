@@ -3,7 +3,7 @@ description: ${project.description}
 author: Ryan Michela
 version: "${project.version}"
 api-version: ${api-version}
-main: com.ryanmichela.trees.TreePlugin
+main: io.github.def9a2a4.gianttreesx.TreePlugin
 load: STARTUP
 
 commands:

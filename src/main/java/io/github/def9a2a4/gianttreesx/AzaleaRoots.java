@@ -1,4 +1,4 @@
-package com.ryanmichela.trees;
+package io.github.def9a2a4.gianttreesx;
 
 import java.util.Random;
 
@@ -9,7 +9,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.plugin.Plugin;
 
-import com.ryanmichela.trees.rendering.Protection;
+import io.github.def9a2a4.gianttreesx.rendering.Protection;
 
 /**
  * Vanilla's azalea tree root system: a column of rooted dirt from the tree's base down toward the

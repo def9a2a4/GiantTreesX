@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.ryanmichela.trees;
+package io.github.def9a2a4.gianttreesx;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -32,7 +32,7 @@ import org.bukkit.World;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.plugin.Plugin;
 
-import com.ryanmichela.trees.rendering.TreeRenderer;
+import io.github.def9a2a4.gianttreesx.rendering.TreeRenderer;
 
 public class TreePopulator extends BlockPopulator {
 

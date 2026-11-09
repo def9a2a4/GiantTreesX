@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.ryanmichela.trees;
+package io.github.def9a2a4.gianttreesx;
 
 import java.io.File;
 import java.util.Locale;
@@ -30,7 +30,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import com.ryanmichela.trees.rendering.TreeRenderer;
+import io.github.def9a2a4.gianttreesx.rendering.TreeRenderer;
 
 public class CreateTreeCommand implements CommandExecutor {
 

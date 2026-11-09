@@ -19,7 +19,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>GiantTrees</groupId>
+  <groupId>io.github.def9a2a4</groupId>
   <artifactId>GiantTrees</artifactId>
   <name>GiantTrees</name>
   <version>4.0</version>
@@ -36,9 +36,9 @@
     <tagNameFormat>@{project.version}</tagNameFormat>
   </properties>
   <scm>
-    <connection>scm:git:git://github.com/rmichela/GiantTrees.git</connection>
-    <developerConnection>scm:git:git@github.com:rmichela/GiantTrees.git</developerConnection>
-    <url>https://github.com/rmichela/GiantTrees</url>
+    <connection>scm:git:git://github.com/def9a2a4/GiantTreesX.git</connection>
+    <developerConnection>scm:git:git@github.com:def9a2a4/GiantTreesX.git</developerConnection>
+    <url>https://github.com/def9a2a4/GiantTreesX</url>
   </scm>
   <licenses>
     <license>

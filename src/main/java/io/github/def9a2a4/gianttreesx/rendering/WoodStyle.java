@@ -1,4 +1,4 @@
-package com.ryanmichela.trees.rendering;
+package io.github.def9a2a4.gianttreesx.rendering;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;

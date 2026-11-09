@@ -1,4 +1,4 @@
-package com.ryanmichela.trees;
+package io.github.def9a2a4.gianttreesx;
 
 import java.io.File;
 import java.util.ArrayList;

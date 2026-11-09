@@ -1,4 +1,4 @@
-package com.ryanmichela.trees;
+package io.github.def9a2a4.gianttreesx;
 
 import org.bukkit.Material;
 import org.bukkit.Tag;
