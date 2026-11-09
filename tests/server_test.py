@@ -3,7 +3,7 @@
 
 Runs a real Paper server (already set up by `make server-setup`) twice:
 
-1. natural: treeGrowthPercentChance=100 for a while, then checks that trees were generated and
+1. natural: natural.chance=100 for a while, then checks that trees were generated and
    nothing went wrong (no errors, exceptions, or legacy-material warnings).
 2. placement: grows trees from the console at known spots and inspects the placed blocks with
    vanilla `execute if block`: planted on the soil surface, bark on the outside, the configured
@@ -122,7 +122,7 @@ def write_config(server_dir: Path, source: Path, chance: float, overrides: str =
     cfg_dir = server_dir / "plugins" / "GiantTrees"
     cfg_dir.mkdir(parents=True, exist_ok=True)
     text = source.read_text()
-    text = re.sub(r"(?m)^treeGrowthPercentChance:.*$", f"treeGrowthPercentChance: {chance}", text)
+    text = re.sub(r"(?m)^  chance:.*$", f"  chance: {chance}", text, count=1)  # natural.chance
     text = re.sub(r"(?m)^wood_types:.*$", "", text)
     text = re.sub(r"(?m)^wood:\n(  .*\n)+", "", text)
     (cfg_dir / "config.yml").write_text(text + "\nverbose-logging: true\n" + overrides)
@@ -162,9 +162,9 @@ def phase_natural(args) -> list[str]:
           f"{placed} placed")
     if placed == 0:
         failures.append("natural: no trees were placed")
-    # natural-tree-sizes makes huge trees 2x and big trees 4x as likely as giants, so 6 in 7
+    # natural.sizes makes huge trees 2x and big trees 4x as likely as giants, so 6 in 7
     # trees are huge or big (2 in 3 for jungle and spruce, which have no big tree); with 10+
-    # trees, none is at worst a ~2e-5 fluke, so it means the sizes or the natural-trees expansion
+    # trees, none is at worst a ~2e-5 fluke, so it means the sizes or the natural.trees expansion
     # to tree.*_HUGE / *_BIG files are not working
     if rendered >= 10 and smaller == 0:
         failures.append(f"natural: {rendered} trees rendered but none was a huge or big variant")

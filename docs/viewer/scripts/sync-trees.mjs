@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Copies the plugin's tree files (src/main/resources/tree.*.xml) into docs/trees/ and writes
 // docs/trees/index.json (the file list) and docs/trees/natural-trees.json (the biomes each tree
-// spawns in, from config.yml's natural-trees; see natural-trees.mjs), so GitHub Pages (serving
+// spawns in, from config.yml's natural.trees; see natural-trees.mjs), so GitHub Pages (serving
 // docs/) can show them. Anything else in docs/trees/ is removed.
 //
 //   node docs/viewer/scripts/sync-trees.mjs           update docs/trees/

@@ -1,347 +1,351 @@
-# By default, Giant Trees only creates trees when you ask it to. To enable automatic
-# generation of trees in your world as new chunks are generated, set naturallyGrowTrees
-# to true
-naturallyGrowTrees: true
-# Percent chance that a new chunk in a natural-trees biome grows a tree (a biome can set its own)
-treeGrowthPercentChance: 0.5
+# Natural trees: trees that grow in new chunks as the world is generated.
+natural:
+  # false: no natural trees at all
+  enabled: true
+  # the worlds they grow in
+  worlds:
+    - world
+  # percent chance that a new chunk in one of the biomes below grows a tree (a biome can set its own)
+  chance: 0.5
+  # How often each size is picked, relative to each other. Trees come in three sizes: giant
+  # (tree.OAK.xml, 40-60 blocks tall), huge (tree.OAK_HUGE.xml, 25-40) and big (tree.OAK_BIG.xml,
+  # about 14-24). With these, a biome grows 2 huge and 4 big trees for every giant (jungle and
+  # spruce have no big tree). 0 stops a size spawning; sizes left out keep these values.
+  sizes:
+    giant: 1
+    huge: 2
+    big: 4
+  # Which trees grow in each biome. A name grows that tree in every size it has a file for: OAK
+  # grows tree.OAK.xml, tree.OAK_HUGE.xml and tree.OAK_BIG.xml (whichever exist), and nothing
+  # else (not tree.OAK_PLAINS.xml). OAK_HUGE grows only tree.OAK_HUGE.xml. Names are the file
+  # names' capitals (tree.MY_TREE.xml is MY_TREE).
+  #
+  # A biome can also set its own chance, tree weights and sizes:
+  #   PLAINS:
+  #     chance: 0.2                 # percent per chunk, instead of natural.chance
+  #     trees: {OAK: 3, BIRCH: 1}   # 3 oaks for every birch ([OAK, BIRCH] weighs each 1)
+  #     sizes: {giant: 0}           # no giant trees here; huge and big keep natural.sizes
+  # A tree file is picked by its tree's weight times its size's weight. A sized name sets its own
+  # weight even next to its tree: {OAK: 1, OAK_HUGE: 0} grows giant and big oaks only. The map
+  # form needs trees: a biome without them grows nothing.
+  #
+  # Keys are biome names (PLAINS, FLOWER_FOREST, ...; any case; a namespace such as "minecraft:"
+  # is optional and ignored, so datapack biomes go by their name alone). Some names also cover
+  # their variants unless the variant has its own entry: FOREST covers FLOWER_FOREST and
+  # WINDSWEPT_FOREST, BIRCH_FOREST covers OLD_GROWTH_BIRCH_FOREST, JUNGLE covers SPARSE_JUNGLE,
+  # TAIGA covers SNOWY_TAIGA, SAVANNA covers SAVANNA_PLATEAU and WINDSWEPT_SAVANNA, BADLANDS
+  # covers ERODED_BADLANDS and WOODED_BADLANDS.
+  # LUSH_CAVES trees grow on soil in any biome, but only above a lush cave. There they join the
+  # surface biome's trees; the surface biome's chance applies, or LUSH_CAVES's where it has none.
+  #
+  # Remove a biome (or give it []) to stop its own trees there (LUSH_CAVES trees still grow
+  # above lush caves); "trees: {}" stops all of them. Deleting the whole list brings back these
+  # defaults. Unknown tree or biome names are logged at startup. Keep this bundled list in the
+  # one-line [A, B] form: the website reads it.
+  trees:
+    FOREST: [OAK, COTTONWOOD]
+    BIRCH_FOREST: [BIRCH]
+    CHERRY_GROVE: [CHERRY]
+    DARK_FOREST: [DARK_OAK]
+    PALE_GARDEN: [PALE_OAK]
+    SWAMP: [SWAMP_OAK]
+    MANGROVE_SWAMP: [MANGROVE]
+    JUNGLE: [JUNGLE]
+    TAIGA: [SPRUCE]
+    SAVANNA: [ACACIA]
+    BADLANDS: [MESAPUZZLE]
+    MUSHROOM_FIELDS: [RED_MUSHROOM, BROWN_MUSHROOM]
+    DAPPLED_FOREST: [POPLAR]
+    LUSH_CAVES: [AZALEA]
 
-# The worlds list below is only used when naturallyGrowTrees is set to true
-worlds:
-  - world
-
-# How often each size is picked when a tree grows naturally, relative to each other. Trees come
-# in three sizes: giant (tree.OAK.xml, 40-60 blocks tall), huge (tree.OAK_HUGE.xml, 25-40) and
-# big (tree.OAK_BIG.xml, about 14-24). With these, a biome grows 2 huge and 4 big trees for
-# every giant (jungle and spruce have no big tree). 0 stops a size spawning. Sizes left out
-# keep these values. A biome in natural-trees can set its own sizes.
-natural-tree-sizes:
-  giant: 1
-  huge: 2
-  big: 4
-
-# Which trees grow naturally in each biome. A name grows that tree in every size it has a file
-# for: OAK grows tree.OAK.xml, tree.OAK_HUGE.xml and tree.OAK_BIG.xml (whichever exist), and
-# nothing else (not tree.OAK_PLAINS.xml). OAK_HUGE grows only tree.OAK_HUGE.xml. Names are
-# the file names' capitals (tree.MY_TREE.xml is MY_TREE).
-#
-# A biome can also set its own chance, tree weights and sizes:
-#   PLAINS:
-#     chance: 0.2                 # percent per chunk, instead of treeGrowthPercentChance
-#     trees: {OAK: 3, BIRCH: 1}   # 3 oaks for every birch ([OAK, BIRCH] weighs each 1)
-#     sizes: {giant: 0}           # no giant trees here; huge and big keep natural-tree-sizes
-# A tree file is picked by its tree's weight times its size's weight. A sized name sets its own
-# weight even next to its tree: {OAK: 1, OAK_HUGE: 0} grows giant and big oaks only. The map
-# form needs trees: a biome without them grows nothing.
-#
-# Keys are biome names (PLAINS, FLOWER_FOREST, ...; any case; a namespace such as "minecraft:"
-# is optional and ignored, so datapack biomes go by their name alone). Some names also cover
-# their variants unless the variant has its own entry: FOREST covers FLOWER_FOREST and
-# WINDSWEPT_FOREST, BIRCH_FOREST covers OLD_GROWTH_BIRCH_FOREST, JUNGLE covers SPARSE_JUNGLE,
-# TAIGA covers SNOWY_TAIGA, SAVANNA covers SAVANNA_PLATEAU and WINDSWEPT_SAVANNA, BADLANDS
-# covers ERODED_BADLANDS and WOODED_BADLANDS.
-# LUSH_CAVES trees grow on soil in any biome, but only above a lush cave. There they join the
-# surface biome's trees; the surface biome's chance applies, or LUSH_CAVES's where it has none.
-#
-# Remove a biome (or give it []) to stop its own trees there (LUSH_CAVES trees still grow
-# above lush caves); "natural-trees: {}" stops all of them.
-# Deleting the whole section brings back these defaults. Unknown tree or biome names are
-# logged at startup. Keep this bundled list in the one-line [A, B] form: the website reads it.
-natural-trees:
-  FOREST: [OAK, COTTONWOOD]
-  BIRCH_FOREST: [BIRCH]
-  CHERRY_GROVE: [CHERRY]
-  DARK_FOREST: [DARK_OAK]
-  PALE_GARDEN: [PALE_OAK]
-  SWAMP: [SWAMP_OAK]
-  MANGROVE_SWAMP: [MANGROVE]
-  JUNGLE: [JUNGLE]
-  TAIGA: [SPRUCE]
-  SAVANNA: [ACACIA]
-  BADLANDS: [MESAPUZZLE]
-  MUSHROOM_FIELDS: [RED_MUSHROOM, BROWN_MUSHROOM]
-  DAPPLED_FOREST: [POPLAR]
-  LUSH_CAVES: [AZALEA]
-
-# The planting pattern is used to grow giant trees in survival mode using collected resources.
-planting-patterns:
+# Growing trees from saplings: lay out a pattern of saplings around the core block and
+# right-click the core block with bone meal.
+planting:
+  # false: trees can't be grown from saplings at all
+  enabled: true
+  # false turns a size off; its patterns are ignored, so a 5 x 5 ring with giant: false grows
+  # the huge tree of its inner 3 x 3 ring
+  sizes:
+    giant: true
+    huge: true
+    big: true
+  # bone meal each size takes from the player's inventory; 0 makes it free
+  bone-meal:
+    giant: 64
+    huge: 32
+    big: 16
+  # the block in the middle of every pattern (X)
+  core: EMERALD_BLOCK
   # Three sizes, by the shape of the pattern around the core block (in the center):
-  #   5 x 5 ring        giant tree (tree.OAK.xml)       costs bone-meal-consumed
-  #   full 3 x 3 ring   huge tree  (tree.OAK_HUGE.xml)  costs bone-meal-consumed-huge
-  #   3 x 3 plus        big tree   (tree.OAK_BIG.xml)   costs bone-meal-consumed-big
+  #   5 x 5 ring        giant tree (tree.OAK.xml)
+  #   full 3 x 3 ring   huge tree  (tree.OAK_HUGE.xml)
+  #   3 x 3 plus        big tree   (tree.OAK_BIG.xml)
   # The plus shape has saplings north, east, south and west of the core; its corners are "-"
   # (don't care), so whatever stands there is ignored and left alone.
   # The most specific pattern that fits wins: a 5 x 5 ring before the 3 x 3 ring inside it, a
   # full 3 x 3 ring before a plus. Patterns are matched in all four 90 degree rotations.
-  # The name of a pattern is the tree file it grows: oak_huge grows tree.OAK_HUGE.xml. The cost
-  # goes by the name: *_huge (and *_small from older configs) costs bone-meal-consumed-huge, *_big
-  # bone-meal-consumed-big; other names go by shape (5 x 5 giant, full 3 x 3 huge, else big).
+  # The name of a pattern is the tree file it grows: oak_huge grows tree.OAK_HUGE.xml. Its size
+  # goes by the name: *_huge is huge, *_big big; other names go by shape (5 x 5 giant, full
+  # 3 x 3 huge, else big).
   # Each row in the pattern represents one row of blocks placed horizontally on the ground.
   # All rows must be as long as there are rows (a square).
   # Each character in the pattern represents one of the following saplings:
-  # A=Acacia, O=Oak, D=Dark Oak, B=Birch, C=Cherry, M=Mangrove Propaglue, S=Spruce, J=Jungle,
+  # A=Acacia, O=Oak, D=Dark Oak, B=Birch, C=Cherry, M=Mangrove Propagule, S=Spruce, J=Jungle,
   # P=Pale Oak, L=Poplar (Minecraft 26.3+), R=Red Mushroom, N=Brown Mushroom, F=Crimson Fungus,
   # W=Warped Fungus, Z=Azalea, Y=Flowering Azalea, H=Blue Orchid, X for core, and - for any
   # block (don't care). Rows starting with - are quoted ("-O-") to keep them plain strings.
   # Patterns using a sapling the server doesn't have (e.g. poplar before 26.3) are skipped.
-  acacia:
-    - AAAAA
-    - AAAAA
-    - AAXAA
-    - AAAAA
-    - AAAAA
-  oak:
-    - OOOOO
-    - OOOOO
-    - OOXOO
-    - OOOOO
-    - OOOOO
-  birch:
-    - BBBBB
-    - BBBBB
-    - BBXBB
-    - BBBBB
-    - BBBBB
-  cherry:
-    - CCCCC
-    - CCCCC
-    - CCXCC
-    - CCCCC
-    - CCCCC
-  dark_oak:
-    - DDDDD
-    - DDDDD
-    - DDXDD
-    - DDDDD
-    - DDDDD
-  spruce:
-    - SSSSS
-    - SSSSS
-    - SSXSS
-    - SSSSS
-    - SSSSS
-  jungle:
-    - JJJJJ
-    - JJJJJ
-    - JJXJJ
-    - JJJJJ
-    - JJJJJ
-  mangrove:
-    - MMMMM
-    - MMMMM
-    - MMXMM
-    - MMMMM
-    - MMMMM
-  mesapuzzle:
-    - AAAAA
-    - AOOOA
-    - AOXOA
-    - AOOOA
-    - AAAAA
-  cottonwood:
-    - BOOOB
-    - OBOBO
-    - OOXOO
-    - OBOBO
-    - BOOOB
-  pale_oak:
-    - PPPPP
-    - PPPPP
-    - PPXPP
-    - PPPPP
-    - PPPPP
-  swamp_oak:
-    - HOOOH
-    - OOOOO
-    - OOXOO
-    - OOOOO
-    - HOOOH
-  poplar:
-    - LLLLL
-    - LLLLL
-    - LLXLL
-    - LLLLL
-    - LLLLL
-  red_mushroom:
-    - RRRRR
-    - RRRRR
-    - RRXRR
-    - RRRRR
-    - RRRRR
-  brown_mushroom:
-    - NNNNN
-    - NNNNN
-    - NNXNN
-    - NNNNN
-    - NNNNN
-  crimson_fungus:
-    - FFFFF
-    - FFFFF
-    - FFXFF
-    - FFFFF
-    - FFFFF
-  warped_fungus:
-    - WWWWW
-    - WWWWW
-    - WWXWW
-    - WWWWW
-    - WWWWW
-  azalea:
-    - ZYZYZ
-    - YZZZY
-    - ZZXZZ
-    - YZZZY
-    - ZYZYZ
-  # 3 x 3 rings: huge trees (bone-meal-consumed-huge)
-  acacia_huge:
-    - AAA
-    - AXA
-    - AAA
-  oak_huge:
-    - OOO
-    - OXO
-    - OOO
-  birch_huge:
-    - BBB
-    - BXB
-    - BBB
-  cherry_huge:
-    - CCC
-    - CXC
-    - CCC
-  dark_oak_huge:
-    - DDD
-    - DXD
-    - DDD
-  spruce_huge:
-    - SSS
-    - SXS
-    - SSS
-  jungle_huge:
-    - JJJ
-    - JXJ
-    - JJJ
-  mangrove_huge:
-    - MMM
-    - MXM
-    - MMM
-  pale_oak_huge:
-    - PPP
-    - PXP
-    - PPP
-  poplar_huge:
-    - LLL
-    - LXL
-    - LLL
-  red_mushroom_huge:
-    - RRR
-    - RXR
-    - RRR
-  brown_mushroom_huge:
-    - NNN
-    - NXN
-    - NNN
-  crimson_fungus_huge:
-    - FFF
-    - FXF
-    - FFF
-  warped_fungus_huge:
-    - WWW
-    - WXW
-    - WWW
-  mesapuzzle_huge:
-    - AOA
-    - OXO
-    - AOA
-  cottonwood_huge:
-    - OBO
-    - BXB
-    - OBO
-  swamp_oak_huge:
-    - HOH
-    - OXO
-    - HOH
-  azalea_huge:
-    - YZY
-    - ZXZ
-    - YZY
-  # 3 x 3 plus shapes: big trees (bone-meal-consumed-big). Only the saplings north, east,
-  # south and west of the core count; the corners (-) can be anything.
-  # Jungle and spruce have no big tree: vanilla's 2 x 2 jungle and spruce trees fill that size.
-  acacia_big:
-    - "-A-"
-    - AXA
-    - "-A-"
-  oak_big:
-    - "-O-"
-    - OXO
-    - "-O-"
-  birch_big:
-    - "-B-"
-    - BXB
-    - "-B-"
-  cherry_big:
-    - "-C-"
-    - CXC
-    - "-C-"
-  dark_oak_big:
-    - "-D-"
-    - DXD
-    - "-D-"
-  mangrove_big:
-    - "-M-"
-    - MXM
-    - "-M-"
-  pale_oak_big:
-    - "-P-"
-    - PXP
-    - "-P-"
-  poplar_big:
-    - "-L-"
-    - LXL
-    - "-L-"
-  red_mushroom_big:
-    - "-R-"
-    - RXR
-    - "-R-"
-  brown_mushroom_big:
-    - "-N-"
-    - NXN
-    - "-N-"
-  crimson_fungus_big:
-    - "-F-"
-    - FXF
-    - "-F-"
-  warped_fungus_big:
-    - "-W-"
-    - WXW
-    - "-W-"
-  mesapuzzle_big:
-    - "-A-"
-    - OXO
-    - "-A-"
-  cottonwood_big:
-    - "-B-"
-    - OXO
-    - "-B-"
-  swamp_oak_big:
-    - "-H-"
-    - OXO
-    - "-H-"
-  azalea_big:
-    - "-Y-"
-    - ZXZ
-    - "-Y-"
+  # Deleting the whole list brings back these defaults; "patterns: {}" grows nothing.
+  patterns:
+    acacia:
+      - AAAAA
+      - AAAAA
+      - AAXAA
+      - AAAAA
+      - AAAAA
+    oak:
+      - OOOOO
+      - OOOOO
+      - OOXOO
+      - OOOOO
+      - OOOOO
+    birch:
+      - BBBBB
+      - BBBBB
+      - BBXBB
+      - BBBBB
+      - BBBBB
+    cherry:
+      - CCCCC
+      - CCCCC
+      - CCXCC
+      - CCCCC
+      - CCCCC
+    dark_oak:
+      - DDDDD
+      - DDDDD
+      - DDXDD
+      - DDDDD
+      - DDDDD
+    spruce:
+      - SSSSS
+      - SSSSS
+      - SSXSS
+      - SSSSS
+      - SSSSS
+    jungle:
+      - JJJJJ
+      - JJJJJ
+      - JJXJJ
+      - JJJJJ
+      - JJJJJ
+    mangrove:
+      - MMMMM
+      - MMMMM
+      - MMXMM
+      - MMMMM
+      - MMMMM
+    mesapuzzle:
+      - AAAAA
+      - AOOOA
+      - AOXOA
+      - AOOOA
+      - AAAAA
+    cottonwood:
+      - BOOOB
+      - OBOBO
+      - OOXOO
+      - OBOBO
+      - BOOOB
+    pale_oak:
+      - PPPPP
+      - PPPPP
+      - PPXPP
+      - PPPPP
+      - PPPPP
+    swamp_oak:
+      - HOOOH
+      - OOOOO
+      - OOXOO
+      - OOOOO
+      - HOOOH
+    poplar:
+      - LLLLL
+      - LLLLL
+      - LLXLL
+      - LLLLL
+      - LLLLL
+    red_mushroom:
+      - RRRRR
+      - RRRRR
+      - RRXRR
+      - RRRRR
+      - RRRRR
+    brown_mushroom:
+      - NNNNN
+      - NNNNN
+      - NNXNN
+      - NNNNN
+      - NNNNN
+    crimson_fungus:
+      - FFFFF
+      - FFFFF
+      - FFXFF
+      - FFFFF
+      - FFFFF
+    warped_fungus:
+      - WWWWW
+      - WWWWW
+      - WWXWW
+      - WWWWW
+      - WWWWW
+    azalea:
+      - ZYZYZ
+      - YZZZY
+      - ZZXZZ
+      - YZZZY
+      - ZYZYZ
+    # 3 x 3 rings: huge trees
+    acacia_huge:
+      - AAA
+      - AXA
+      - AAA
+    oak_huge:
+      - OOO
+      - OXO
+      - OOO
+    birch_huge:
+      - BBB
+      - BXB
+      - BBB
+    cherry_huge:
+      - CCC
+      - CXC
+      - CCC
+    dark_oak_huge:
+      - DDD
+      - DXD
+      - DDD
+    spruce_huge:
+      - SSS
+      - SXS
+      - SSS
+    jungle_huge:
+      - JJJ
+      - JXJ
+      - JJJ
+    mangrove_huge:
+      - MMM
+      - MXM
+      - MMM
+    pale_oak_huge:
+      - PPP
+      - PXP
+      - PPP
+    poplar_huge:
+      - LLL
+      - LXL
+      - LLL
+    red_mushroom_huge:
+      - RRR
+      - RXR
+      - RRR
+    brown_mushroom_huge:
+      - NNN
+      - NXN
+      - NNN
+    crimson_fungus_huge:
+      - FFF
+      - FXF
+      - FFF
+    warped_fungus_huge:
+      - WWW
+      - WXW
+      - WWW
+    mesapuzzle_huge:
+      - AOA
+      - OXO
+      - AOA
+    cottonwood_huge:
+      - OBO
+      - BXB
+      - OBO
+    swamp_oak_huge:
+      - HOH
+      - OXO
+      - HOH
+    azalea_huge:
+      - YZY
+      - ZXZ
+      - YZY
+    # 3 x 3 plus shapes: big trees. Only the saplings north, east,
+    # south and west of the core count; the corners (-) can be anything.
+    # Jungle and spruce have no big tree: vanilla's 2 x 2 jungle and spruce trees fill that size.
+    acacia_big:
+      - "-A-"
+      - AXA
+      - "-A-"
+    oak_big:
+      - "-O-"
+      - OXO
+      - "-O-"
+    birch_big:
+      - "-B-"
+      - BXB
+      - "-B-"
+    cherry_big:
+      - "-C-"
+      - CXC
+      - "-C-"
+    dark_oak_big:
+      - "-D-"
+      - DXD
+      - "-D-"
+    mangrove_big:
+      - "-M-"
+      - MXM
+      - "-M-"
+    pale_oak_big:
+      - "-P-"
+      - PXP
+      - "-P-"
+    poplar_big:
+      - "-L-"
+      - LXL
+      - "-L-"
+    red_mushroom_big:
+      - "-R-"
+      - RXR
+      - "-R-"
+    brown_mushroom_big:
+      - "-N-"
+      - NXN
+      - "-N-"
+    crimson_fungus_big:
+      - "-F-"
+      - FXF
+      - "-F-"
+    warped_fungus_big:
+      - "-W-"
+      - WXW
+      - "-W-"
+    mesapuzzle_big:
+      - "-A-"
+      - OXO
+      - "-A-"
+    cottonwood_big:
+      - "-B-"
+      - OXO
+      - "-B-"
+    swamp_oak_big:
+      - "-H-"
+      - OXO
+      - "-H-"
+    azalea_big:
+      - "-Y-"
+      - ZXZ
+      - "-Y-"
 
-# core block (marked by X in patterns)
-core: EMERALD_BLOCK
-
-# Fertilizing the tree consumes some number of bone meal: bone-meal-consumed for a giant tree
-# (5 x 5 ring), bone-meal-consumed-huge for a huge one (full 3 x 3 ring), bone-meal-consumed-big
-# for a big one (3 x 3 plus). An older config's bone-meal-consumed-small sets the huge cost.
-bone-meal-consumed: 64
-bone-meal-consumed-huge: 32
-bone-meal-consumed-big: 16
-  
 # Giant trees can possibly smother players if they don't get out of the way.
 # How many seconds should Giant Trees wait before adding a tree to the world?
 generation-delay: 3

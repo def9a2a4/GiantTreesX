@@ -1,5 +1,5 @@
 // The trees the gallery shows: every tree file in docs/trees/index.json, with the biomes it spawns
-// in (spawnsIn, from config.yml's natural-trees; see natural-trees.mjs). Shared by gallery.mjs
+// in (spawnsIn, from config.yml's natural.trees; see natural-trees.mjs). Shared by gallery.mjs
 // (which renders them) and gallery-check.mjs (which checks the gallery still matches them).
 //
 // The gallery shows one card per tree file, i.e. per (type, size): tree.OAK (giant),

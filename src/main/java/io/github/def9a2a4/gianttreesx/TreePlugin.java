@@ -41,7 +41,7 @@ public class TreePlugin extends JavaPlugin {
 
     @EventHandler
     public void onWorldInit(final WorldInitEvent event) {
-      if (TreePlugin.this.getConfig().getStringList("worlds").contains(event.getWorld().getName())) {
+      if (TreePlugin.this.getConfig().getStringList("natural.worlds").contains(event.getWorld().getName())) {
         TreePlugin.this.getLogger().info("Attaching giant tree populator to world \""
                                          + event.getWorld().getName() + "\"");
         event.getWorld().getPopulators()
@@ -56,8 +56,11 @@ public class TreePlugin extends JavaPlugin {
   public void onEnable() {
     new Metrics(this, 35220);
     this.warnAboutBiomeFiles();
-    this.getServer().getPluginManager().registerEvents(new PlantTreeEventHandler(this), this);
-    if (this.getConfig().getBoolean("naturallyGrowTrees", true)) {
+    this.warnAboutOldSettings();
+    if (this.getConfig().getBoolean("planting.enabled")) {
+      this.getServer().getPluginManager().registerEvents(new PlantTreeEventHandler(this), this);
+    }
+    if (this.getConfig().getBoolean("natural.enabled")) {
       this.naturalTrees = NaturalTrees.load(this, NaturalTrees.serverBiomes());
       this.getServer().getPluginManager().registerEvents(new WorldInitListener(), this);
     }
@@ -74,7 +77,7 @@ public class TreePlugin extends JavaPlugin {
   }
 
   /**
-   * Biome files (biome.FOREST-OAK.xml) from before natural-trees: they are no longer read, so an
+   * Biome files (biome.FOREST-OAK.xml) from before natural.trees: they are no longer read, so an
    * edited or added one would otherwise stop spawning without a word.
    */
   private void warnAboutBiomeFiles() {
@@ -84,9 +87,27 @@ public class TreePlugin extends JavaPlugin {
       Arrays.sort(old);
       this.getLogger().warning(old.length + " biome.*.xml files in the plugin folder are no longer"
                                + " used (" + String.join(", ", old) + "). Natural trees are now set"
-                               + " in config.yml's natural-trees, by tree name (tree.<NAME>.xml);"
+                               + " in config.yml's natural.trees, by tree name (tree.<NAME>.xml);"
                                + " to keep a custom one, rename it to tree.<NAME>.xml and list it"
                                + " there. The biome files can be deleted.");
+    }
+  }
+
+  /** Top-level settings from before the natural: and planting: sections, no longer read. */
+  private static final List<String> OLD_SETTINGS = List.of(
+      "naturallyGrowTrees", "worlds", "treeGrowthPercentChance", "natural-tree-sizes",
+      "natural-tree-weights", "natural-trees", "planting-patterns", "core", "bone-meal-consumed",
+      "bone-meal-consumed-huge", "bone-meal-consumed-big", "bone-meal-consumed-small");
+
+  /** A config.yml from an older version would otherwise fall back to the defaults without a word. */
+  private void warnAboutOldSettings() {
+    final List<String> old = OLD_SETTINGS.stream()
+        .filter(key -> this.getConfig().get(key, null) != null).toList();
+    if (!old.isEmpty()) {
+      this.getLogger().warning("config.yml has settings from an older version that are no longer"
+                               + " read: " + String.join(", ", old) + ". They moved into the"
+                               + " natural: and planting: sections; see the bundled config.yml"
+                               + " (the defaults apply until then).");
     }
   }
 

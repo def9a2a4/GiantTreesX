@@ -71,7 +71,7 @@ node scripts/tree-params.mjs derive OAK OAK_TALL Scale=70.0 ScaleV=5.0
 
 Root files are separate: edit `NAME.root` to change the roots. `derive` writes `tree.NEW.xml` and
 `tree.NEW.root.xml` from an existing tree with some params changed. Which trees spawn naturally,
-and in which biomes, is set in `natural-trees` in `src/main/resources/config.yml`, not by file
+and in which biomes, is set in `natural.trees` in `src/main/resources/config.yml`, not by file
 names: add `NEW` to a biome there to have it spawn.
 
 After changing files in `src/main/resources/`, run `make docs-trees` so the website's copies in

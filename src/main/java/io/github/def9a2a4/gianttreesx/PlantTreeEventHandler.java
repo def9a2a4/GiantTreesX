@@ -58,14 +58,18 @@ public class PlantTreeEventHandler implements Listener {
       this.article = article;
     }
 
+    /** Its key in the config's planting.sizes and planting.bone-meal sections. */
+    String key() {
+      return this.name().toLowerCase(Locale.ROOT);
+    }
+
     /**
-     * The tier of the tree a pattern grows: by its name's suffix (_huge, or _small from older
-     * configs, and _big), else by its shape: 5x5 giant, full 3x3 huge, 3x3 with "don't care"
-     * cells big.
+     * The tier of the tree a pattern grows: by its name's suffix (_huge, _big), else by its
+     * shape: 5x5 giant, full 3x3 huge, 3x3 with "don't care" cells big.
      */
     static Tier of(final String patternName, final int size, final int wildcards) {
       final String name = patternName.toLowerCase(Locale.ROOT);
-      if (name.endsWith("_huge") || name.endsWith("_small")) {
+      if (name.endsWith("_huge")) {
         return HUGE;
       }
       if (name.endsWith("_big")) {
@@ -125,30 +129,32 @@ public class PlantTreeEventHandler implements Listener {
 		this.renderer = new TreeRenderer(plugin);
 		final var config = plugin.getConfig();
 
-		// getInt(path) falls back to the bundled config.yml; getInt(path, def) only reads the
-		// server's own. bone-meal-consumed-small (configs from before the size tiers) still sets
-		// the huge cost when bone-meal-consumed-huge isn't set.
-		boneMeal.put(Tier.GIANT, config.getInt("bone-meal-consumed"));
-		boneMeal.put(Tier.HUGE, config.getInt("bone-meal-consumed-huge",
-				config.getInt("bone-meal-consumed-small", config.getInt("bone-meal-consumed-huge"))));
-		boneMeal.put(Tier.BIG, config.getInt("bone-meal-consumed-big"));
+		// getInt / getBoolean fall back to the bundled config.yml for settings the server's lacks
+		for (final Tier tier : Tier.values()) {
+			boneMeal.put(tier, config.getInt("planting.bone-meal." + tier.key()));
+		}
 
 		// matchMaterial ignores case and accepts "minecraft:emerald_block"
-		coreblock = Material.matchMaterial(config.getString("core", "EMERALD_BLOCK"));
+		coreblock = Material.matchMaterial(config.getString("planting.core", "EMERALD_BLOCK"));
 		if (coreblock == null || !coreblock.isBlock()) {
 			plugin.getLogger().warning("Warning: Invalid core block provided. Default to EMERALD_BLOCK");
 			coreblock = Material.EMERALD_BLOCK;
 		}
 
-		final ConfigurationSection patternSection = config.getConfigurationSection("planting-patterns");
-		if (patternSection == null) {
-			plugin.getLogger().warning("Warning: no planting-patterns config section; survival planting of trees is off");
-			return;
-		}
+		// the server's own patterns, or the bundled ones when its config has none
+		final ConfigurationSection patternSection =
+				config.get("planting.patterns", null) instanceof ConfigurationSection own ? own
+						: config.getDefaults().getConfigurationSection("planting.patterns");
 		for (final String pattern : patternSection.getKeys(false)) {
 			final Material[][] patternmaterials = parsePattern(pattern, patternSection.getStringList(pattern));
 			if (patternmaterials != null) {
 				final PhysicalCraftingRecipe recipe = new PhysicalCraftingRecipe(pattern, patternmaterials);
+				// a size turned off in planting.sizes: its patterns are left out, so a smaller
+				// pattern inside the laid-out saplings can match instead
+				if (!config.getBoolean("planting.sizes."
+						+ Tier.of(pattern, recipe.getSize(), recipe.getWildcards()).key())) {
+					continue;
+				}
 				if (!treeFile(recipe).exists()) {
 					plugin.getLogger().warning("Planting pattern " + pattern + " has no tree file ("
 							+ treeFile(recipe).getName() + "); it grows nothing");

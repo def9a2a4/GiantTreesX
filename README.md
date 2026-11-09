@@ -42,26 +42,31 @@ GiantTreesX is maintained by [def9a2a4](https://github.com/def9a2a4). It is a fo
 | huge  | one full ring (3x3)                         | 32        | `tree.<NAME>_HUGE.xml` |
 | big   | a plus: saplings north, east, south and west | 16        | `tree.<NAME>_BIG.xml`  |
 
-Most trees use their own sapling all round. Mixed patterns (mesa puzzle: acacia and oak; cottonwood: birch and oak; swamp oak: oak with blue orchids; azalea: azalea and flowering azalea), the mushrooms and the fungi are listed with every pattern in [`config.yml`](src/main/resources/config.yml). Patterns match in any rotation. The bone meal costs are configurable; set one to 0 to make that size free.
+Most trees use their own sapling all round. Mixed patterns (mesa puzzle: acacia and oak; cottonwood: birch and oak; swamp oak: oak with blue orchids; azalea: azalea and flowering azalea), the mushrooms and the fungi are listed with every pattern in [`config.yml`](src/main/resources/config.yml). Patterns match in any rotation. Server owners can change the bone meal costs (0 makes a size free), turn a size off (a 5x5 ring then grows the huge tree of its inner ring), or turn growing from saplings off altogether, in the `planting:` section of `config.yml`.
 
 ![Planting a giant tree](doc/planting.png)
 
 ## Natural Trees
 
-Trees spawn in newly generated chunks of the worlds listed in `worlds`. `natural-trees` in `config.yml` says which trees grow in which biome; a name grows every size of that tree:
+Trees spawn in newly generated chunks. The `natural:` section of `config.yml` sets where, how often and which trees; a tree name grows every size of that tree:
 
 ```yaml
-natural-trees:
-  FOREST: [OAK, COTTONWOOD]
-  PALE_GARDEN: [PALE_OAK]
-  LUSH_CAVES: [AZALEA]          # above lush caves, in any biome
-  PLAINS:                       # a biome can also set its own chance, weights and sizes
-    chance: 0.2                 # percent per chunk, instead of treeGrowthPercentChance
-    trees: {OAK: 3, BIRCH: 1}   # 3 oaks for every birch
-    sizes: {giant: 0}           # no giant trees here
+natural:
+  enabled: true
+  worlds: [world]
+  chance: 0.5                     # percent of new chunks that grow a tree
+  sizes: {giant: 1, huge: 2, big: 4}
+  trees:
+    FOREST: [OAK, COTTONWOOD]
+    PALE_GARDEN: [PALE_OAK]
+    LUSH_CAVES: [AZALEA]          # above lush caves, in any biome
+    PLAINS:                       # a biome can also set its own chance, weights and sizes
+      chance: 0.2
+      trees: {OAK: 3, BIRCH: 1}   # 3 oaks for every birch
+      sizes: {giant: 0}           # no giant trees here
 ```
 
-By default each biome grows 4 big and 2 huge trees for every giant (`natural-tree-sizes`). Natural trees grow only on soil, never on or in another tree, and in water only in swamps. Biome variants share their biome's entry (`FOREST` also covers flower and windswept forests) unless you give them their own. Unknown tree or biome names are logged at startup.
+By default each biome grows 4 big and 2 huge trees for every giant. Natural trees grow only on soil, never on or in another tree, and in water only in swamps. Biome variants share their biome's entry (`FOREST` also covers flower and windswept forests) unless you give them their own. Unknown tree or biome names are logged at startup.
 
 ## Commands
 
@@ -78,7 +83,7 @@ By default each biome grows 4 big and 2 huge trees for every giant (`natural-tre
 
 Trees are [Arbaro](https://arbaro.sourceforge.net/) parameter files: `tree.<NAME>.xml` for the tree and an optional `tree.<NAME>.root.xml` for its roots, which grow upside down below it.
 
-The easiest way to make one is the **[web viewer](https://def9a2a4.github.io/GiantTreesX/viewer/)**. Start from any bundled tree, change its parameters and watch it regenerate as Minecraft blocks, then *Download XML*. Put the file in `plugins/GiantTrees/` with a name in capitals, and it works with `/gt` straight away. To make it spawn, list its name under a biome in `natural-trees`; to grow it from saplings, add a pattern to `planting-patterns`. To tune a tree for one biome only, give it its own file (`tree.OAK_PLAINS.xml`) and list that.
+The easiest way to make one is the **[web viewer](https://def9a2a4.github.io/GiantTreesX/viewer/)**. Start from any bundled tree, change its parameters and watch it regenerate as Minecraft blocks, then *Download XML*. Put the file in `plugins/GiantTrees/` with a name in capitals, and it works with `/gt` straight away. To make it spawn, list its name under a biome in `natural.trees`; to grow it from saplings, add a pattern to `planting.patterns`. To tune a tree for one biome only, give it its own file (`tree.OAK_PLAINS.xml`) and list that.
 
 
 # Installation
@@ -103,17 +108,18 @@ The plugin folder is `plugins/GiantTrees/`. Tree files are unpacked there on fir
 
 ## Upgrading from GiantTrees
 
-Old configs keep working: settings they lack fall back to the defaults. Copy the new `planting-patterns` from the bundled [`config.yml`](src/main/resources/config.yml) to grow the new trees and sizes from saplings.
+The config has a new layout: natural spawning settings are in a `natural:` section and planting settings in a `planting:` section. Old settings (`naturallyGrowTrees`, `worlds`, `treeGrowthPercentChance`, `planting-patterns`, `core`, `bone-meal-consumed`, ...) are no longer read, and the plugin warns at startup while they are in your `config.yml`; until you move them, the defaults apply. The easiest way is to delete `config.yml`, restart to get the new one, and copy your changes back in.
 
-`biome.*.xml` files are no longer read; natural trees come from `natural-trees` instead. The plugin warns at startup while such files are in its folder. Delete them, or for one you edited, rename it to `tree.<NAME>.xml` and list `<NAME>` under its biome. `natural-tree-weights` is replaced by `natural-tree-sizes` and is ignored with a warning.
+`biome.*.xml` files are no longer read; natural trees come from `natural.trees` instead. The plugin warns at startup while such files are in its folder. Delete them, or for one you edited, rename it to `tree.<NAME>.xml` and list `<NAME>` under its biome.
 
 
 # Configuration
 
 Everything is in `plugins/GiantTrees/config.yml`, and every setting is explained in the [bundled copy](src/main/resources/config.yml). Restart the server after changing it.
 
-- **Natural spawning**: `naturallyGrowTrees`, `worlds`, `treeGrowthPercentChance`, `natural-tree-sizes`, `natural-trees`
-- **Planting**: `planting-patterns`, `core`, `bone-meal-consumed`, `bone-meal-consumed-huge`, `bone-meal-consumed-big`, `generation-delay`
+- **Natural spawning** (`natural:`): `enabled`, `worlds`, `chance`, `sizes` (how often each size spawns; 0 turns one off) and `trees` (per biome)
+- **Growing from saplings** (`planting:`): `enabled`, `sizes` (`false` turns a size off), `bone-meal` (cost per size), `core` and `patterns`
+- `generation-delay`: seconds before a grown or `/gt` tree appears
 - **Looks**: `wood` (`style`: `all_log`, `mixed` or `mixed_stripped`; `hollow_chance`; `hollow_wall_thickness`) and `wood_types` (the same per wood type, plus a weighted `leaves` mix)
 - **Safety**: `protect_block_entities`, `protected_blocks`
 - **Performance**: `BLOCKS_PER_TICK`, `TICK_DELAY`

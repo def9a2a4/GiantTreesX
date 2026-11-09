@@ -2,7 +2,7 @@
 // Checks that docs/gallery/ still matches the tree files in docs/trees/ (what CI runs):
 //   - every tree file has an entry in docs/gallery/gallery.json, and there are no entries for
 //     trees that no longer exist,
-//   - each entry lists the biomes the tree spawns in (spawnsIn) that config.yml's natural-trees
+//   - each entry lists the biomes the tree spawns in (spawnsIn) that config.yml's natural.trees
 //     gives it now,
 //   - each entry (one card per tree file) has the type, category (trees / fungi) and size tier
 //     the tree files give it now, and every card picture (CARD_IMAGES), and they exist,

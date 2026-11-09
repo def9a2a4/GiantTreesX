@@ -21,7 +21,7 @@ Commands:
   derive BASE NEW [NAME=VALUE...]
                                write tree.NEW.xml and tree.NEW.root.xml as copies of BASE's with
                                the params changed (in the tree file). To spawn it naturally, add
-                               NEW to a biome in config.yml's natural-trees
+                               NEW to a biome in config.yml's natural.trees
 
 Options:
   -p, --params LIST   show/diff: only these params (comma-separated)

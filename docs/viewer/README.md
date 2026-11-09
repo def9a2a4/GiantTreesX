@@ -17,7 +17,7 @@ Online: **https://def9a2a4.github.io/GiantTreesX/** is the gallery, and
 - `docs/viewer/`: this tool.
 - `docs/trees/`: copies of the plugin's tree files (`src/main/resources/tree.*.xml`),
   `index.json`, the list the viewer loads, and `natural-trees.json`, the biomes each tree spawns in
-  (read from the `natural-trees` block of `src/main/resources/config.yml` by
+  (read from `natural.trees` in `src/main/resources/config.yml` by
   `scripts/natural-trees.mjs`). `make docs-trees` refreshes them; CI fails if they are out of date.
 - `docs/gallery/`: the gallery's pictures, made by `make gallery`.
 
@@ -39,7 +39,7 @@ shows only the 3D view) and renders every tree file. The gallery page shows one 
 file, i.e. per type and size (`tree.OAK`, `tree.OAK_HUGE` and `tree.OAK_BIG` are three cards; see
 `scripts/gallery-trees.mjs`), each with a hero shot (`hero.jpg`), a cut through the middle
 (`cut.jpg`) and a view from above (`top.jpg`), and the biomes the tree spawns in (`spawnsIn`, from
-`config.yml`'s `natural-trees`; "Planting only" when none). The page filters the cards by category
+`config.yml`'s `natural.trees`; "Planting only" when none). The page filters the cards by category
 (trees, fungi) and size, and groups them by type or size. The angles live at the top of the
 script. It drives the viewer through `window.__treePreview.shot()` (camera angle,
 zoom, view cut, toggles) and waits on `isIdle()`. Every picture on the gallery page links to its
@@ -50,7 +50,7 @@ those files, and `--out <dir>` writes somewhere other than `docs/gallery/` for t
 gallery entry, an entry is left over for a tree that is gone, an entry's `spawnsIn` no longer
 matches `config.yml`, or an entry's content hash (each entry records a hash of its tree files) no
 longer matches the tree files. Re-run `make gallery` after adding, removing or editing tree files
-or changing `natural-trees`.
+or changing `natural.trees`.
 
 ## What it does
 

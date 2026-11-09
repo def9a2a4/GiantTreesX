@@ -89,7 +89,7 @@ server-test: $(SERVER_JAR)
 PREVIEW_PORT ?= 8000
 VIEWER := docs/viewer
 
-# Copy src/main/resources/tree.*.xml into docs/trees/, with natural-trees.json from config.yml
+# Copy src/main/resources/tree.*.xml into docs/trees/, with natural-trees.json from config.yml's natural.trees
 # (CI checks they are in sync).
 .PHONY: docs-trees
 docs-trees:

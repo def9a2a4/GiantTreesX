@@ -33,7 +33,7 @@ export async function loadPluginTrees() {
   })));
 }
 
-/** Biome key from config.yml's natural-trees, for display: DARK_FOREST -> Dark Forest. */
+/** Biome key from config.yml's natural.trees, for display: DARK_FOREST -> Dark Forest. */
 export function biomeLabel(key) {
   if (key === 'LUSH_CAVES') return 'any biome above Lush Caves'; // a pseudo-biome, not a real one
   return key.toLowerCase().split('_').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');

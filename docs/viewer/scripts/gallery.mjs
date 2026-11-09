@@ -9,7 +9,7 @@
 // docs/gallery/gallery.json, which docs/index.html turns into the gallery page: one card per tree
 // file, i.e. per type and size (tree.OAK, tree.OAK_HUGE and tree.OAK_BIG are three cards), each
 // with the pictures in CARD_IMAGES (a hero shot, a cut through the middle, a view from above) and
-// the biomes it spawns in (spawnsIn, from config.yml's natural-trees).
+// the biomes it spawns in (spawnsIn, from config.yml's natural.trees).
 // --types renders whole types; --out writes somewhere else than docs/gallery/ (for trying it out;
 // image paths in gallery.json still say gallery/..., so use e.g. --out <site>/gallery).
 import { createServer } from 'node:http';

@@ -15,7 +15,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
 
 /**
- * Which trees grow naturally in which biome: the natural-trees and natural-tree-sizes sections
+ * Which trees grow naturally in which biome: the natural.trees and natural.sizes sections
  * of config.yml, read once when the plugin enables. Tree files are only looked up when a tree
  * grows, so a tree file added later (say tree.OAK_BIG.xml) spawns without a restart.
  */
@@ -97,16 +97,11 @@ final class NaturalTrees {
   static NaturalTrees load(final Plugin plugin, final Set<String> knownBiomes) {
     final Logger log = plugin.getLogger();
     final Configuration config = plugin.getConfig();
-    if (config.get("natural-tree-weights", null) != null) {
-      log.warning("config.yml: natural-tree-weights is no longer used; set the trees of each biome"
-                  + " in natural-trees and the sizes in natural-tree-sizes (see the bundled"
-                  + " config.yml)");
-    }
-    final double defaultChance = chance(config.get("treeGrowthPercentChance"), 0.0,
-                                        "config.yml: treeGrowthPercentChance", log);
+    final double defaultChance = chance(config.get("natural.chance"), 0.0,
+                                        "config.yml: natural.chance", log);
     final Configuration defaults = config.getDefaults();
     final ConfigurationSection bundled = defaults == null
-        ? null : defaults.getConfigurationSection("natural-trees");
+        ? null : defaults.getConfigurationSection("natural.trees");
 
     // the bundled sizes, then the ones this config sets (a partial section keeps the rest)
     final Map<String, Double> sizes = new LinkedHashMap<>();
@@ -114,22 +109,22 @@ final class NaturalTrees {
       sizes.put(size, 1.0);
     }
     if (defaults != null) {
-      readSizes(defaults.getConfigurationSection("natural-tree-sizes"), sizes,
-                "bundled natural-tree-sizes", log);
+      readSizes(defaults.getConfigurationSection("natural.sizes"), sizes,
+                "bundled natural.sizes", log);
     }
-    if (config.get("natural-tree-sizes", null) instanceof ConfigurationSection own) {
-      readSizes(own, sizes, "config.yml: natural-tree-sizes", log);
+    if (config.get("natural.sizes", null) instanceof ConfigurationSection own) {
+      readSizes(own, sizes, "config.yml: natural.sizes", log);
     }
 
     final Map<String, Entry> entries = new LinkedHashMap<>();
-    final Object own = config.get("natural-trees", null);
+    final Object own = config.get("natural.trees", null);
     final ConfigurationSection section;
     if (own instanceof ConfigurationSection ownSection) {
       section = ownSection;
     } else {
       if (own != null) {
-        log.warning("config.yml: natural-trees must be a map of biomes to trees; no natural trees"
-                    + " grow (\"natural-trees: {}\" says that without this warning)");
+        log.warning("config.yml: natural.trees must be a map of biomes to trees; no natural trees"
+                    + " grow (\"trees: {}\" says that without this warning)");
         return new NaturalTrees(entries);
       }
       // no section in this config (an older one): the bundled trees
@@ -146,7 +141,7 @@ final class NaturalTrees {
     }
     for (final String key : section.getKeys(false)) {
       final String biome = biomeKey(key);
-      final String where = "config.yml: natural-trees." + key;
+      final String where = "config.yml: natural.trees." + key;
       if (!LUSH_CAVES.equals(biome) && !knownBiomes.contains(biome)
           && !bundledBiomes.contains(biome)) {
         log.warning(where + ": no biome of that name on this server");

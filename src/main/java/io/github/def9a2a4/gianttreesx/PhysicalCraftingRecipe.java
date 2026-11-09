@@ -66,7 +66,7 @@ public class PhysicalCraftingRecipe {
     }
   }
 
-  /** Name of the tree for this recipe (the planting-patterns key) */
+  /** Name of the tree for this recipe (its key in planting.patterns) */
   public String getTreeName() {
 	  return this.treename;
   }
