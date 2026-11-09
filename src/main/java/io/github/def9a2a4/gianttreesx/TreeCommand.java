@@ -2,6 +2,9 @@ package io.github.def9a2a4.gianttreesx;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -25,6 +28,7 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
+import io.github.def9a2a4.gianttreesx.rendering.TreeFiles;
 import io.github.def9a2a4.gianttreesx.rendering.TreeRenderer;
 
 /**
@@ -69,12 +73,14 @@ public class TreeCommand implements TabExecutor {
   private final Plugin plugin;
   /** the plugin jar, whose main class is the Arbaro editor */
   private final File jar;
+  private final TreeFiles trees;
   private final TreeRenderer renderer;
 
-  public TreeCommand(final Plugin plugin, final File jar) {
+  public TreeCommand(final Plugin plugin, final File jar, final TreeFiles trees) {
     this.plugin = plugin;
     this.jar = jar;
-    this.renderer = new TreeRenderer(plugin);
+    this.trees = trees;
+    this.renderer = new TreeRenderer(plugin, trees);
   }
 
   @Override
@@ -149,7 +155,7 @@ public class TreeCommand implements TabExecutor {
     if (target == null) {
       return;
     }
-    final File treeFile = this.treeFile(type, size, false);
+    final String treeFile = treeFile(type, size, false);
     final World world = target.getWorld();
     final TreeGround ground = TreeGround.at(world, target.getBlockX(), target.getBlockZ());
     // asked for explicitly, so the tree grows anyway, on the ground below any water
@@ -160,7 +166,7 @@ public class TreeCommand implements TabExecutor {
       sender.sendMessage(Component.text("No soil here: growing on " + groundName, NamedTextColor.YELLOW));
     }
     final Location base = ground.block().getLocation();
-    sender.sendMessage(Component.text("Growing " + treeFile.getName().replace(".xml", "") + " at "
+    sender.sendMessage(Component.text("Growing " + treeFile.replace(".xml", "") + " at "
                                       + world.getName() + " " + base.getBlockX() + " " + base.getBlockY()
                                       + " " + base.getBlockZ() + ". Stand back!", NamedTextColor.GREEN));
     this.renderer.renderTree(base, treeFile, TreeRenderer.positionSeed(base), true);
@@ -219,7 +225,27 @@ public class TreeCommand implements TabExecutor {
                                         + this.jar.getName() + " <tree file>", NamedTextColor.RED));
       return;
     }
-    final File toOpen = this.treeFile(type, size, args.length > 3 && args[3].equalsIgnoreCase("root"));
+    final String name = treeFile(type, size, args.length > 3 && args[3].equalsIgnoreCase("root"));
+    // a bundled tree is copied into tree/ first: the editor saves the server's own copy there
+    final File toOpen = this.trees.userFile(name);
+    if (!toOpen.isFile()) {
+      final URL source = this.trees.find(name);
+      if (source == null) {
+        sender.sendMessage(Component.text("No tree file " + name + " (a tree without roots has no .root file)",
+                                          NamedTextColor.RED));
+        return;
+      }
+      try (InputStream in = source.openStream()) {
+        Files.createDirectories(toOpen.toPath().getParent());
+        Files.copy(in, toOpen.toPath());
+      } catch (final IOException e) {
+        sender.sendMessage(Component.text("Could not copy " + name + " into " + toOpen.getParent() + ": "
+                                          + e.getMessage(), NamedTextColor.RED));
+        return;
+      }
+      sender.sendMessage(Component.text("Copied the bundled " + name + " to " + toOpen.getPath()
+                                        + "; it replaces the bundled one from now on", NamedTextColor.YELLOW));
+    }
     final File java = new File(System.getProperty("java.home"),
                                "bin" + File.separator + (File.separatorChar == '\\' ? "java.exe" : "java"));
     final File log = new File(this.plugin.getDataFolder(), "arbaro.log");
@@ -321,17 +347,12 @@ public class TreeCommand implements TabExecutor {
   // ── trees ─────────────────────────────────────────────────────────────
 
   /**
-   * The tree types in the data folder and the sizes each has: tree.OAK_HUGE.xml is type oak, size
-   * huge. Read on every use, so new tree files show up without a restart.
+   * The tree types, bundled and the server's own, and the sizes each has: tree.OAK_HUGE.xml is
+   * type oak, size huge. Read on every use, so new tree files show up without a restart.
    */
   private TreeMap<String, List<Size>> types() {
     final TreeMap<String, List<Size>> types = new TreeMap<>();
-    final String[] files = this.plugin.getDataFolder().list(
-        (dir, name) -> name.startsWith("tree.") && name.endsWith(".xml") && !name.endsWith(".root.xml"));
-    if (files == null) {
-      return types;
-    }
-    for (final String file : files) {
+    for (final String file : this.trees.treeNames()) {
       String name = file.substring("tree.".length(), file.length() - ".xml".length());
       Size size = Size.GIANT;
       for (final Size s : Size.values()) {
@@ -347,9 +368,8 @@ public class TreeCommand implements TabExecutor {
     return types;
   }
 
-  private File treeFile(final String type, final Size size, final boolean root) {
-    return new File(this.plugin.getDataFolder(), "tree." + type.toUpperCase(Locale.ROOT) + size.suffix
-                                                 + (root ? ".root" : "") + ".xml");
+  private static String treeFile(final String type, final Size size, final boolean root) {
+    return "tree." + type.toUpperCase(Locale.ROOT) + size.suffix + (root ? ".root" : "") + ".xml";
   }
 
   // ── breadcrumbs and buttons ───────────────────────────────────────────

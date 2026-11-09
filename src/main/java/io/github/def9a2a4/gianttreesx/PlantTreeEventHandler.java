@@ -17,7 +17,6 @@
  */
 package io.github.def9a2a4.gianttreesx;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -39,6 +38,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
+import io.github.def9a2a4.gianttreesx.rendering.TreeFiles;
 import io.github.def9a2a4.gianttreesx.rendering.TreeRenderer;
 
 public class PlantTreeEventHandler implements Listener {
@@ -93,6 +93,7 @@ public class PlantTreeEventHandler implements Listener {
   private final List<PhysicalCraftingRecipe> recipes = new ArrayList<>();
   private final Map<Tier, Integer> boneMeal = new EnumMap<>(Tier.class);
   private final TreeRenderer renderer;
+  private final TreeFiles trees;
   /** Sapling codes whose block this server doesn't have; patterns using them are skipped. */
   private static final Set<Character> unavailableCodes = new HashSet<>();
 
@@ -126,9 +127,10 @@ public class PlantTreeEventHandler implements Listener {
   	/*
   	 * Load up tree recipes and validate
   	 */
-	public PlantTreeEventHandler(final Plugin plugin) {
+	public PlantTreeEventHandler(final Plugin plugin, final TreeFiles trees) {
 		this.plugin = plugin;
-		this.renderer = new TreeRenderer(plugin);
+		this.trees = trees;
+		this.renderer = new TreeRenderer(plugin, trees);
 		final var config = plugin.getConfig();
 
 		// getInt / getBoolean fall back to the bundled config.yml for settings the server's lacks
@@ -168,9 +170,9 @@ public class PlantTreeEventHandler implements Listener {
 				if (!config.getBoolean("planting.sizes." + tier.key())) {
 					continue;
 				}
-				if (!treeFile(recipe).exists()) {
+				if (!trees.exists(treeFile(recipe))) {
 					plugin.getLogger().warning("Planting pattern " + pattern + " has no tree file ("
-							+ treeFile(recipe).getName() + "); it grows nothing");
+							+ treeFile(recipe) + "); it grows nothing");
 				}
 				recipes.add(recipe);
 			}
@@ -257,9 +259,9 @@ public class PlantTreeEventHandler implements Listener {
 			if (orientation == null) {
 				continue;
 			}
-			if (!treeFile(candidate).exists()) {
+			if (!trees.exists(treeFile(candidate))) {
 				if (missingTree == null) {
-					missingTree = treeFile(candidate).getName();
+					missingTree = treeFile(candidate);
 				}
 				continue;
 			}
@@ -283,21 +285,20 @@ public class PlantTreeEventHandler implements Listener {
 		}
 
 		final String treeType = recipe.getTreeName().toUpperCase(Locale.ROOT);
-		final File treeFile = treeFile(recipe);
 		event.setCancelled(true);
 		if (cost != null) {
 			event.getPlayer().getInventory().removeItem(cost);
 		}
 		event.getPlayer().sendMessage("Stand back! Generating " + tier.article + treeType + " tree!");
 		clearBlocks(clickedBlock, matched);
-		renderer.renderTree(clickedBlock.getLocation(), treeFile,
+		renderer.renderTree(clickedBlock.getLocation(), treeFile(recipe),
 				TreeRenderer.positionSeed(clickedBlock.getLocation()), true,
 				plugin.getConfig().getBoolean("planting.particles", true));
 	}
 
-    /** The tree file a pattern grows: oak_big grows tree.OAK_BIG.xml in the data folder. */
-    private File treeFile(final PhysicalCraftingRecipe recipe) {
-		return new File(plugin.getDataFolder(), "tree." + recipe.getTreeName().toUpperCase(Locale.ROOT) + ".xml");
+    /** The tree file a pattern grows: oak_big grows tree.OAK_BIG.xml. */
+    private static String treeFile(final PhysicalCraftingRecipe recipe) {
+		return "tree." + recipe.getTreeName().toUpperCase(Locale.ROOT) + ".xml";
     }
 
     /*

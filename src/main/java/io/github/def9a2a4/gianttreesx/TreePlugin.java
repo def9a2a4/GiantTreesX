@@ -19,21 +19,20 @@ package io.github.def9a2a4.gianttreesx;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.logging.Level;
-import java.util.regex.Pattern;
 
 import org.bstats.bukkit.Metrics;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.WorldInitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import io.github.def9a2a4.gianttreesx.rendering.TreeFiles;
 
 public class TreePlugin extends JavaPlugin {
 
@@ -45,50 +44,80 @@ public class TreePlugin extends JavaPlugin {
         TreePlugin.this.getLogger().info("Attaching giant tree populator to world \""
                                          + event.getWorld().getName() + "\"");
         event.getWorld().getPopulators()
-             .add(new TreePopulator(TreePlugin.this, TreePlugin.this.naturalTrees));
+             .add(new TreePopulator(TreePlugin.this, TreePlugin.this.naturalTrees, TreePlugin.this.trees));
       }
     }
   }
 
   private NaturalTrees naturalTrees;
+  private TreeFiles trees;
 
   @Override
   public void onEnable() {
     new Metrics(this, 35220);
-    this.warnAboutBiomeFiles();
+    try {
+      this.trees = new TreeFiles(new File(this.getDataFolder(), "tree"), this.getFile(), this.getClassLoader());
+    } catch (final IOException e) {
+      throw new IllegalStateException("Could not list the tree files in the plugin jar", e);
+    }
+    // an empty tree/ folder shows where added trees go; the bundled ones stay in the jar
+    this.trees.userDir().mkdirs();
+    this.warnAboutOldTreeFiles();
     this.warnAboutOldSettings();
     if (this.getConfig().getBoolean("planting.enabled")) {
-      this.getServer().getPluginManager().registerEvents(new PlantTreeEventHandler(this), this);
+      this.getServer().getPluginManager().registerEvents(new PlantTreeEventHandler(this, this.trees), this);
     }
     if (this.getConfig().getBoolean("natural.enabled")) {
-      this.naturalTrees = NaturalTrees.load(this, NaturalTrees.serverBiomes());
+      this.naturalTrees = NaturalTrees.load(this, this.trees, NaturalTrees.serverBiomes());
       this.getServer().getPluginManager().registerEvents(new WorldInitListener(), this);
     }
 
-    this.getCommand("gianttrees").setExecutor(new TreeCommand(this, this.getFile()));
+    this.getCommand("gianttrees").setExecutor(new TreeCommand(this, this.getFile(), this.trees));
   }
 
   @Override
   public void onLoad() {
     // writes config.yml only when it is missing (also when just the file was deleted)
     this.saveDefaultConfig();
-    this.unpackTreeFiles();
   }
 
   /**
-   * Biome files (biome.FOREST-OAK.xml) from before natural.trees: they are no longer read, so an
-   * edited or added one would otherwise stop spawning without a word.
+   * Tree files older versions unpacked into the plugin folder (tree.*.xml, biome.*.xml): no longer
+   * read, so an edited or added one would otherwise stop working without a word. Names the ones
+   * that differ from the bundled trees, which are the ones worth moving into tree/.
    */
-  private void warnAboutBiomeFiles() {
+  private void warnAboutOldTreeFiles() {
     final String[] old = this.getDataFolder().list(
-        (dir, name) -> name.startsWith("biome.") && name.endsWith(".xml") && !name.endsWith(".root.xml"));
-    if (old != null && old.length > 0) {
-      Arrays.sort(old);
-      this.getLogger().warning(old.length + " biome.*.xml files in the plugin folder are no longer"
-                               + " used (" + String.join(", ", old) + "). Natural trees are now set"
-                               + " in config.yml's natural.trees, by tree name (tree.<NAME>.xml);"
-                               + " to keep a custom one, rename it to tree.<NAME>.xml and list it"
-                               + " there. The biome files can be deleted.");
+        (dir, name) -> (name.startsWith("tree.") || name.startsWith("biome.")) && name.endsWith(".xml"));
+    if (old == null || old.length == 0) {
+      return;
+    }
+    Arrays.sort(old);
+    final List<String> changed = new ArrayList<>();
+    for (final String name : old) {
+      if (!this.sameAsBundled(name)) {
+        changed.add(name);
+      }
+    }
+    this.getLogger().warning(old.length + " tree files in " + this.getDataFolder() + " are left from an"
+                             + " older version and are no longer read: the bundled trees come from the"
+                             + " plugin jar, and added or replaced trees go in the tree/ subfolder"
+                             + (changed.isEmpty() ? ". They can all be deleted."
+                                : ". These differ from the bundled trees; move the ones you want into tree/"
+                                  + " (rename biome.BIOME-NAME.xml to tree.NAME.xml and list it in"
+                                  + " natural.trees), then delete the rest: " + String.join(", ", changed)));
+  }
+
+  /** Whether data folder file {@code name} is byte for byte a bundled tree file. */
+  private boolean sameAsBundled(final String name) {
+    final URL bundled = this.trees.isBundled(name) ? this.getClassLoader().getResource(name) : null;
+    if (bundled == null) {
+      return false;
+    }
+    try (InputStream in = bundled.openStream()) {
+      return Arrays.equals(in.readAllBytes(), Files.readAllBytes(new File(this.getDataFolder(), name).toPath()));
+    } catch (final IOException e) {
+      return false;
     }
   }
 
@@ -110,35 +139,5 @@ public class TreePlugin extends JavaPlugin {
     }
   }
 
-  /**
-   * Writes every tree file bundled in the plugin jar ({@code tree.*.xml}, roots included) that
-   * the data folder does not have yet. Existing files
-   * are never overwritten, so edited trees survive upgrades; deleted ones come back.
-   */
-  private void unpackTreeFiles() {
-    final List<String> bundled = new ArrayList<>();
-    try (JarFile jar = new JarFile(this.getFile())) {
-      final Enumeration<JarEntry> entries = jar.entries();
-      while (entries.hasMoreElements()) {
-        final JarEntry entry = entries.nextElement();
-        if (!entry.isDirectory() && TREE_FILE.matcher(entry.getName()).matches()) {
-          bundled.add(entry.getName());
-        }
-      }
-    } catch (final IOException e) {
-      this.getLogger().log(Level.SEVERE, "Could not list the tree files in the plugin jar", e);
-      return;
-    }
-    Collections.sort(bundled);
-    for (final String name : bundled) {
-      // check first: saveResource warns when the file exists and replace is false
-      if (!new File(this.getDataFolder(), name).exists()) {
-        this.saveResource(name, false);
-      }
-    }
-  }
-
-  /** Tree files at the root of the jar: tree.X.xml and tree.X.root.xml. */
-  private static final Pattern TREE_FILE = Pattern.compile("tree\\.[^/]+\\.xml");
 
 }

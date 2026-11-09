@@ -195,7 +195,8 @@ public final class GeometryHarness {
                                     final Location refPoint, final WorldChangeTracker tracker,
                                     final Digest dg) throws Exception {
     refPoint.add(0, TreeRenderer.mangroveRaise(treeFile.getName()), 0);
-    return TreeRenderer.generate(treeFile, rootFile, seed, tracker, null,
+    return TreeRenderer.generate(treeFile.toURI().toURL(), rootFile == null ? null : rootFile.toURI().toURL(),
+        seed, tracker, null,
         (smooth, type, orientation) -> recordingDraw3d(refPoint, smooth, type, tracker, orientation, dg));
   }
 

@@ -17,7 +17,6 @@
  */
 package io.github.def9a2a4.gianttreesx;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -32,16 +31,19 @@ import org.bukkit.World;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.plugin.Plugin;
 
+import io.github.def9a2a4.gianttreesx.rendering.TreeFiles;
 import io.github.def9a2a4.gianttreesx.rendering.TreeRenderer;
 
 public class TreePopulator extends BlockPopulator {
 
   private final Plugin plugin;
   private final NaturalTrees natural;
+  private final TreeFiles trees;
 
-  public TreePopulator(final Plugin plugin, final NaturalTrees natural) {
+  public TreePopulator(final Plugin plugin, final NaturalTrees natural, final TreeFiles trees) {
     this.plugin = plugin;
     this.natural = natural;
+    this.trees = trees;
   }
 
   @Override
@@ -72,15 +74,14 @@ public class TreePopulator extends BlockPopulator {
       if (chanceOf == null || random.nextDouble() * 100.0 >= chanceOf.chance()) {
         return;
       }
-      final File folder = this.plugin.getDataFolder();
       final List<NaturalTrees.Candidate> candidates = new ArrayList<>();
       if (surface != null) {
-        candidates.addAll(surface.candidates(folder));
+        candidates.addAll(surface.candidates(this.trees));
       }
       // checked after the roll too: it samples the biome all the way down
       if (lush != null && lush.hasTrees() && hasLushCaveBelow(world, refPoint.getBlockX(),
                                                               refPoint.getBlockY(), refPoint.getBlockZ())) {
-        candidates.addAll(lush.candidates(folder));
+        candidates.addAll(lush.candidates(this.trees));
       }
       // picked with the chunk's random from lists in config order, so a world seed always grows
       // the same trees
@@ -93,7 +94,7 @@ public class TreePopulator extends BlockPopulator {
         this.plugin.getLogger().info("Natural tree " + pick.fileName() + " in " + pick.biome()
                                      + (pick.biome().equals(biome) ? "" : " (" + biome + ")"));
       }
-      new TreeRenderer(this.plugin).renderTree(refPoint, new File(folder, pick.fileName()),
+      new TreeRenderer(this.plugin, this.trees).renderTree(refPoint, pick.fileName(),
                                                random.nextInt(), false);
     } catch (Exception ex) {
       plugin.getLogger().log(Level.SEVERE, "Exception caught generating giant tree", ex);

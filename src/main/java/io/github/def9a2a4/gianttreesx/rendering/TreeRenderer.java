@@ -17,8 +17,8 @@
  */
 package io.github.def9a2a4.gianttreesx.rendering;
 
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -60,9 +60,11 @@ public class TreeRenderer {
   record Generated(Tree tree, TreeType treeType, TreeType rootType) {}
 
   private final Plugin plugin;
+  private final TreeFiles trees;
 
-  public TreeRenderer(final Plugin plugin) {
+  public TreeRenderer(final Plugin plugin, final TreeFiles trees) {
     this.plugin = plugin;
+    this.trees = trees;
   }
 
   /**
@@ -75,21 +77,28 @@ public class TreeRenderer {
                       ^ ((long) location.getBlockZ() * 132897987541L)).nextInt();
   }
 
-  /** Grows tree file X.xml at the point, with its root system X.root.xml if there is one. */
-  public void renderTree(final Location requestedRefPoint, final File treeFile, final int seed,
+  /**
+   * Grows tree file {@code treeName} (tree.OAK.xml) at the point, with its root system
+   * (tree.OAK.root.xml) if there is one; both are looked up in {@link TreeFiles}.
+   */
+  public void renderTree(final Location requestedRefPoint, final String treeName, final int seed,
                          final boolean withDelay) {
-    renderTree(requestedRefPoint, treeFile, seed, withDelay, false);
+    renderTree(requestedRefPoint, treeName, seed, withDelay, false);
   }
 
   /**
-   * As {@link #renderTree(Location, File, int, boolean)}; {@code growEffect} also plays
+   * As {@link #renderTree(Location, String, int, boolean)}; {@code growEffect} also plays
    * {@link GrowEffect} at the planting point until the tree appears (trees grown from saplings).
    */
-  public void renderTree(final Location requestedRefPoint, final File treeFile, final int seed,
+  public void renderTree(final Location requestedRefPoint, final String treeName, final int seed,
                          final boolean withDelay, final boolean growEffect) {
-    final String name = treeFile.getName();
-    final File rootFile = new File(treeFile.getParentFile(),
-                                   name.substring(0, name.length() - ".xml".length()) + ".root.xml");
+    final String rootName = treeName.substring(0, treeName.length() - ".xml".length()) + ".root.xml";
+    final URL treeFile = this.trees.find(treeName);
+    final URL rootFile = this.trees.find(rootName);
+    if (treeFile == null) {
+      plugin.getLogger().warning("No tree file " + treeName);
+      return;
+    }
     if (!plugin.isEnabled()) {
       return;
     }
@@ -98,14 +107,13 @@ public class TreeRenderer {
     final Location refPoint = requestedRefPoint.clone();
     final Location ground = requestedRefPoint.clone();
     // mangrove trees stand on exposed stilt roots: raise the refpoint by the tier's root height
-    refPoint.add(0, mangroveRaise(treeFile.getName()), 0);
+    refPoint.add(0, mangroveRaise(treeName), 0);
     final Logger logger = plugin.getLogger();
 
     plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
       try {
         if (plugin.getConfig().getBoolean("verbose-logging", false)) {
-          logger.info("Rendering tree " + treeFile.getName()
-                      + (rootFile.exists() ? " (root " + rootFile.getName() + ")" : ""));
+          logger.info("Rendering tree " + treeName + (rootFile != null ? " (root " + rootName + ")" : ""));
         }
         final WorldChangeTracker tracker = new WorldChangeTracker();
         final Generated generated = generate(treeFile, rootFile, seed, tracker, logger,
@@ -133,20 +141,20 @@ public class TreeRenderer {
               AzaleaRoots.place(plugin, refPoint);
             }
           } catch (final Exception e) {
-            logger.log(Level.SEVERE, "Error rendering tree " + treeFile.getName(), e);
+            logger.log(Level.SEVERE, "Error rendering tree " + treeName, e);
           }
         }, generationDelay);
       } catch (final Exception e) {
-        logger.log(Level.SEVERE, "Error rendering tree " + treeFile.getName(), e);
+        logger.log(Level.SEVERE, "Error rendering tree " + treeName, e);
       }
     });
   }
 
   /**
-   * Draws a tree file, and its root system when rootFile exists, into tracker: wood, leaves and
+   * Draws a tree file, and its root system when rootFile isn't null, into tracker: wood, leaves and
    * decorations, not yet styled ({@link WoodStyler}). The viewer's GeometryHarness runs this too.
    */
-  static Generated generate(final File treeFile, final File rootFile, final int seed,
+  static Generated generate(final URL treeFile, final URL rootFile, final int seed,
                             final WorldChangeTracker tracker, final Logger logger,
                             final Draw3dFactory draw3d) throws Exception {
     AbstractParam.loading = true; // silences Arbaro's parameter warnings
@@ -163,7 +171,7 @@ public class TreeRenderer {
       d3d.drawRootJunction(d3d.toMcVector(((Segment) trunk.stemSegments().nextElement()).posFrom()),
                            trunk.baseRadius);
       TreeType rootType = null;
-      if (rootFile != null && rootFile.exists()) {
+      if (rootFile != null) {
         final Tree root = loadTree(rootFile, seed);
         // no leaves on roots, and the same scale as the tree
         root.params.Leaves = -1;
@@ -300,10 +308,10 @@ public class TreeRenderer {
            && !Tag.LOGS.isTagged(type);
   }
 
-  private static Tree loadTree(final File file, final int seed) throws Exception {
+  private static Tree loadTree(final URL file, final int seed) throws Exception {
     final Tree tree = new Tree();
     tree.setOutputType(Tree.CONES);
-    try (FileInputStream in = new FileInputStream(file)) {
+    try (InputStream in = file.openStream()) {
       tree.readFromXML(in);
     }
     tree.params.Seed = seed;

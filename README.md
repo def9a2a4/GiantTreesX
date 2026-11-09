@@ -26,7 +26,7 @@ GiantTreesX is maintained by [def9a2a4](https://github.com/def9a2a4). It is a fo
 - **Natural spawning**, configured per biome: which trees, how often, and in which sizes. Azaleas spawn above lush caves, like vanilla.
 - **Gentle on the server**: trees are worked out off the main thread and placed from the bottom up in small batches.
 - **Safe**: trees never replace chests, spawners or other block entities, or any block you list in `protected_blocks`.
-- **Custom trees**: design your own in the [web viewer](https://def9a2a4.github.io/GiantTreesX/viewer/) and drop the file in the plugin folder.
+- **Custom trees**: design your own in the [web viewer](https://def9a2a4.github.io/GiantTreesX/viewer/) and drop the file in `plugins/GiantTrees/tree/`.
 
 ## Growing Trees
 
@@ -80,13 +80,13 @@ By default each biome grows 4 big and 2 huge trees for every giant. Natural tree
 | `/gt edit <type> <size> [root]`              | Open a tree file in the Arbaro desktop editor (console only, needs a display) | console                          |
 | *(right-click a sapling pattern with bone meal)* | Grow a tree from saplings                                            | `gianttrees.grow` (default: everyone) |
 
-Types are the tree files in the plugin folder (`tree.PALE_OAK_HUGE.xml` is type `pale_oak`, size `huge`); sizes are `giant`, `huge` and `big`.
+Types are the bundled trees plus any in `plugins/GiantTrees/tree/` (`tree.PALE_OAK_HUGE.xml` is type `pale_oak`, size `huge`); sizes are `giant`, `huge` and `big`.
 
 ## Custom Trees
 
 Trees are [Arbaro](https://arbaro.sourceforge.net/) parameter files: `tree.<NAME>.xml` for the tree and an optional `tree.<NAME>.root.xml` for its roots, which grow upside down below it.
 
-The easiest way to make one is the **[web viewer](https://def9a2a4.github.io/GiantTreesX/viewer/)**. Start from any bundled tree, change its parameters and watch it regenerate as Minecraft blocks, then *Download XML*. Put the file in `plugins/GiantTrees/` with a name in capitals, and it works with `/gt grow` straight away. To make it spawn, list its name under a biome in `natural.trees`; to grow it from saplings, add a pattern to `planting.patterns`. To tune a tree for one biome only, give it its own file (`tree.OAK_PLAINS.xml`) and list that.
+The easiest way to make one is the **[web viewer](https://def9a2a4.github.io/GiantTreesX/viewer/)**. Start from any bundled tree, change its parameters and watch it regenerate as Minecraft blocks, then *Download XML*. Put the file in `plugins/GiantTrees/tree/` with a name in capitals, and it works with `/gt grow` straight away. A file there with a bundled tree's name (`tree.OAK.xml`) replaces that tree; delete it to go back to the bundled one. To make it spawn, list its name under a biome in `natural.trees`; to grow it from saplings, add a pattern to `planting.patterns`. To tune a tree for one biome only, give it its own file (`tree.OAK_PLAINS.xml`) and list that.
 
 
 # Installation
@@ -107,13 +107,13 @@ No other plugins are needed.
 
 GiantTreesX reports anonymous usage statistics to [bStats](https://bstats.org/plugin/bukkit/GiantTreesX/35220) (server count, Minecraft and Java versions). Server owners can turn it off for all plugins in `plugins/bStats/config.yml`.
 
-The plugin folder is `plugins/GiantTrees/`. Tree files are unpacked there on first start; files you edit are never overwritten, and deleted ones come back on the next start.
+The plugin folder is `plugins/GiantTrees/`: `config.yml`, and a `tree/` folder for trees you add or replace. The bundled trees stay inside the plugin jar, so updates bring their latest versions.
 
 ## Upgrading from GiantTrees
 
 The config has a new layout: natural spawning settings are in a `natural:` section and planting settings in a `planting:` section. Old settings (`naturallyGrowTrees`, `worlds`, `treeGrowthPercentChance`, `planting-patterns`, `core`, `bone-meal-consumed`, ...) are no longer read, and the plugin warns at startup while they are in your `config.yml`; until you move them, the defaults apply. The easiest way is to delete `config.yml`, restart to get the new one, and copy your changes back in.
 
-`biome.*.xml` files are no longer read; natural trees come from `natural.trees` instead. The plugin warns at startup while such files are in its folder. Delete them, or for one you edited, rename it to `tree.<NAME>.xml` and list `<NAME>` under its biome.
+Tree files are no longer unpacked into the plugin folder, and the old `tree.*.xml` and `biome.*.xml` files there are no longer read. The plugin warns at startup while they are there, naming the ones that differ from the bundled trees. Move those you want to keep into `plugins/GiantTrees/tree/` (rename a `biome.BIOME-NAME.xml` to `tree.NAME.xml` and list `NAME` under its biome in `natural.trees`), then delete the rest.
 
 
 # Configuration

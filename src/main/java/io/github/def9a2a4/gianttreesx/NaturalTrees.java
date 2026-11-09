@@ -1,6 +1,5 @@
 package io.github.def9a2a4.gianttreesx;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -13,6 +12,8 @@ import java.util.logging.Logger;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
+
+import io.github.def9a2a4.gianttreesx.rendering.TreeFiles;
 
 /**
  * Which trees grow naturally in which biome: the natural.trees and natural.sizes sections
@@ -55,11 +56,11 @@ final class NaturalTrees {
       return this.files.values().stream().anyMatch(w -> w > 0);
     }
 
-    /** The files that exist in {@code folder} and have a positive weight. */
-    List<Candidate> candidates(final File folder) {
+    /** The files that exist and have a positive weight. */
+    List<Candidate> candidates(final TreeFiles trees) {
       final List<Candidate> out = new ArrayList<>();
       for (final Map.Entry<String, Double> e : this.files.entrySet()) {
-        if (e.getValue() > 0 && new File(folder, e.getKey()).isFile()) {
+        if (e.getValue() > 0 && trees.exists(e.getKey())) {
           out.add(new Candidate(e.getKey(), e.getValue(), this.biome));
         }
       }
@@ -94,7 +95,7 @@ final class NaturalTrees {
    * Reads the config. Warnings (unknown biome keys, names without tree files, bad values) go to
    * the plugin's log.
    */
-  static NaturalTrees load(final Plugin plugin, final Set<String> knownBiomes) {
+  static NaturalTrees load(final Plugin plugin, final TreeFiles treeFiles, final Set<String> knownBiomes) {
     final Logger log = plugin.getLogger();
     final Configuration config = plugin.getConfig();
     final double defaultChance = chance(config.get("natural.chance"), 0.0,
@@ -133,7 +134,6 @@ final class NaturalTrees {
     if (section == null) {
       return new NaturalTrees(entries);
     }
-    final File folder = plugin.getDataFolder();
     // bundled biomes are not checked: DAPPLED_FOREST only exists from 26.3 on
     final Set<String> bundledBiomes = new HashSet<>();
     if (bundled != null) {
@@ -166,7 +166,7 @@ final class NaturalTrees {
       final Map<String, Double> files = new LinkedHashMap<>();
       for (final Map.Entry<String, Double> tree : treeWeights(trees, where, log).entrySet()) {
         final List<String> names = expand(tree.getKey());
-        if (names.stream().noneMatch(n -> new File(folder, n).isFile())) {
+        if (names.stream().noneMatch(treeFiles::exists)) {
           log.warning(where + ": no tree file for " + tree.getKey() + " (looked for "
                       + String.join(", ", names) + ")");
         }
