@@ -27,10 +27,8 @@ import org.bukkit.Material;
  */
 public class PhysicalCraftingRecipe {
 
-  private String treename = null;
+  private final String treename;
   private final int size;
-  private final Material coreblock;
-  private final int boneMealCost;
   /** number of "don't care" (null) cells; fewer means more specific */
   private final int wildcards;
   /** the pattern in all distinct orientations (1 when every rotation looks the same, else 4) */
@@ -42,15 +40,11 @@ public class PhysicalCraftingRecipe {
    * Null cells match any block.
    *
    * @param treename - Name of the tree - matches tree filename
-   * @param coreblock - The material of the central core block
    * @param pattern - The square of Materials to match.
-   * @param boneMealCost - bone meal consumed when this recipe grows a tree
    */
-  public PhysicalCraftingRecipe(String treename, Material coreblock, final Material[][] pattern, int boneMealCost) {
+  public PhysicalCraftingRecipe(String treename, final Material[][] pattern) {
     this.treename = treename;
-    this.coreblock = coreblock;
     this.size = pattern.length;
-    this.boneMealCost = boneMealCost;
     int dontCare = 0;
     for (final Material[] row : pattern) {
       for (final Material cell : row) {
@@ -61,7 +55,7 @@ public class PhysicalCraftingRecipe {
     }
     this.wildcards = dontCare;
 
-    final Material[][] r0 = copy(pattern);
+    final Material[][] r0 = pattern;
     final Material[][] r1 = rotateCW(r0);
     final Material[][] r2 = rotateCW(r1);
     final Material[][] r3 = rotateCW(r2);
@@ -70,10 +64,6 @@ public class PhysicalCraftingRecipe {
     } else {
       this.orientations = new Material[][][] { r0, r1, r2, r3 };
     }
-  }
-
-  public void setTreeName(String treename) {
-	  this.treename = treename;
   }
 
   /** Name of the tree for this recipe (the planting-patterns key) */
@@ -86,29 +76,9 @@ public class PhysicalCraftingRecipe {
     return this.size;
   }
 
-  /** Bone meal consumed when this recipe grows a tree */
-  public int getBoneMealCost() {
-    return this.boneMealCost;
-  }
-
   /** Number of "don't care" cells; recipes with fewer are more specific and are tried first */
   public int getWildcards() {
     return this.wildcards;
-  }
-
-  public Material getCoreBlock() {
-    return this.coreblock;
-  }
-
-  /**
-   * Determines if this PhysicalCraftingRecipe matches the blocks in the world, in any of the
-   * four 90 degree orientations.
-   *
-   * @param worldblocks - size x size blocks around the clicked core block
-   * @return true or false if a match was found
-   */
-  public boolean matches(Material[][] worldblocks) {
-    return this.matchingOrientation(worldblocks) != null;
   }
 
   /**
@@ -127,13 +97,7 @@ public class PhysicalCraftingRecipe {
   }
 
   private static boolean fits(Material[][] pattern, Material[][] worldblocks) {
-    if (worldblocks.length != pattern.length) {
-      return false;
-    }
     for (int r = 0; r < pattern.length; r++) {
-      if (worldblocks[r].length != pattern[r].length) {
-        return false;
-      }
       for (int c = 0; c < pattern[r].length; c++) {
         if (pattern[r][c] != null && pattern[r][c] != worldblocks[r][c]) {
           return false;
@@ -141,14 +105,6 @@ public class PhysicalCraftingRecipe {
       }
     }
     return true;
-  }
-
-  private static Material[][] copy(Material[][] matrix) {
-    final Material[][] ret = new Material[matrix.length][];
-    for (int r = 0; r < matrix.length; r++) {
-      ret[r] = matrix[r].clone();
-    }
-    return ret;
   }
 
   /** Returns a copy of a square matrix rotated 90 degrees clockwise */

@@ -7,10 +7,8 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 
 import org.bukkit.Material;
-import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.MultipleFacing;
 import org.bukkit.block.data.type.HangingMoss;
 import org.bukkit.util.Vector;
 
@@ -32,11 +30,6 @@ final class LeafDecorator {
    *  hash % (TreeType.hangingOneIn * HANGING_SPARSER) == 0. */
   static final int HANGING_SPARSER = 2;
 
-  /** dx, dz of the vine's cell relative to the leaf, in the order N, S, E, W. */
-  private static final int[][] SIDES = {{0, -1}, {0, 1}, {1, 0}, {-1, 0}};
-  /** The face of the vine block that touches the leaf, per side (as JungleVinePopulator). */
-  private static final BlockFace[] FACES = {BlockFace.SOUTH, BlockFace.NORTH, BlockFace.WEST, BlockFace.EAST};
-
   private LeafDecorator() {
   }
 
@@ -51,7 +44,6 @@ final class LeafDecorator {
   private static void vines(final WorldChangeTracker tracker, final int seed) {
     // cell -> face index; where two strands meet, the lower face index wins
     final Map<WorldChangeKey, Integer> cells = new HashMap<>();
-    final WorldChangeKey probe = new WorldChangeKey();
     for (final WorldChange change : tracker.getChanges()) {
       if (change.kind != WorldChange.Kind.LEAVES) {
         continue;
@@ -64,17 +56,14 @@ final class LeafDecorator {
         if (Math.floorMod(h, VINE_ONE_IN) != 0) {
           continue;
         }
-        final int vx = x + SIDES[s][0];
-        final int vz = z + SIDES[s][1];
+        final int vx = x + JungleVinePopulator.SIDES[s][0];
+        final int vz = z + JungleVinePopulator.SIDES[s][1];
         final int length = VINE_MIN + Math.floorMod(h >>> 8, VINE_MAX - VINE_MIN + 1);
         for (int vy = y; vy > y - length && vy >= 1; vy--) {
-          probe.x = vx;
-          probe.y = vy;
-          probe.z = vz;
-          if (tracker.getChange(probe) != null) {
+          final WorldChangeKey key = new WorldChangeKey(vx, vy, vz);
+          if (tracker.getChange(key) != null) {
             break;
           }
-          final WorldChangeKey key = new WorldChangeKey(vx, vy, vz);
           final Integer old = cells.get(key);
           if (old == null || s < old) {
             cells.put(key, s);
@@ -84,7 +73,8 @@ final class LeafDecorator {
     }
     final List<WorldChange> added = new ArrayList<>(cells.size());
     for (final Map.Entry<WorldChangeKey, Integer> e : cells.entrySet()) {
-      added.add(new WorldChange(e.getKey().toVector(), Material.VINE, face(FACES[e.getValue()]),
+      added.add(new WorldChange(e.getKey().toVector(), Material.VINE,
+                                JungleVinePopulator.orient(JungleVinePopulator.FACES[e.getValue()]),
                                 WorldChange.Kind.VINE, -1));
     }
     for (final WorldChange c : added) {
@@ -103,7 +93,6 @@ final class LeafDecorator {
     final int min = type.hangingMin;
     final int max = type.hangingMax;
     final List<WorldChange> added = new ArrayList<>();
-    final WorldChangeKey probe = new WorldChangeKey();
     for (final WorldChange change : tracker.getChanges()) {
       if (change.kind != WorldChange.Kind.LEAVES) {
         continue;
@@ -119,10 +108,7 @@ final class LeafDecorator {
       // strands stop at the first block of the tree, so two never share a cell
       int bottom = y;
       for (int vy = y - 1; vy >= y - length && vy >= 1; vy--) {
-        probe.x = x;
-        probe.y = vy;
-        probe.z = z;
-        if (tracker.getChange(probe) != null) {
+        if (tracker.getChange(new WorldChangeKey(x, vy, z)) != null) {
           break;
         }
         bottom = vy;
@@ -152,20 +138,6 @@ final class LeafDecorator {
     h *= 0xC2B2AE35;
     h ^= h >>> 16;
     return h;
-  }
-
-  private static UnaryOperator<BlockData> face(final BlockFace direction) {
-    return blockData -> {
-      if (blockData instanceof MultipleFacing) {
-        final MultipleFacing facing = (MultipleFacing) blockData;
-        facing.setFace(BlockFace.NORTH, false);
-        facing.setFace(BlockFace.SOUTH, false);
-        facing.setFace(BlockFace.EAST, false);
-        facing.setFace(BlockFace.WEST, false);
-        facing.setFace(direction, true);
-      }
-      return blockData;
-    };
   }
 
   private static UnaryOperator<BlockData> tip(final boolean tip) {

@@ -29,8 +29,8 @@ import org.bukkit.Material;
 
 /**
  * Maps a tree file's WoodType to blocks. Every block is looked up by name at runtime, so wood
- * types whose blocks only exist on newer servers (e.g. poplar, added in 26.3) fall back to
- * another wood type instead of failing on older ones. Keep in sync with treeTypeMaterials in
+ * types whose blocks only exist on newer servers (poplar, added in 26.3) fall back to another
+ * wood type instead of failing on older ones. Keep in sync with treeTypeMaterials in
  * docs/viewer/src/materials.js.
  */
 public class TreeType {
@@ -46,96 +46,67 @@ public class TreeType {
     HANGING
   }
 
-  private static final class Spec {
-    final String wood;
-    /** Leaf block names and weights; the first one is the tree's raw leaf block. */
-    final String[] leaves;
-    final int[] weights;
-    final Decoration decoration;
-    final String hanging;
-    /** WoodType used when wood or the first leaf block doesn't exist on this server. */
-    final String fallback;
-    int capLevel = Integer.MAX_VALUE;
-    boolean noisyLeaves = true;
-    double leafDroop;
-    /** Bottom block of a hanging strand; null for {@link #hanging} with its tip state set. */
-    String hangingTip;
-    /** A leaf bottom grows a strand one in this many times; strand length range. */
-    int hangingOneIn = 4;
-    int hangingMin = 1;
-    int hangingMax = 6;
-    /** Wood block for the parts of a root system that end up in the ground (mud, dirt, ...);
-     *  null to keep {@link #wood} there. */
-    String groundWood;
-
-    Spec(final String wood, final String[] leaves, final int[] weights,
-         final Decoration decoration, final String hanging, final String fallback) {
-      this.wood = wood;
-      this.leaves = leaves;
-      this.weights = weights;
-      this.decoration = decoration;
-      this.hanging = hanging;
-      this.fallback = fallback;
-    }
-  }
+  /** Leaf block names and weights (the first one is the tree's raw leaf block); hanging: the
+   *  block hung below leaves for {@link Decoration#HANGING}, otherwise null. */
+  private record Spec(String wood, String[] leaves, int[] weights, Decoration decoration,
+                      String hanging) {}
 
   private static final Map<String, Spec> SPECS = new LinkedHashMap<>();
 
   private static void add(final String woodType, final String wood, final String leaf,
-                          final Decoration decoration, final String fallback) {
-    SPECS.put(woodType, new Spec(wood, new String[] {leaf}, new int[] {1}, decoration, null, fallback));
+                          final Decoration decoration) {
+    SPECS.put(woodType, new Spec(wood, new String[] {leaf}, new int[] {1}, decoration, null));
   }
 
   static {
-    add("Oak", "OAK_LOG", "OAK_LEAVES", Decoration.NONE, null);
-    add("Spruce", "SPRUCE_LOG", "SPRUCE_LEAVES", Decoration.NONE, "Oak");
-    // drooping boughs
-    SPECS.get("Spruce").leafDroop = 0.6;
-    add("Birch", "BIRCH_LOG", "BIRCH_LEAVES", Decoration.NONE, "Oak");
-    add("Cherry", "CHERRY_LOG", "CHERRY_LEAVES", Decoration.NONE, "Oak");
-    add("Jungle", "JUNGLE_LOG", "JUNGLE_LEAVES", Decoration.TRUNK_VINES, "Oak");
-    add("Acacia", "ACACIA_LOG", "ACACIA_LEAVES", Decoration.NONE, "Oak");
-    add("Dark Oak", "DARK_OAK_LOG", "DARK_OAK_LEAVES", Decoration.NONE, "Oak");
+    add("Oak", "OAK_LOG", "OAK_LEAVES", Decoration.NONE);
+    add("Spruce", "SPRUCE_LOG", "SPRUCE_LEAVES", Decoration.NONE);
+    add("Birch", "BIRCH_LOG", "BIRCH_LEAVES", Decoration.NONE);
+    add("Cherry", "CHERRY_LOG", "CHERRY_LEAVES", Decoration.NONE);
+    add("Jungle", "JUNGLE_LOG", "JUNGLE_LEAVES", Decoration.TRUNK_VINES);
+    add("Acacia", "ACACIA_LOG", "ACACIA_LEAVES", Decoration.NONE);
+    add("Dark Oak", "DARK_OAK_LOG", "DARK_OAK_LEAVES", Decoration.NONE);
     // vines hang from the leaves, like vanilla's leave_vine decorator (no vines on the trunk)
-    add("Mangrove", "MANGROVE_LOG", "MANGROVE_LEAVES", Decoration.LEAF_VINES, "Oak");
-    add("Mangrove_roots", "MANGROVE_ROOTS", "MANGROVE_LEAVES", Decoration.NONE, "Oak");
-    // prop roots that reach into the mud become muddy mangrove roots, like vanilla's
-    SPECS.get("Mangrove_roots").groundWood = "MUDDY_MANGROVE_ROOTS";
+    add("Mangrove", "MANGROVE_LOG", "MANGROVE_LEAVES", Decoration.LEAF_VINES);
+    add("Mangrove_roots", "MANGROVE_ROOTS", "MANGROVE_LEAVES", Decoration.NONE);
     SPECS.put("Pale Oak", new Spec("PALE_OAK_LOG", new String[] {"PALE_OAK_LEAVES"}, new int[] {1},
-        Decoration.HANGING, "PALE_HANGING_MOSS", "Dark Oak"));
-    add("Swamp Oak", "OAK_LOG", "OAK_LEAVES", Decoration.LEAF_VINES, "Oak");
-    // mushroom branches are part of the cap
-    add("Red Mushroom", "MUSHROOM_STEM", "RED_MUSHROOM_BLOCK", Decoration.NONE, "Oak");
-    SPECS.get("Red Mushroom").capLevel = 1;
-    SPECS.get("Red Mushroom").noisyLeaves = false;
-    add("Brown Mushroom", "MUSHROOM_STEM", "BROWN_MUSHROOM_BLOCK", Decoration.NONE, "Oak");
-    SPECS.get("Brown Mushroom").capLevel = 1;
-    SPECS.get("Brown Mushroom").noisyLeaves = false;
-    // 26.3+: on older servers poplar trees are grown as birch
+        Decoration.HANGING, "PALE_HANGING_MOSS"));
+    add("Swamp Oak", "OAK_LOG", "OAK_LEAVES", Decoration.LEAF_VINES);
+    add("Red Mushroom", "MUSHROOM_STEM", "RED_MUSHROOM_BLOCK", Decoration.NONE);
+    add("Brown Mushroom", "MUSHROOM_STEM", "BROWN_MUSHROOM_BLOCK", Decoration.NONE);
     SPECS.put("Poplar", new Spec("POPLAR_LOG",
         new String[] {"YELLOW_POPLAR_LEAVES", "ORANGE_POPLAR_LEAVES", "RED_POPLAR_LEAVES"},
-        new int[] {5, 3, 2}, Decoration.NONE, null, "Birch"));
+        new int[] {5, 3, 2}, Decoration.NONE, null));
     // weeping vines hang from under the cap: plant blocks with a (fully grown) tip at the bottom
     SPECS.put("Crimson", new Spec("CRIMSON_STEM", new String[] {"NETHER_WART_BLOCK", "SHROOMLIGHT"},
-        new int[] {14, 1}, Decoration.HANGING, "WEEPING_VINES_PLANT", "Oak"));
-    SPECS.get("Crimson").hangingTip = "WEEPING_VINES";
-    SPECS.get("Crimson").hangingOneIn = 6;
-    SPECS.get("Crimson").hangingMin = 1;
-    SPECS.get("Crimson").hangingMax = 9;
+        new int[] {14, 1}, Decoration.HANGING, "WEEPING_VINES_PLANT"));
     SPECS.put("Warped", new Spec("WARPED_STEM", new String[] {"WARPED_WART_BLOCK", "SHROOMLIGHT"},
-        new int[] {14, 1}, Decoration.NONE, null, "Oak"));
-    // fungus caps keep their smooth wart domes
-    SPECS.get("Crimson").noisyLeaves = false;
-    SPECS.get("Warped").noisyLeaves = false;
+        new int[] {14, 1}, Decoration.NONE, null));
     SPECS.put("Azalea", new Spec("OAK_LOG", new String[] {"AZALEA_LEAVES", "FLOWERING_AZALEA_LEAVES"},
-        new int[] {3, 2}, Decoration.NONE, null, "Oak"));
+        new int[] {3, 2}, Decoration.NONE, null));
   }
+
+  /** Wood type grown instead when the wood or first leaf block is missing: 26.3+ poplar on older
+   *  servers. */
+  private static final Map<String, String> FALLBACKS = Map.of("Poplar", "Birch");
+  /** Mushroom branches are part of the cap ({@link #capLevel}). */
+  private static final Map<String, Integer> CAP_LEVELS = Map.of("Red Mushroom", 1, "Brown Mushroom", 1);
+  /** Mushroom caps and fungus wart domes stay smooth ({@link #noisyLeaves} false). */
+  private static final Set<String> SMOOTH_LEAVES = Set.of("Red Mushroom", "Brown Mushroom", "Crimson", "Warped");
+  /** Drooping boughs ({@link #leafDroop}). */
+  private static final Map<String, Double> LEAF_DROOPS = Map.of("Spruce", 0.6);
+  /** Bottom block of a hanging strand when not the hanging block itself (with its tip state). */
+  private static final Map<String, String> HANGING_TIPS = Map.of("Crimson", "WEEPING_VINES");
+  /** hangingOneIn, hangingMin, hangingMax; default 4, 1, 6. */
+  private static final Map<String, int[]> HANGING_SHAPES = Map.of("Crimson", new int[] {6, 1, 9});
+  /** Prop roots that reach into the mud become muddy mangrove roots, like vanilla's. */
+  private static final Map<String, String> GROUND_WOODS = Map.of("Mangrove_roots", "MUDDY_MANGROVE_ROOTS");
 
   /** Wood types already reported as unavailable, so the notice is logged once. */
   private static final Set<String> NOTIFIED = ConcurrentHashMap.newKeySet();
 
-  public Material leafMaterial;
-  public Material woodMaterial;
+  public final Material leafMaterial;
+  public final Material woodMaterial;
   /** Default weighted leaf mix (WoodStyle uses it when the config sets none); empty for one leaf. */
   public final Map<Material, Integer> leafMix;
   public final Decoration decoration;
@@ -168,61 +139,59 @@ public class TreeType {
    *               server and a fallback is used; null for none
    */
   public TreeType(final String treeType, final Logger logger) {
-    Spec spec = SPECS.getOrDefault(treeType, SPECS.get("Oak"));
     String name = SPECS.containsKey(treeType) ? treeType : "Oak";
-    while (lookup(spec.wood) == null || lookup(spec.leaves[0]) == null) {
+    Spec spec = SPECS.get(name);
+    if (FALLBACKS.containsKey(name)
+        && (Material.getMaterial(spec.wood) == null || Material.getMaterial(spec.leaves[0]) == null)) {
       if (logger != null && NOTIFIED.add(name)) {
         logger.info(name + " blocks are not available on this server version; growing "
-                    + spec.fallback + " instead");
+                    + FALLBACKS.get(name) + " instead");
       }
-      name = spec.fallback;
+      name = FALLBACKS.get(name);
       spec = SPECS.get(name);
     }
-    this.woodMaterial = lookup(spec.wood);
-    this.leafMaterial = lookup(spec.leaves[0]);
+    this.woodMaterial = Material.getMaterial(spec.wood);
+    this.leafMaterial = Material.getMaterial(spec.leaves[0]);
     final Map<Material, Integer> mix = new LinkedHashMap<>();
     if (spec.leaves.length > 1) {
       for (int i = 0; i < spec.leaves.length; i++) {
-        final Material m = lookup(spec.leaves[i]);
+        final Material m = Material.getMaterial(spec.leaves[i]);
         if (m != null) {
           mix.put(m, spec.weights[i]);
         }
       }
     }
     this.leafMix = Collections.unmodifiableMap(mix);
-    final Material hanging = spec.hanging == null ? null : lookup(spec.hanging);
-    final Material hangingTip = spec.hangingTip == null ? hanging : lookup(spec.hangingTip);
-    this.decoration = spec.decoration == Decoration.HANGING && (hanging == null || hangingTip == null)
-        ? Decoration.NONE : spec.decoration;
-    this.hangingMaterial = this.decoration == Decoration.HANGING ? hanging : null;
-    this.hangingTipMaterial = this.decoration == Decoration.HANGING ? hangingTip : null;
-    this.hangingOneIn = spec.hangingOneIn;
-    this.hangingMin = spec.hangingMin;
-    this.hangingMax = spec.hangingMax;
-    this.capLevel = spec.capLevel;
-    this.noisyLeaves = spec.noisyLeaves;
-    this.leafDroop = spec.leafDroop;
-    this.groundWoodMaterial = spec.groundWood == null ? null : lookup(spec.groundWood);
-  }
-
-  private static Material lookup(final String name) {
-    return Material.getMaterial(name);
+    this.decoration = spec.decoration;
+    this.hangingMaterial = spec.hanging == null ? null : Material.getMaterial(spec.hanging);
+    this.hangingTipMaterial = HANGING_TIPS.containsKey(name)
+        ? Material.getMaterial(HANGING_TIPS.get(name)) : hangingMaterial;
+    final int[] shape = HANGING_SHAPES.getOrDefault(name, new int[] {4, 1, 6});
+    this.hangingOneIn = shape[0];
+    this.hangingMin = shape[1];
+    this.hangingMax = shape[2];
+    this.capLevel = CAP_LEVELS.getOrDefault(name, Integer.MAX_VALUE);
+    this.noisyLeaves = !SMOOTH_LEAVES.contains(name);
+    this.leafDroop = LEAF_DROOPS.getOrDefault(name, 0.0);
+    this.groundWoodMaterial = GROUND_WOODS.containsKey(name)
+        ? Material.getMaterial(GROUND_WOODS.get(name)) : null;
   }
 
   /** Every block name the table can produce (for the viewer equivalence harness). */
   public static Set<String> candidateMaterialNames() {
     final Set<String> names = new LinkedHashSet<>();
-    for (final Spec s : SPECS.values()) {
+    for (final Map.Entry<String, Spec> e : SPECS.entrySet()) {
+      final Spec s = e.getValue();
       names.add(s.wood);
       Collections.addAll(names, s.leaves);
       if (s.hanging != null) {
         names.add(s.hanging);
       }
-      if (s.hangingTip != null) {
-        names.add(s.hangingTip);
+      if (HANGING_TIPS.containsKey(e.getKey())) {
+        names.add(HANGING_TIPS.get(e.getKey()));
       }
-      if (s.groundWood != null) {
-        names.add(s.groundWood);
+      if (GROUND_WOODS.containsKey(e.getKey())) {
+        names.add(GROUND_WOODS.get(e.getKey()));
       }
     }
     return names;

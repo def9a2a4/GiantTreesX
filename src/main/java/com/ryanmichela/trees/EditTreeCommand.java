@@ -19,7 +19,6 @@ package com.ryanmichela.trees;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -39,9 +38,12 @@ import org.bukkit.plugin.Plugin;
 public class EditTreeCommand implements CommandExecutor {
 
   private final Plugin plugin;
+  /** the plugin jar, whose main class is the Arbaro editor */
+  private final File jar;
 
-  public EditTreeCommand(final Plugin plugin) {
+  public EditTreeCommand(final Plugin plugin, final File jar) {
     this.plugin = plugin;
+    this.jar = jar;
   }
 
   @Override
@@ -70,25 +72,19 @@ public class EditTreeCommand implements CommandExecutor {
       return true;
     }
 
-    final File jar = this.pluginJar();
-    if (jar == null || !jar.isFile()) {
-      sender.sendMessage("Cannot start the tree editor: the GiantTrees plugin jar was not found"
-                         + (jar == null ? "." : " at " + jar + "."));
-      return true;
-    }
     if (!hasDisplay()) {
       sender.sendMessage("Cannot start the tree editor: this server has no graphical display. "
-                         + "Run it on a desktop instead: java -jar " + jar.getName()
+                         + "Run it on a desktop instead: java -jar " + this.jar.getName()
                          + " <tree file>");
       return true;
     }
 
     final File java = new File(System.getProperty("java.home"),
-                               "bin" + File.separator + (isWindows() ? "java.exe" : "java"));
+                               "bin" + File.separator + (File.separatorChar == '\\' ? "java.exe" : "java"));
     final File toOpen = new File(this.plugin.getDataFolder(), arg[0] + ".xml");
     final File log = new File(this.plugin.getDataFolder(), "arbaro.log");
     final ProcessBuilder pb = new ProcessBuilder(java.getAbsolutePath(), "-jar",
-                                                 jar.getAbsolutePath(), toOpen.getAbsolutePath());
+                                                 this.jar.getAbsolutePath(), toOpen.getAbsolutePath());
     pb.redirectErrorStream(true);
     pb.redirectOutput(log);
     final Process process;
@@ -114,21 +110,6 @@ public class EditTreeCommand implements CommandExecutor {
       }
     });
     return true;
-  }
-
-  /** The jar this plugin was loaded from, or null if it cannot be determined. */
-  private File pluginJar() {
-    try {
-      return new File(this.plugin.getClass().getProtectionDomain().getCodeSource()
-                                 .getLocation().toURI());
-    } catch (final URISyntaxException | SecurityException | NullPointerException
-        | IllegalArgumentException e) {
-      return null;
-    }
-  }
-
-  private static boolean isWindows() {
-    return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).startsWith("windows");
   }
 
   /**

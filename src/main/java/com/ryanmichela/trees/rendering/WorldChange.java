@@ -40,11 +40,6 @@ class WorldChange {
   public final int level;
 
   WorldChange(final Vector location, final Material material,
-              final UnaryOperator<BlockData> blockDataMutator) {
-    this(location, material, blockDataMutator, Kind.WOOD, -1);
-  }
-
-  WorldChange(final Vector location, final Material material,
               final UnaryOperator<BlockData> blockDataMutator, final Kind kind,
               final int level) {
     this.location = location;

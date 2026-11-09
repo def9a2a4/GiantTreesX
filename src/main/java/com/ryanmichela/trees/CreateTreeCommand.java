@@ -19,7 +19,6 @@ package com.ryanmichela.trees;
 
 import java.io.File;
 import java.util.Locale;
-import java.util.Random;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -36,13 +35,11 @@ import com.ryanmichela.trees.rendering.TreeRenderer;
 public class CreateTreeCommand implements CommandExecutor {
 
   private final Plugin       plugin;
-  private final PopupHandler popup;
   private final TreeRenderer renderer;
 
   public CreateTreeCommand(final Plugin plugin) {
     this.plugin = plugin;
     this.renderer = new TreeRenderer(plugin);
-    this.popup = new PopupHandler(plugin);
   }
 
   @Override
@@ -51,16 +48,11 @@ public class CreateTreeCommand implements CommandExecutor {
     final Player player = sender instanceof Player ? (Player) sender : null;
     final Location target;
 
+    // the gianttrees.create permission is checked by Bukkit (plugin.yml)
     if (player != null && arg.length == 1) {
-      if (!player.hasPermission("gianttrees.create")) {
-        return true;
-      }
       target = player.getLocation();
     } else if (arg.length == 4) {
       // tree-create <species> <world> <x> <z>: usable from the console and by scripts/tests
-      if (player != null && !player.hasPermission("gianttrees.create")) {
-        return true;
-      }
       final World world = Bukkit.getWorld(arg[1]);
       if (world == null) {
         sender.sendMessage(ChatColor.RED + "No world named " + arg[1]);
@@ -81,7 +73,6 @@ public class CreateTreeCommand implements CommandExecutor {
 
     final String species = arg[0];
     final File treeFile = new File(this.plugin.getDataFolder(), species + ".xml");
-    final File rootFile = new File(this.plugin.getDataFolder(), species + ".root.xml");
 
     if (!treeFile.exists()) {
       sender.sendMessage(ChatColor.RED + "Tree " + species + " does not exist.");
@@ -101,17 +92,12 @@ public class CreateTreeCommand implements CommandExecutor {
     }
 
     final Location base = ground.block().getLocation();
-    // mix in the position so trees created in the same world don't all share one shape
-    final Random seed = new Random(world.getSeed()
-                                   ^ ((long) base.getBlockX() * 341873128712L)
-                                   ^ ((long) base.getBlockZ() * 132897987541L));
     if (player != null) {
-      this.popup.sendPopup(player, "Stand back!");
+      player.sendMessage("Stand back!");
     }
     sender.sendMessage("Growing " + species + " at " + world.getName() + " "
                        + base.getBlockX() + " " + base.getBlockY() + " " + base.getBlockZ());
-    this.renderer.renderTreeWithHistory(base, treeFile, rootFile,
-                                        seed.nextInt(), player, true);
+    this.renderer.renderTree(base, treeFile, TreeRenderer.positionSeed(base), true);
     return true;
   }
 }

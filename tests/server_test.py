@@ -155,15 +155,16 @@ def phase_natural(args) -> list[str]:
         failures.append("natural: GiantTrees was not enabled")
     rendered = sum("Rendering tree" in l for l in lines)
     placed = sum("Placed tree at" in l for l in lines)
-    smaller = sum(bool(re.search(r"Rendering tree biome\.\S+_(HUGE|BIG)\.xml", l)) for l in lines)
-    azalea = sum("Rendering tree biome.LUSH_CAVES-" in l for l in lines)
+    smaller = sum(bool(re.search(r"Natural tree tree\.\S+_(HUGE|BIG)\.xml in ", l)) for l in lines)
+    azalea = sum(bool(re.search(r"Natural tree \S+ in LUSH_CAVES\b", l)) for l in lines)
     print(f"natural: {rendered} trees rendered ({smaller} huge or big, {azalea} azalea over lush caves), "
           f"{placed} placed")
     if placed == 0:
         failures.append("natural: no trees were placed")
-    # natural-tree-weights makes huge trees 2x and big trees 4x as likely as giants, so 6 in 7
-    # trees are huge or big; with 10+ trees, none is a ~1e-8 fluke, so it means the weights or the
-    # biome.*_HUGE / *_BIG files are not being used
+    # natural-tree-sizes makes huge trees 2x and big trees 4x as likely as giants, so 6 in 7
+    # trees are huge or big (2 in 3 for jungle and spruce, which have no big tree); with 10+
+    # trees, none is at worst a ~2e-5 fluke, so it means the sizes or the natural-trees expansion
+    # to tree.*_HUGE / *_BIG files are not working
     if rendered >= 10 and smaller == 0:
         failures.append(f"natural: {rendered} trees rendered but none was a huge or big variant")
     failures += [f"natural: {p}" for p in scan_problems(lines)]

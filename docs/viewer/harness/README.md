@@ -1,15 +1,15 @@
 # Tree preview equivalence harness
 
 The browser preview (`docs/viewer/src/`) is a JavaScript port of the plugin's tree
-generator: Arbaro (`src/arbaro/java`), the Minecraft exporters, `Draw3d`, `WorldChangeTracker`,
+generator: Arbaro (`src/arbaro/java`), `TreeRenderer.generate`, `Draw3d`, `WorldChangeTracker`,
 `JungleVinePopulator`, `LeafDecorator` and `WoodStyler` (`src/main/java/.../rendering`). The port has to match the
 plugin block for block, up to a tiny floating-point tolerance (see "Java math"). This directory
 holds the Java side of the check.
 
 ## What is compared
 
-`GeometryHarness.java` runs the plugin's real classes without a server, mirroring the
-orchestration in `TreeRenderer.renderTree()`. `scripts/equivalence.mjs` runs the JS port on the
+`GeometryHarness.java` runs the plugin's real classes without a server, through the same
+`TreeRenderer.generate()` that `TreeRenderer.renderTree()` uses. `scripts/equivalence.mjs` runs the JS port on the
 same jobs and compares them. A job is a bundled tree file plus root file, a seed and a reference
 point. For each job it checks:
 
@@ -65,13 +65,13 @@ that.
 
 ## When Java rendering changes
 
-Keep three things in step: the Java code, `GeometryHarness.run()` and the JS port.
+Keep the Java code and the JS port in step.
 
 | Java change | Update |
 |---|---|
-| `TreeRenderer.renderTree` orchestration (order of exporters, vines, root junction, roots, refPoint rules) | `GeometryHarness.run()` and `src/render.js` `renderTree()` |
+| `TreeRenderer.generate` orchestration (order of export, vines, root junction, roots) or the refPoint rules in `renderTree` | `src/render.js` `renderTree()` (and `GeometryHarness.run()` for refPoint rules) |
 | `Draw3d` (plotting, noise, orientation), `Orientation` | `src/draw3d.js` |
-| `MinecraftExporter` / `*StemExporter` / `*SegmentExporter` / `*LeafExporter` | `exportTree()` in `src/render.js` |
+| `TreeRenderer.export` | `exportTree()` in `src/render.js` |
 | `WorldChangeTracker.addChange` overwrite rules, `WorldChange` fields | `VoxelStore.add()` in `src/voxels.js` (and the voxel line format in both harness files if new fields matter) |
 | `JungleVinePopulator` | `populateVines()` in `src/render.js`; HashMap iteration order lives in `src/javamap.js` |
 | `WoodStyler` / `WoodStyle` | `woodStyleAssign()` and helpers in `src/materials.js`; add a style spec to `DEFAULT_STYLES` in `equivalence.mjs` if there is a new knob (and teach `GeometryHarness.parseStyle` about it) |

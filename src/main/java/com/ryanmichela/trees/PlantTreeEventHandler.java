@@ -20,11 +20,13 @@ package com.ryanmichela.trees;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Random;
-import com.ryanmichela.trees.cost.ItemCost;
+import java.util.Map;
+import java.util.Set;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -41,12 +43,6 @@ import com.ryanmichela.trees.rendering.TreeRenderer;
 
 public class PlantTreeEventHandler implements Listener {
 
-  /** default bone meal cost of a 5x5 (giant) pattern */
-  private static final int DEFAULT_BONE_MEAL = 64;
-  /** default bone meal cost of a huge tree (full 3x3 ring) */
-  private static final int DEFAULT_BONE_MEAL_HUGE = 32;
-  /** default bone meal cost of a big tree (3x3 plus shape) */
-  private static final int DEFAULT_BONE_MEAL_BIG = 16;
   /** widest pattern accepted; patterns are 3x3 or 5x5 squares with the core in the centre */
   private static final int MAX_PATTERN_SIZE = 5;
   /** pattern code for a "don't care" cell, which matches any block (e.g. the plus shape's corners) */
@@ -83,50 +79,41 @@ public class PlantTreeEventHandler implements Listener {
   }
 
   private Material coreblock;
-  private boolean enabled;
   private final Plugin plugin;
-  private final PopupHandler popup;
   /**
    * sorted most specific first: 5x5 before 3x3, and among patterns of one size those with fewer
    * "don't care" cells first, so a full 3x3 ring wins over the plus shape inside it
    */
   private final List<PhysicalCraftingRecipe> recipes = new ArrayList<>();
+  private final Map<Tier, Integer> boneMeal = new EnumMap<>(Tier.class);
   private final TreeRenderer renderer;
   /** Sapling codes whose block this server doesn't have; patterns using them are skipped. */
-  private static final java.util.Set<Character> unavailableCodes = new java.util.HashSet<>();
+  private static final Set<Character> unavailableCodes = new HashSet<>();
 
-  private static final HashMap<Character, Material> patternMaterialMap;
+  private static final Map<Character, Material> patternMaterialMap = new HashMap<>();
   static {
-	  patternMaterialMap = new HashMap<Character, Material>() {
-		  private static final long serialVersionUID = 1L; {
-			  put('A', Material.ACACIA_SAPLING); 
-			  put('O', Material.OAK_SAPLING);
-			  put('D', Material.DARK_OAK_SAPLING);
-			  put('B', Material.BIRCH_SAPLING);
-			  put('M', Material.MANGROVE_PROPAGULE);
-			  put('S', Material.SPRUCE_SAPLING);
-			  put('J', Material.JUNGLE_SAPLING);
-			  put('C', Material.CHERRY_SAPLING);
-			  put('R', Material.RED_MUSHROOM);
-			  put('N', Material.BROWN_MUSHROOM);
-			  put('F', Material.CRIMSON_FUNGUS);
-			  put('W', Material.WARPED_FUNGUS);
-			  put('Z', Material.AZALEA);
-			  put('Y', Material.FLOWERING_AZALEA);
-			  put('H', Material.BLUE_ORCHID);
-		  }
-	  };
-	  // looked up by name: these blocks don't exist on every supported server version
-	  putIfAvailable('P', "PALE_OAK_SAPLING");
-	  putIfAvailable('L', "POPLAR_SAPLING"); // 26.3+
-  }
-
-  private static void putIfAvailable(final char code, final String material) {
-	  final Material m = Material.getMaterial(material);
-	  if (m != null) {
-		  patternMaterialMap.put(code, m);
+	  patternMaterialMap.put('A', Material.ACACIA_SAPLING);
+	  patternMaterialMap.put('O', Material.OAK_SAPLING);
+	  patternMaterialMap.put('D', Material.DARK_OAK_SAPLING);
+	  patternMaterialMap.put('B', Material.BIRCH_SAPLING);
+	  patternMaterialMap.put('M', Material.MANGROVE_PROPAGULE);
+	  patternMaterialMap.put('S', Material.SPRUCE_SAPLING);
+	  patternMaterialMap.put('J', Material.JUNGLE_SAPLING);
+	  patternMaterialMap.put('C', Material.CHERRY_SAPLING);
+	  patternMaterialMap.put('P', Material.PALE_OAK_SAPLING);
+	  patternMaterialMap.put('R', Material.RED_MUSHROOM);
+	  patternMaterialMap.put('N', Material.BROWN_MUSHROOM);
+	  patternMaterialMap.put('F', Material.CRIMSON_FUNGUS);
+	  patternMaterialMap.put('W', Material.WARPED_FUNGUS);
+	  patternMaterialMap.put('Z', Material.AZALEA);
+	  patternMaterialMap.put('Y', Material.FLOWERING_AZALEA);
+	  patternMaterialMap.put('H', Material.BLUE_ORCHID);
+	  // looked up by name: poplar only exists from 26.3 on
+	  final Material poplar = Material.getMaterial("POPLAR_SAPLING");
+	  if (poplar != null) {
+		  patternMaterialMap.put('L', poplar);
 	  } else {
-		  unavailableCodes.add(code);
+		  unavailableCodes.add('L');
 	  }
   }
 
@@ -136,83 +123,41 @@ public class PlantTreeEventHandler implements Listener {
 	public PlantTreeEventHandler(final Plugin plugin) {
 		this.plugin = plugin;
 		this.renderer = new TreeRenderer(plugin);
-		this.popup = new PopupHandler(plugin);
+		final var config = plugin.getConfig();
 
-		try {
-			// Read config and create tree recipes
-			int boneMealConsumed = DEFAULT_BONE_MEAL;
-			if (!plugin.getConfig().contains("bone-meal-consumed")) {
-				plugin.getLogger().warning("Warning: Please include a bone-meal-consumed config setting");
-			} else {
-				boneMealConsumed = plugin.getConfig().getInt("bone-meal-consumed");
-			}
-			// huge and big trees cost less; bone-meal-consumed-small (configs from before the size
-			// tiers) still sets the huge cost when bone-meal-consumed-huge isn't set
-			final int boneMealHuge = configuredInt("bone-meal-consumed-huge",
-					configuredInt("bone-meal-consumed-small",
-							plugin.getConfig().getInt("bone-meal-consumed-huge", DEFAULT_BONE_MEAL_HUGE)));
-			final int boneMealBig = plugin.getConfig().getInt("bone-meal-consumed-big", DEFAULT_BONE_MEAL_BIG);
+		// getInt(path) falls back to the bundled config.yml; getInt(path, def) only reads the
+		// server's own. bone-meal-consumed-small (configs from before the size tiers) still sets
+		// the huge cost when bone-meal-consumed-huge isn't set.
+		boneMeal.put(Tier.GIANT, config.getInt("bone-meal-consumed"));
+		boneMeal.put(Tier.HUGE, config.getInt("bone-meal-consumed-huge",
+				config.getInt("bone-meal-consumed-small", config.getInt("bone-meal-consumed-huge"))));
+		boneMeal.put(Tier.BIG, config.getInt("bone-meal-consumed-big"));
 
-			if (!plugin.getConfig().contains("core")) {
-				plugin.getLogger().warning("Warning: Please include a core block config setting");
-				coreblock = Material.EMERALD_BLOCK;
-			} else {
-				// matchMaterial ignores case and accepts "minecraft:emerald_block"
-				final String core = plugin.getConfig().getString("core");
-				coreblock = core == null ? null : Material.matchMaterial(core);
-				if (coreblock == null || !coreblock.isBlock()) {
-					plugin.getLogger().warning("Warning: Invalid core block provided. Default to EMERALD_BLOCK");
-					coreblock = Material.EMERALD_BLOCK;
+		// matchMaterial ignores case and accepts "minecraft:emerald_block"
+		coreblock = Material.matchMaterial(config.getString("core", "EMERALD_BLOCK"));
+		if (coreblock == null || !coreblock.isBlock()) {
+			plugin.getLogger().warning("Warning: Invalid core block provided. Default to EMERALD_BLOCK");
+			coreblock = Material.EMERALD_BLOCK;
+		}
+
+		final ConfigurationSection patternSection = config.getConfigurationSection("planting-patterns");
+		if (patternSection == null) {
+			plugin.getLogger().warning("Warning: no planting-patterns config section; survival planting of trees is off");
+			return;
+		}
+		for (final String pattern : patternSection.getKeys(false)) {
+			final Material[][] patternmaterials = parsePattern(pattern, patternSection.getStringList(pattern));
+			if (patternmaterials != null) {
+				final PhysicalCraftingRecipe recipe = new PhysicalCraftingRecipe(pattern, patternmaterials);
+				if (!treeFile(recipe).exists()) {
+					plugin.getLogger().warning("Planting pattern " + pattern + " has no tree file ("
+							+ treeFile(recipe).getName() + "); it grows nothing");
 				}
-			}
-
-			final ConfigurationSection patternSection = plugin.getConfig().getConfigurationSection("planting-patterns");
-			if (patternSection == null) {
-				plugin.getLogger().warning("Warning: no planting-patterns config section; survival planting of trees is off");
-				enabled = false;
-				return;
-			}
-			for (final String pattern : patternSection.getKeys(false)) {
-				final Material[][] patternmaterials = parsePattern(pattern, patternSection.getStringList(pattern));
-				if (patternmaterials != null) {
-					final PhysicalCraftingRecipe recipe = new PhysicalCraftingRecipe(pattern, coreblock, patternmaterials, 0);
-					final int cost = switch (Tier.of(pattern, recipe.getSize(), recipe.getWildcards())) {
-						case GIANT -> boneMealConsumed;
-						case HUGE -> boneMealHuge;
-						case BIG -> boneMealBig;
-					};
-					final PhysicalCraftingRecipe costed = new PhysicalCraftingRecipe(pattern, coreblock, patternmaterials, cost);
-					if (!treeFile(costed).exists()) {
-						plugin.getLogger().warning("Planting pattern " + pattern + " has no tree file ("
-								+ treeFile(costed).getName() + "); it grows nothing");
-					}
-					recipes.add(costed);
-				}
-			}
-			recipes.sort(Comparator.comparingInt(PhysicalCraftingRecipe::getSize).reversed()
-					.thenComparingInt(PhysicalCraftingRecipe::getWildcards));
-			enabled = true;
-		} catch (final Exception e) {
-			plugin.getLogger().severe(
-					"The planting-pattern config section is invalid! Disabling survival planting of giant trees. " + e.toString());
-			enabled = false;
-		}
-	}
-
-	/** The int set at {@code path} in the server's own config.yml (not the bundled defaults), else {@code def}. */
-	private int configuredInt(final String path, final int def) {
-		final Object value = plugin.getConfig().get(path, null);
-		if (value instanceof Number) {
-			return ((Number) value).intValue();
-		}
-		if (value != null) {
-			try {
-				return Integer.parseInt(value.toString().trim());
-			} catch (final NumberFormatException e) {
-				plugin.getLogger().warning("Invalid " + path + " '" + value + "', using " + def);
+				recipes.add(recipe);
 			}
 		}
-		return def;
+		recipes.sort(Comparator.comparingInt(PhysicalCraftingRecipe::getSize).reversed()
+				.thenComparingInt(PhysicalCraftingRecipe::getWildcards));
 	}
 
 	/**
@@ -262,10 +207,6 @@ public class PlantTreeEventHandler implements Listener {
 
     @EventHandler
 	public void onPlayerInteract(final PlayerInteractEvent event) {
-		if (!enabled) {
-			return;
-		}
-
 		// the event fires once per hand; only handle the main hand so nothing runs twice
 		if (event.getHand() != EquipmentSlot.HAND) {
 			return;
@@ -307,30 +248,26 @@ public class PlantTreeEventHandler implements Listener {
 			break;
 		}
 		if (recipe == null) {
-			popup.sendPopup(event.getPlayer(), missingTree == null ? "Unable to match this pattern"
+			event.getPlayer().sendMessage(missingTree == null ? "Unable to match this pattern"
 					: "There is no tree for this pattern (" + missingTree + " is missing)");
 			return;
 		}
 
-		final ItemCost cost = new ItemCost(Material.BONE_MEAL, recipe.getBoneMealCost());
-		if (!cost.isAffordable(event.getPlayer())) {
-			popup.sendPopup(event.getPlayer(), "You need " + recipe.getBoneMealCost() + " bone meal to grow this tree");
+		final Tier tier = Tier.of(recipe.getTreeName(), recipe.getSize(), recipe.getWildcards());
+		final ItemStack cost = new ItemStack(Material.BONE_MEAL, boneMeal.get(tier));
+		if (!event.getPlayer().getInventory().containsAtLeast(cost, cost.getAmount())) {
+			event.getPlayer().sendMessage("You need " + cost.getAmount() + " bone meal to grow this tree");
 			return;
 		}
 
 		final String treeType = recipe.getTreeName().toUpperCase(Locale.ROOT);
-		// mix in the position so trees grown in the same world don't all share one shape
-		final Random seed = new Random(clickedBlock.getWorld().getSeed()
-				^ ((long) clickedBlock.getX() * 341873128712L)
-				^ ((long) clickedBlock.getZ() * 132897987541L));
 		final File treeFile = treeFile(recipe);
-		final File rootFile = new File(plugin.getDataFolder(), "tree." + treeType + ".root.xml");
 		event.setCancelled(true);
-		cost.apply(event.getPlayer());
-		final Tier tier = Tier.of(recipe.getTreeName(), recipe.getSize(), recipe.getWildcards());
-		popup.sendPopup(event.getPlayer(), "Stand back! Generating " + tier.article + treeType + " tree!");
+		event.getPlayer().getInventory().removeItem(cost);
+		event.getPlayer().sendMessage("Stand back! Generating " + tier.article + treeType + " tree!");
 		clearBlocks(clickedBlock, matched);
-		renderer.renderTree(clickedBlock.getLocation(), treeFile, rootFile, seed.nextInt(), true);
+		renderer.renderTree(clickedBlock.getLocation(), treeFile,
+				TreeRenderer.positionSeed(clickedBlock.getLocation()), true);
 	}
 
     /** The tree file a pattern grows: oak_big grows tree.OAK_BIG.xml in the data folder. */

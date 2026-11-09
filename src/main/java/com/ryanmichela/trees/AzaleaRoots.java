@@ -1,17 +1,15 @@
 package com.ryanmichela.trees;
 
-import java.util.EnumSet;
 import java.util.Random;
-import java.util.Set;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.block.TileState;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
+
+import com.ryanmichela.trees.rendering.Protection;
 
 /**
  * Vanilla's azalea tree root system: a column of rooted dirt from the tree's base down toward the
@@ -95,26 +93,5 @@ public final class AzaleaRoots {
   /** What rooted dirt grows through: stone (stone, deepslate, tuff, ...) and soil. */
   static boolean isReplaceable(final Material type) {
     return Tag.BASE_STONE_OVERWORLD.isTagged(type) || TreeGround.isSoil(type) || type == Material.GRAVEL;
-  }
-
-  /** The protect_block_entities and protected_blocks settings, as the tree placement reads them. */
-  private static final class Protection {
-    private final boolean blockEntities;
-    private final Set<Material> blocks = EnumSet.noneOf(Material.class);
-
-    Protection(final ConfigurationSection config) {
-      this.blockEntities = config.getBoolean("protect_block_entities", true);
-      for (final String name : config.getStringList("protected_blocks")) {
-        final Material material = Material.matchMaterial(name);
-        if (material != null) {
-          this.blocks.add(material);
-        }
-      }
-    }
-
-    boolean isProtected(final Block block) {
-      return this.blocks.contains(block.getType())
-             || (this.blockEntities && block.getState(false) instanceof TileState);
-    }
   }
 }

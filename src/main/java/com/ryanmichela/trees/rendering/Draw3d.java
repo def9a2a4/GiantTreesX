@@ -19,10 +19,8 @@ package com.ryanmichela.trees.rendering;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import org.bukkit.Axis;
@@ -30,7 +28,6 @@ import org.bukkit.Location;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Orientable;
 import org.bukkit.block.data.type.Leaves;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.util.Vector;
 import org.bukkit.util.noise.NoiseGenerator;
 import org.bukkit.util.noise.SimplexNoiseGenerator;
@@ -71,16 +68,7 @@ public class Draw3d {
   private static final int[][] COVER_SIDES = {{0, 1, 0}, {1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1}};
   private static final int[][] FACES = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
 
-  public class Point2D {
-
-    public int p;
-    public int q;
-
-    public Point2D(final int p, final int q) {
-      this.p = p;
-      this.q = q;
-    }
-  }
+  private record Point2D(int p, int q) {}
 
   public enum RenderOrientation {
     INVERTED, NORMAL
@@ -113,10 +101,6 @@ public class Draw3d {
     this.changeTracker = changeTracker;
     this.treeType = treeType;
     this.renderOrientation = renderOrientation;
-  }
-
-  public void applyChanges(final Plugin plugin) {
-    changeTracker.applyChanges(refPoint, plugin);
   }
 
   public void drawCone(final Vector l1, final double rad1, final Vector l2,
@@ -170,7 +154,7 @@ public class Draw3d {
     this.leafWidth = width;
     final List<Vector> points = treeType.noisyLeaves
         ? plotNoisyEllipsoid(pos, length, width, length)
-        : plotEllipsoid(pos, length, width, length, 0);
+        : plotEllipsoid(pos, length, width, length);
     for (final Vector loc : points) {
       changeTracker.addChange(loc, treeType.leafMaterial,
                                    persist(), WorldChange.Kind.LEAVES, -1, false);
@@ -265,11 +249,11 @@ public class Draw3d {
       if (change.kind != WorldChange.Kind.WOOD) {
         continue;
       }
-      final int n = sides.count(key.x, key.y, key.z, change.level);
+      final int n = sides.count(key.x(), key.y(), key.z(), change.level);
       for (int k = 0; k < n; k++) {
-        final WorldChangeKey side = new WorldChangeKey(key.x + COVER_SIDES[k][0],
-                                                       key.y + COVER_SIDES[k][1],
-                                                       key.z + COVER_SIDES[k][2]);
+        final WorldChangeKey side = new WorldChangeKey(key.x() + COVER_SIDES[k][0],
+                                                       key.y() + COVER_SIDES[k][1],
+                                                       key.z() + COVER_SIDES[k][2]);
         if (changeTracker.getChange(side) == null) {
           cover.add(side);
         }
@@ -368,7 +352,7 @@ public class Draw3d {
 
   private List<Point2D> plotCircle(final int cx, final int cy, final int z,
                                    final int r, final int level) {
-    final List<Point2D> points2d = new LinkedList<>();
+    final List<Point2D> points2d = new ArrayList<>();
 
     final int rSquare = r * r;
     for (int x = -r - 8; x <= (r + 8); x++) {
@@ -392,7 +376,7 @@ public class Draw3d {
    * circle as a ring at ground level.
    */
   private List<Vector> plotDownwardHemisphere(final Vector pos, final double r) {
-    final List<Vector> points = new LinkedList<>();
+    final List<Vector> points = new ArrayList<>();
     final int rCeil = (int) Math.ceil(r) + 4;
     final double r2 = r * r;
     final int rTop = (int) Math.round(r);
@@ -420,9 +404,8 @@ public class Draw3d {
   }
 
   private List<Vector> plotEllipsoid(final Vector pos, final double a,
-                                     final double b, final double c,
-                                     final int level) {
-    final List<Vector> points = new LinkedList<>();
+                                     final double b, final double c) {
+    final List<Vector> points = new ArrayList<>();
 
     final int halfSize = (int) Math.ceil(Math.max(Math.max(a, b), c)) + 2;
     final double[] drop = droop(pos, halfSize);
@@ -438,7 +421,7 @@ public class Draw3d {
           final double noiseOffset = calculateNoiseOffset((x + pos.getBlockX()),
                                                                (y + pos.getBlockY()),
                                                                (z + pos.getBlockZ()),
-                                                               1, level);
+                                                               1, 0);
           if (left <= (1 + noiseOffset)) {
             points.add(new Vector(x, y, z).add(pos));
           }
@@ -459,7 +442,7 @@ public class Draw3d {
    */
   private List<Vector> plotNoisyEllipsoid(final Vector pos, final double a, final double b,
                                           final double c) {
-    final List<Vector> points = new LinkedList<>();
+    final List<Vector> points = new ArrayList<>();
     final int halfSize = (int) Math.ceil(Math.max(Math.max(a, b), c)) + 3;
     final int px = pos.getBlockX();
     final int py = pos.getBlockY();
@@ -529,7 +512,7 @@ public class Draw3d {
 
   private List<Point2D> plotLine2d(final int x1, final int y1, final int x2,
                                    final int y2) {
-    final List<Point2D> points2d = new LinkedList<>();
+    final List<Point2D> points2d = new ArrayList<>();
     // Bresenham's Line Algorithm
     int currentX, currentY;
     int xInc, yInc;
@@ -587,7 +570,7 @@ public class Draw3d {
 
   private List<Vector> plotLine3d(final Vector l1, final Vector l2,
                                   final Orientation orientation) {
-    final List<Vector> locations = new LinkedList<>();
+    final List<Vector> locations = new ArrayList<>();
     if (orientation == Orientation.xMajor) /* x dominant */
     {
       final List<Point2D> xy = plotLine2d(l1.getBlockX(), l1.getBlockY(),
@@ -606,7 +589,7 @@ public class Draw3d {
       for (int i = 0; i < Math.min(yx.size(), yz.size()); i++) {
         locations.add(new Vector(yx.get(i).q, yx.get(i).p, yz.get(i).q));
       }
-    } else if (orientation == Orientation.zMajor) /* z dominant */
+    } else /* z dominant */
     {
       final List<Point2D> zx = plotLine2d(l1.getBlockZ(), l1.getBlockX(),
                                                l2.getBlockZ(), l2.getBlockX());
@@ -622,7 +605,7 @@ public class Draw3d {
 
   private List<Vector> plotSphere(final Vector pos, final double r,
                                   final int level) {
-    final List<Vector> points = new LinkedList<>();
+    final List<Vector> points = new ArrayList<>();
     final int rCeil = (int) Math.ceil(r) + 4;
     final double r2 = r * r;
     for (int x = -rCeil; x <= rCeil; x++) {

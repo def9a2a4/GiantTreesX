@@ -17,67 +17,50 @@
  */
 package com.ryanmichela.trees.rendering;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.MultipleFacing;
 
 public class JungleVinePopulator {
 
+  /** dx, dz of a vine's cell relative to the block it clings to, in the order N, S, E, W (also
+   *  LeafDecorator's). */
+  static final int[][] SIDES = {{0, -1}, {0, 1}, {1, 0}, {-1, 0}};
+  /** The face of the vine block that touches that block, per side. */
+  static final BlockFace[] FACES = {BlockFace.SOUTH, BlockFace.NORTH, BlockFace.WEST, BlockFace.EAST};
+
   public static void populate(final WorldChangeTracker tracker, final Random r) {
-    final WorldChangeKey north = new WorldChangeKey();
-    final WorldChangeKey south = new WorldChangeKey();
-    final WorldChangeKey east = new WorldChangeKey();
-    final WorldChangeKey west = new WorldChangeKey();
-
-    final List<WorldChange> newChanges = new LinkedList<>();
-
+    final List<WorldChange> newChanges = new ArrayList<>();
     for (final WorldChange change : tracker.getChanges()) {
-      if (change.kind == WorldChange.Kind.WOOD) {
-        north.x = change.location.getBlockX();
-        north.y = change.location.getBlockY();
-        north.z = change.location.getBlockZ() - 1;
-        south.x = change.location.getBlockX();
-        south.y = change.location.getBlockY();
-        south.z = change.location.getBlockZ() + 1;
-        east.x = change.location.getBlockX() + 1;
-        east.y = change.location.getBlockY();
-        east.z = change.location.getBlockZ();
-        west.x = change.location.getBlockX() - 1;
-        west.y = change.location.getBlockY();
-        west.z = change.location.getBlockZ();
-
-        if ((r.nextInt(3) > 0) && (tracker.getChange(north) == null)) {
-          newChanges.add(new WorldChange(north.toVector(), Material.VINE, orient(BlockFace.SOUTH), WorldChange.Kind.VINE, -1));
-        }
-        if ((r.nextInt(3) > 0) && (tracker.getChange(south) == null)) {
-          newChanges.add(new WorldChange(south.toVector(), Material.VINE, orient(BlockFace.NORTH), WorldChange.Kind.VINE, -1));
-        }
-        if ((r.nextInt(3) > 0) && (tracker.getChange(east) == null)) {
-          newChanges.add(new WorldChange(east.toVector(), Material.VINE, orient(BlockFace.WEST), WorldChange.Kind.VINE, -1));
-        }
-        if ((r.nextInt(3) > 0) && (tracker.getChange(west) == null)) {
-          newChanges.add(new WorldChange(west.toVector(), Material.VINE, orient(BlockFace.EAST), WorldChange.Kind.VINE, -1));
+      if (change.kind != WorldChange.Kind.WOOD) {
+        continue;
+      }
+      for (int s = 0; s < SIDES.length; s++) {
+        final WorldChangeKey side = new WorldChangeKey(change.location.getBlockX() + SIDES[s][0],
+                                                       change.location.getBlockY(),
+                                                       change.location.getBlockZ() + SIDES[s][1]);
+        if ((r.nextInt(3) > 0) && (tracker.getChange(side) == null)) {
+          newChanges.add(new WorldChange(side.toVector(), Material.VINE, orient(FACES[s]),
+                                         WorldChange.Kind.VINE, -1));
         }
       }
     }
-
     for (final WorldChange newChange : newChanges) {
       tracker.addChange(newChange, false);
     }
   }
 
-  private static UnaryOperator<BlockData> orient(BlockFace direction) {
+  /** A vine block clinging to its one face {@code direction}. */
+  static UnaryOperator<BlockData> orient(final BlockFace direction) {
     return blockData -> {
       if (blockData instanceof MultipleFacing) {
-        MultipleFacing facing = (MultipleFacing) blockData;
+        final MultipleFacing facing = (MultipleFacing) blockData;
         facing.setFace(BlockFace.NORTH, false);
         facing.setFace(BlockFace.SOUTH, false);
         facing.setFace(BlockFace.EAST, false);

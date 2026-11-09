@@ -40,16 +40,11 @@ public class TreePlugin extends JavaPlugin {
 
     @EventHandler
     public void onWorldInit(final WorldInitEvent event) {
-      for (final String worldName : TreePlugin.this.getConfig()
-                                                   .getStringList("worlds")) {
-        if (worldName.equals(event.getWorld().getName())) {
-          TreePlugin.this.getLogger()
-                         .info("Attaching giant tree populator to world \""
-                                   + event.getWorld().getName() + "\"");
-          event.getWorld().getPopulators()
-               .add(new TreePopulator(TreePlugin.this, TreePlugin.this.naturalTrees));
-          return;
-        }
+      if (TreePlugin.this.getConfig().getStringList("worlds").contains(event.getWorld().getName())) {
+        TreePlugin.this.getLogger().info("Attaching giant tree populator to world \""
+                                         + event.getWorld().getName() + "\"");
+        event.getWorld().getPopulators()
+             .add(new TreePopulator(TreePlugin.this, TreePlugin.this.naturalTrees));
       }
     }
   }
@@ -59,20 +54,13 @@ public class TreePlugin extends JavaPlugin {
   @Override
   public void onEnable() {
     this.warnAboutBiomeFiles();
-    try {
-      this.getServer().getPluginManager()
-          .registerEvents(new PlantTreeEventHandler(this), this);
-      // attach to worlds automatically when onlyUseWorldManagers is false
-      if (this.getConfig().getBoolean("naturallyGrowTrees", true)) {
-        this.naturalTrees = NaturalTrees.load(this, NaturalTrees.serverBiomes());
-        this.getServer().getPluginManager()
-            .registerEvents(new WorldInitListener(), this);
-      }
-    } catch (final Exception e) {
-      this.getLogger().severe("Failed to initialize plugin: " + e.getMessage());
+    this.getServer().getPluginManager().registerEvents(new PlantTreeEventHandler(this), this);
+    if (this.getConfig().getBoolean("naturallyGrowTrees", true)) {
+      this.naturalTrees = NaturalTrees.load(this, NaturalTrees.serverBiomes());
+      this.getServer().getPluginManager().registerEvents(new WorldInitListener(), this);
     }
 
-    this.getCommand("tree-edit").setExecutor(new EditTreeCommand(this));
+    this.getCommand("tree-edit").setExecutor(new EditTreeCommand(this, this.getFile()));
     this.getCommand("tree-create").setExecutor(new CreateTreeCommand(this));
   }
 

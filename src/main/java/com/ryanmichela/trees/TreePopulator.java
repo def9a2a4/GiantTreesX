@@ -47,14 +47,10 @@ public class TreePopulator extends BlockPopulator {
   @Override
   public void populate(final World world, final Random random, final Chunk chunk) {
     try {
-      
-      final Location refPoint = new Location(world,
-    		  (chunk.getX() * 16) + random.nextInt(16),
-    		  64,
-              (chunk.getZ() * 16) + random.nextInt(16)
-      );
-      final TreeGround ground = TreeGround.at(world, refPoint.getBlockX(), refPoint.getBlockZ());
-      refPoint.setY(ground.block().getY());
+      final int x = (chunk.getX() * 16) + random.nextInt(16);
+      final int z = (chunk.getZ() * 16) + random.nextInt(16);
+      final TreeGround ground = TreeGround.at(world, x, z);
+      final Location refPoint = ground.block().getLocation();
 
       // by key string, so biomes newer than the compile-time API (dappled_forest) work too
       final String biome = world.getBiome(refPoint.getBlockX(), refPoint.getBlockY(), refPoint.getBlockZ())
@@ -73,7 +69,7 @@ public class TreePopulator extends BlockPopulator {
       final NaturalTrees.Entry lush = ground.soil() && !ground.underFluid()
           ? this.natural.lushCaves() : null;
       final NaturalTrees.Entry chanceOf = surface != null && surface.hasTrees() ? surface : lush;
-      if (chanceOf == null || random.nextDouble() * 100.0 >= chanceOf.chance) {
+      if (chanceOf == null || random.nextDouble() * 100.0 >= chanceOf.chance()) {
         return;
       }
       final File folder = this.plugin.getDataFolder();
@@ -97,12 +93,8 @@ public class TreePopulator extends BlockPopulator {
         this.plugin.getLogger().info("Natural tree " + pick.fileName() + " in " + pick.biome()
                                      + (pick.biome().equals(biome) ? "" : " (" + biome + ")"));
       }
-      final File treeFile = new File(folder, pick.fileName());
-      final File rootFile = new File(folder, pick.fileName().substring(0, pick.fileName().length() - 4)
-                                             + ".root.xml");
-      // a missing root file just means no roots (TreeRenderer checks)
-      final TreeRenderer renderer = new TreeRenderer(this.plugin);
-      renderer.renderTree(refPoint, treeFile, rootFile, random.nextInt(), false);
+      new TreeRenderer(this.plugin).renderTree(refPoint, new File(folder, pick.fileName()),
+                                               random.nextInt(), false);
     } catch (Exception ex) {
       plugin.getLogger().log(Level.SEVERE, "Exception caught generating giant tree", ex);
     }

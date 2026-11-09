@@ -4,7 +4,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
@@ -14,12 +13,10 @@ import org.bukkit.util.Vector;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.UnaryOperator;
 
 /**
@@ -75,14 +72,7 @@ public class WorldChangeTracker {
     final ConfigurationSection config = plugin.getConfig();
     final int blocksPerTick = Math.max(1, config.getInt("BLOCKS_PER_TICK", 1500));
     final long tickDelay = Math.max(1, config.getInt("TICK_DELAY", 1));
-    final boolean protectBlockEntities = config.getBoolean("protect_block_entities", true);
-    final Set<Material> protectedBlocks = EnumSet.noneOf(Material.class);
-    for (final String name : config.getStringList("protected_blocks")) {
-      final Material material = Material.matchMaterial(name);
-      if (material != null) {
-        protectedBlocks.add(material);
-      }
-    }
+    final Protection protection = new Protection(config);
 
     final boolean verbose = config.getBoolean("verbose-logging", false);
     final World world = refPoint.getWorld();
@@ -105,8 +95,7 @@ public class WorldChangeTracker {
             continue;
           }
           final Block block = loc.getBlock();
-          if (protectedBlocks.contains(block.getType())
-              || (protectBlockEntities && block.getState(false) instanceof TileState)) {
+          if (protection.isProtected(block)) {
             skipped++;
             continue;
           }

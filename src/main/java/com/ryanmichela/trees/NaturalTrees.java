@@ -2,7 +2,6 @@ package com.ryanmichela.trees;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -45,19 +44,11 @@ final class NaturalTrees {
   /** One tree file that may grow, with its pick weight. */
   record Candidate(String fileName, double weight, String biome) {}
 
-  /** One biome's entry: its chance and the tree files it may grow, in config order. */
-  static final class Entry {
-    final String biome;
-    /** Percent chance per chunk. */
-    final double chance;
-    /** File name (tree.X.xml) to weight, for every size of every listed tree. */
-    final Map<String, Double> files;
-
-    Entry(final String biome, final double chance, final Map<String, Double> files) {
-      this.biome = biome;
-      this.chance = chance;
-      this.files = files;
-    }
+  /**
+   * One biome's entry: its chance (percent per chunk) and the tree files (tree.X.xml) it may grow
+   * with their weights, in config order.
+   */
+  record Entry(String biome, double chance, Map<String, Double> files) {
 
     /** Whether any listed file has a positive weight (whether or not it exists). */
     boolean hasTrees() {
@@ -101,7 +92,7 @@ final class NaturalTrees {
 
   /**
    * Reads the config. Warnings (unknown biome keys, names without tree files, bad values) go to
-   * the plugin's log; {@code knownBiomes} is null when the server's biomes can't be listed.
+   * the plugin's log.
    */
   static NaturalTrees load(final Plugin plugin, final Set<String> knownBiomes) {
     final Logger log = plugin.getLogger();
@@ -111,10 +102,11 @@ final class NaturalTrees {
                   + " in natural-trees and the sizes in natural-tree-sizes (see the bundled"
                   + " config.yml)");
     }
-    final double defaultChance = clampChance(
-        number(config.get("treeGrowthPercentChance"), 0.0, "treeGrowthPercentChance", log),
-        "config.yml: treeGrowthPercentChance", log);
+    final double defaultChance = chance(config.get("treeGrowthPercentChance"), 0.0,
+                                        "config.yml: treeGrowthPercentChance", log);
     final Configuration defaults = config.getDefaults();
+    final ConfigurationSection bundled = defaults == null
+        ? null : defaults.getConfigurationSection("natural-trees");
 
     // the bundled sizes, then the ones this config sets (a partial section keeps the rest)
     final Map<String, Double> sizes = new LinkedHashMap<>();
@@ -141,24 +133,22 @@ final class NaturalTrees {
         return new NaturalTrees(entries);
       }
       // no section in this config (an older one): the bundled trees
-      section = defaults == null ? null : defaults.getConfigurationSection("natural-trees");
+      section = bundled;
     }
     if (section == null) {
       return new NaturalTrees(entries);
     }
     final File folder = plugin.getDataFolder();
     // bundled biomes are not checked: DAPPLED_FOREST only exists from 26.3 on
-    final Set<String> bundled = new HashSet<>();
-    final ConfigurationSection bundledSection = defaults == null
-        ? null : defaults.getConfigurationSection("natural-trees");
-    if (bundledSection != null) {
-      bundledSection.getKeys(false).forEach(k -> bundled.add(biomeKey(k)));
+    final Set<String> bundledBiomes = new HashSet<>();
+    if (bundled != null) {
+      bundled.getKeys(false).forEach(k -> bundledBiomes.add(biomeKey(k)));
     }
     for (final String key : section.getKeys(false)) {
       final String biome = biomeKey(key);
       final String where = "config.yml: natural-trees." + key;
-      if (knownBiomes != null && !LUSH_CAVES.equals(biome) && !knownBiomes.contains(biome)
-          && !bundled.contains(biome)) {
+      if (!LUSH_CAVES.equals(biome) && !knownBiomes.contains(biome)
+          && !bundledBiomes.contains(biome)) {
         log.warning(where + ": no biome of that name on this server");
       }
       if (entries.containsKey(biome)) {
@@ -174,8 +164,7 @@ final class NaturalTrees {
           log.warning(where + ": no trees listed, so none grow here (add trees: [...])");
         }
         if (biomeSection.contains("chance", true)) {
-          chance = clampChance(number(biomeSection.get("chance"), defaultChance,
-                                      where + ".chance", log), where + ".chance", log);
+          chance = chance(biomeSection.get("chance"), defaultChance, where + ".chance", log);
         }
         readSizes(biomeSection.getConfigurationSection("sizes"), ownSizes, where + ".sizes", log);
       }
@@ -296,28 +285,22 @@ final class NaturalTrees {
     return k.substring(k.indexOf(':') + 1).toUpperCase(Locale.ROOT);
   }
 
-  private static double clampChance(final double chance, final String name, final Logger log) {
-    if (chance > 100.0) {
-      log.warning(name + " > 100. Assuming 100.");
-      return 100.0;
+  /** A percent chance: a number clamped to 0-100, else {@code fallback} with a warning. */
+  private static double chance(final Object value, final double fallback, final String where,
+                               final Logger log) {
+    final double chance = number(value, fallback, where, log);
+    if (chance < 0.0 || chance > 100.0) {
+      log.warning(where + ": " + chance + " is outside 0-100; using " + (chance < 0 ? 0 : 100));
     }
-    if (chance < 0.0) {
-      log.warning(name + " < 0. Assuming zero.");
-      return 0.0;
-    }
-    return chance;
+    return Math.max(0.0, Math.min(100.0, chance));
   }
 
-  /** The biome keys a server has (FOREST, PALE_GARDEN, ...), or null when they can't be listed. */
+  /** The biome keys a server has (FOREST, PALE_GARDEN, ...). */
   static Set<String> serverBiomes() {
-    try {
-      final Set<String> out = new HashSet<>();
-      io.papermc.paper.registry.RegistryAccess.registryAccess()
-          .getRegistry(io.papermc.paper.registry.RegistryKey.BIOME)
-          .forEach(b -> out.add(biomeKey(b.getKey().getKey())));
-      return Collections.unmodifiableSet(out);
-    } catch (final Throwable t) {
-      return null;
-    }
+    final Set<String> out = new HashSet<>();
+    io.papermc.paper.registry.RegistryAccess.registryAccess()
+        .getRegistry(io.papermc.paper.registry.RegistryKey.BIOME)
+        .forEach(b -> out.add(biomeKey(b.getKey().getKey())));
+    return out;
   }
 }

@@ -15,16 +15,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Random;
-
-import net.sourceforge.arbaro.params.AbstractParam;
-import net.sourceforge.arbaro.tree.Segment;
-import net.sourceforge.arbaro.tree.Stem;
-import net.sourceforge.arbaro.tree.Tree;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.MultipleFacing;
 import org.bukkit.block.data.Orientable;
@@ -34,13 +27,8 @@ import org.bukkit.util.Vector;
 
 /**
  * Equivalence harness for docs/viewer: runs the plugin's real tree generation code
- * (Arbaro + Draw3d + exporters + JungleVinePopulator + LeafDecorator + WoodStyler) without a
- * server and dumps
- * every WorldChange as JSON.
- *
- * It mirrors the orchestration in TreeRenderer.renderTree() (which itself is not callable
- * without a running plugin scheduler). Keep the two in sync: if TreeRenderer's orchestration
- * changes, update run() below and docs/viewer/src/render.js.
+ * (TreeRenderer.generate: Arbaro + Draw3d + JungleVinePopulator + LeafDecorator, then WoodStyler)
+ * without a server and dumps every WorldChange as JSON.
  *
  * BlockData mutators are applied to a recording java.lang.reflect.Proxy instead of real block
  * data, so the Axis/BlockFace the Java code picks is captured without a server. Every Draw3d
@@ -104,18 +92,6 @@ public final class GeometryHarness {
         new Class<?>[] {Orientable.class, MultipleFacing.class, Leaves.class, HangingMoss.class}, r);
     mutator.apply(r.proxy);
     return r;
-  }
-
-  private static Tree loadTree(final File treeFile, final int seed) throws Exception {
-    final Tree tree = new Tree();
-    tree.setOutputType(Tree.CONES);
-    try (FileInputStream in = new FileInputStream(treeFile)) {
-      tree.readFromXML(in);
-    }
-    tree.params.Seed = seed;
-    tree.params.stopLevel = -1;
-    tree.params.verbose = false;
-    return tree;
   }
 
   /** Order-sensitive digest of Draw3d call arguments (bit patterns), shared with equivalence.mjs. */
@@ -195,7 +171,7 @@ public final class GeometryHarness {
    * Parses mode/hollowChance/wallThickness/leaves (see class comment). '-' leaves means the wood
    * type's own leaves, as WoodStyle.fromConfig resolves them (its default mix, if any).
    */
-  static WoodStyle parseStyle(final String spec, final String woodType) {
+  static WoodStyle parseStyle(final String spec, final Map<Material, Integer> defaultLeaves) {
     final String[] p = spec.split("/");
     final Map<Material, Integer> leaves = new LinkedHashMap<>();
     if (!"-".equals(p[3])) {
@@ -204,45 +180,19 @@ public final class GeometryHarness {
         leaves.put(Material.valueOf(e[0]), Integer.parseInt(e[1]));
       }
     } else {
-      leaves.putAll(new TreeType(woodType).leafMix);
+      leaves.putAll(defaultLeaves);
     }
     return new WoodStyle(WoodStyle.Mode.valueOf(p[0].toUpperCase(Locale.ROOT)),
         Double.parseDouble(p[1]), Integer.parseInt(p[2]), leaves);
   }
 
-  /** Mirrors TreeRenderer.renderTree() up to (not including) WoodStyler / applyChanges. */
-  static WorldChangeTracker run(final File treeFile, final File rootFile, final int seed,
-                                final Location refPoint, final double[] scaleOut,
-                                final String[] woodTypeOut, final Digest dg) throws Exception {
-    AbstractParam.loading = true;
-    final WorldChangeTracker changeTracker = new WorldChangeTracker();
-    final Tree tree = loadTree(treeFile, seed);
+  /** TreeRenderer.generate, refPoint raised as renderTree does, every Draw3d call recorded. */
+  static TreeRenderer.Generated run(final File treeFile, final File rootFile, final int seed,
+                                    final Location refPoint, final WorldChangeTracker tracker,
+                                    final Digest dg) throws Exception {
     refPoint.add(0, TreeRenderer.mangroveRaise(treeFile.getName()), 0);
-    tree.make();
-    final TreeType treeType = new TreeType(tree.params.WoodType);
-    final Draw3d d3d = recordingDraw3d(refPoint, tree.params.Smooth, treeType, changeTracker,
-        Draw3d.RenderOrientation.NORMAL, dg);
-    new MinecraftExporter(tree, d3d).write();
-    if (treeType.decoration == TreeType.Decoration.TRUNK_VINES) {
-      JungleVinePopulator.populate(changeTracker, new Random(seed));
-    }
-    d3d.drawRootJunction(d3d.toMcVector(((Segment) ((Stem) tree.trunks.get(0)).stemSegments()
-        .nextElement()).posFrom()), ((Stem) tree.trunks.get(0)).baseRadius);
-    if (rootFile != null && rootFile.exists()) {
-      final Tree root = loadTree(rootFile, seed);
-      root.params.Leaves = -1;
-      root.params.scale_tree = tree.params.scale_tree;
-      root.make();
-      final TreeType rootType = new TreeType(root.params.WoodType);
-      final Draw3d d3dInverted = recordingDraw3d(refPoint, root.params.Smooth, rootType,
-          changeTracker, Draw3d.RenderOrientation.INVERTED, dg);
-      new MinecraftExporter(root, d3dInverted).write();
-    }
-    AbstractParam.loading = false;
-    LeafDecorator.populate(changeTracker, treeType, seed);
-    scaleOut[0] = tree.params.scale_tree;
-    woodTypeOut[0] = tree.params.WoodType;
-    return changeTracker;
+    return TreeRenderer.generate(treeFile, rootFile, seed, tracker, null,
+        (smooth, type, orientation) -> recordingDraw3d(refPoint, smooth, type, tracker, orientation, dg));
   }
 
   private static String jsonStr(final String s) {
@@ -279,8 +229,9 @@ public final class GeometryHarness {
         final List<String> matNames = new ArrayList<>();
         final List<int[]> styled = new ArrayList<>();
         try {
-          final String[] woodType = new String[1];
-          tracker = run(treeFile, rootFile, seed, ref, scale, woodType, dg);
+          tracker = new WorldChangeTracker();
+          final TreeRenderer.Generated generated = run(treeFile, rootFile, seed, ref, tracker, dg);
+          scale[0] = generated.tree().params.scale_tree;
           order.addAll(tracker.getChanges());
           // WoodStyler mutates WorldChange.material in place: snapshot and restore per style
           final Map<WorldChange, Material> original = new IdentityHashMap<>();
@@ -288,7 +239,7 @@ public final class GeometryHarness {
             original.put(c, c.material);
           }
           for (final String spec : styleSpecs) {
-            WoodStyler.apply(tracker, parseStyle(spec, woodType[0]), seed);
+            WoodStyler.apply(tracker, parseStyle(spec, generated.treeType().leafMix), seed);
             final int[] mats = new int[order.size()];
             for (int i = 0; i < mats.length; i++) {
               final String name = order.get(i).material.name();

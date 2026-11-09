@@ -1,5 +1,5 @@
-// Port of TreeRenderer.renderTree orchestration (minus scheduling / world application),
-// MinecraftExporter / MinecraftStemExporter / MinecraftSegmentExporter / MinecraftLeafExporter,
+// Port of TreeRenderer.renderTree / generate orchestration (minus scheduling / world application),
+// TreeRenderer.export,
 // JungleVinePopulator and LeafDecorator.
 import { Tree } from './tree.js';
 import { ParamDB } from './params.js';
@@ -18,10 +18,10 @@ function loadTree(db, seed) {
   return tree;
 }
 
-/** MinecraftExporter.write() */
+/** TreeRenderer.export() */
 function exportTree(tree, d3d) {
   const stopLevel = tree.params.stopLevel;
-  // stems (MinecraftStemExporter + MinecraftSegmentExporter)
+  // stems (TreeRenderer.export)
   tree.traverseTree({
     enterStem(stem) {
       if (stem.stemlevel < stopLevel || stopLevel === -1) {
@@ -45,7 +45,7 @@ function exportTree(tree, d3d) {
             return false;
           },
         });
-        // MinecraftStemExporter: the stem's end, for Draw3d.coverBranches
+        // the stem's end, for Draw3d.coverBranches
         const segs = stem.segments;
         if (segs.length > 0) {
           const last = segs[segs.length - 1];

@@ -21,7 +21,7 @@ Jason Weber and Joseph Penn as implemented by Wolfram Diestel in Arbaro.
 in your browser at https://def9a2a4.github.io/GiantTreesX/
 
 ## Version 4.0
-Runs on Paper 1.21.x and 26.1 through 26.3 (one jar).
+Runs on Paper 1.21.4 through 1.21.11 and 26.1 through 26.3 (one jar).
 
 * **Wood styles.** The new `wood` config section picks how trunks and branches are built:
   `all_log` (the old look), `mixed` (wood blocks with bark on all sides outside, logs in the

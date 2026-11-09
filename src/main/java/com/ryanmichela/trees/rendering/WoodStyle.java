@@ -41,16 +41,14 @@ public class WoodStyle {
     this.leaves = leaves;
   }
 
-  /** The legacy look: logs everywhere, never hollow, the wood type's own leaves. */
-  public static WoodStyle legacy() {
-    return new WoodStyle(Mode.ALL_LOG, 0, 2, new LinkedHashMap<>());
-  }
-
   /**
    * Resolves the style for {@code woodType} (the tree file's WoodType param, e.g. "Dark Oak"):
    * keys under {@code wood_types.<woodType>} win over the same keys under {@code wood}.
+   * {@code defaultLeaves} (the wood type's own {@link TreeType#leafMix}) is used when the config
+   * sets no leaves.
    */
   public static WoodStyle fromConfig(final ConfigurationSection config, final String woodType,
+                                     final Map<Material, Integer> defaultLeaves,
                                      final Logger logger) {
     final ConfigurationSection base = config.getConfigurationSection("wood");
     final ConfigurationSection override = config.getConfigurationSection("wood_types." + woodType);
@@ -70,9 +68,8 @@ public class WoodStyle {
         number(override, base, "hollow_wall_thickness", "2", woodType, logger));
 
     final Map<Material, Integer> leaves = new LinkedHashMap<>();
-    final ConfigurationSection leafSection = override != null && override.isConfigurationSection("leaves")
-        ? override.getConfigurationSection("leaves")
-        : null;
+    final ConfigurationSection leafSection = override == null ? null
+        : override.getConfigurationSection("leaves");
     if (leafSection != null) {
       for (final String key : leafSection.getKeys(false)) {
         final Material material = Material.matchMaterial(key);
@@ -87,7 +84,7 @@ public class WoodStyle {
 
     if (leaves.isEmpty()) {
       // the wood type's own leaves, which for some (e.g. Poplar) are a mix
-      leaves.putAll(new TreeType(woodType).leafMix);
+      leaves.putAll(defaultLeaves);
     }
     return new WoodStyle(mode, hollowChance, wallThickness, leaves);
   }

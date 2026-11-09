@@ -193,9 +193,6 @@ final class WoodStyler {
     }
 
     Material pick(final int x, final int y, final int z, final int seed) {
-      if (primary.length == 1 && accent.length == 0) {
-        return primary[0];
-      }
       if (accent.length > 0) {
         int roll = (hash(seed, x, y, z, SALT_ACCENT) >>> 1) % total;
         for (int i = 0; i < accent.length; i++) {
