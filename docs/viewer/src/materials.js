@@ -10,31 +10,33 @@
 import { KIND_WOOD, KIND_LEAF, KIND_VINE, KIND_HANGING, packKey } from './voxels.js';
 import { JavaRandom } from './jrandom.js';
 
-// rendering/TreeType.java: [wood, [[leaf, weight], ...], decoration, hanging block, fallback].
+// rendering/TreeType.java: [wood, [[leaf, weight], ...], decoration, hanging block].
 // The first leaf is the raw leaf block; several leaves make the default WoodStyle leaf mix.
 export const DECORATION_NONE = 'none';
 export const DECORATION_TRUNK_VINES = 'trunk_vines'; // JungleVinePopulator
 export const DECORATION_LEAF_VINES = 'leaf_vines'; // LeafDecorator.vines
 export const DECORATION_HANGING = 'hanging'; // LeafDecorator.hanging
 const TREE_TYPES = {
-  'Oak': ['OAK_LOG', [['OAK_LEAVES', 1]], DECORATION_NONE, null, null],
-  'Spruce': ['SPRUCE_LOG', [['SPRUCE_LEAVES', 1]], DECORATION_NONE, null, 'Oak'],
-  'Birch': ['BIRCH_LOG', [['BIRCH_LEAVES', 1]], DECORATION_NONE, null, 'Oak'],
-  'Cherry': ['CHERRY_LOG', [['CHERRY_LEAVES', 1]], DECORATION_NONE, null, 'Oak'],
-  'Jungle': ['JUNGLE_LOG', [['JUNGLE_LEAVES', 1]], DECORATION_TRUNK_VINES, null, 'Oak'],
-  'Acacia': ['ACACIA_LOG', [['ACACIA_LEAVES', 1]], DECORATION_NONE, null, 'Oak'],
-  'Dark Oak': ['DARK_OAK_LOG', [['DARK_OAK_LEAVES', 1]], DECORATION_NONE, null, 'Oak'],
-  'Mangrove': ['MANGROVE_LOG', [['MANGROVE_LEAVES', 1]], DECORATION_LEAF_VINES, null, 'Oak'],
-  'Mangrove_roots': ['MANGROVE_ROOTS', [['MANGROVE_LEAVES', 1]], DECORATION_NONE, null, 'Oak'],
-  'Pale Oak': ['PALE_OAK_LOG', [['PALE_OAK_LEAVES', 1]], DECORATION_HANGING, 'PALE_HANGING_MOSS', 'Dark Oak'],
-  'Swamp Oak': ['OAK_LOG', [['OAK_LEAVES', 1]], DECORATION_LEAF_VINES, null, 'Oak'],
-  'Red Mushroom': ['MUSHROOM_STEM', [['RED_MUSHROOM_BLOCK', 1]], DECORATION_NONE, null, 'Oak'],
-  'Brown Mushroom': ['MUSHROOM_STEM', [['BROWN_MUSHROOM_BLOCK', 1]], DECORATION_NONE, null, 'Oak'],
-  'Poplar': ['POPLAR_LOG', [['YELLOW_POPLAR_LEAVES', 5], ['ORANGE_POPLAR_LEAVES', 3], ['RED_POPLAR_LEAVES', 2]], DECORATION_NONE, null, 'Birch'],
-  'Crimson': ['CRIMSON_STEM', [['NETHER_WART_BLOCK', 14], ['SHROOMLIGHT', 1]], DECORATION_HANGING, 'WEEPING_VINES_PLANT', 'Oak'],
-  'Warped': ['WARPED_STEM', [['WARPED_WART_BLOCK', 14], ['SHROOMLIGHT', 1]], DECORATION_NONE, null, 'Oak'],
-  'Azalea': ['OAK_LOG', [['AZALEA_LEAVES', 3], ['FLOWERING_AZALEA_LEAVES', 2]], DECORATION_NONE, null, 'Oak'],
+  'Oak': ['OAK_LOG', [['OAK_LEAVES', 1]], DECORATION_NONE, null],
+  'Spruce': ['SPRUCE_LOG', [['SPRUCE_LEAVES', 1]], DECORATION_NONE, null],
+  'Birch': ['BIRCH_LOG', [['BIRCH_LEAVES', 1]], DECORATION_NONE, null],
+  'Cherry': ['CHERRY_LOG', [['CHERRY_LEAVES', 1]], DECORATION_NONE, null],
+  'Jungle': ['JUNGLE_LOG', [['JUNGLE_LEAVES', 1]], DECORATION_TRUNK_VINES, null],
+  'Acacia': ['ACACIA_LOG', [['ACACIA_LEAVES', 1]], DECORATION_NONE, null],
+  'Dark Oak': ['DARK_OAK_LOG', [['DARK_OAK_LEAVES', 1]], DECORATION_NONE, null],
+  'Mangrove': ['MANGROVE_LOG', [['MANGROVE_LEAVES', 1]], DECORATION_LEAF_VINES, null],
+  'Mangrove_roots': ['MANGROVE_ROOTS', [['MANGROVE_LEAVES', 1]], DECORATION_NONE, null],
+  'Pale Oak': ['PALE_OAK_LOG', [['PALE_OAK_LEAVES', 1]], DECORATION_HANGING, 'PALE_HANGING_MOSS'],
+  'Swamp Oak': ['OAK_LOG', [['OAK_LEAVES', 1]], DECORATION_LEAF_VINES, null],
+  'Red Mushroom': ['MUSHROOM_STEM', [['RED_MUSHROOM_BLOCK', 1]], DECORATION_NONE, null],
+  'Brown Mushroom': ['MUSHROOM_STEM', [['BROWN_MUSHROOM_BLOCK', 1]], DECORATION_NONE, null],
+  'Poplar': ['POPLAR_LOG', [['YELLOW_POPLAR_LEAVES', 5], ['ORANGE_POPLAR_LEAVES', 3], ['RED_POPLAR_LEAVES', 2]], DECORATION_NONE, null],
+  'Crimson': ['CRIMSON_STEM', [['NETHER_WART_BLOCK', 14], ['SHROOMLIGHT', 1]], DECORATION_HANGING, 'WEEPING_VINES_PLANT'],
+  'Warped': ['WARPED_STEM', [['WARPED_WART_BLOCK', 14], ['SHROOMLIGHT', 1]], DECORATION_NONE, null],
+  'Azalea': ['OAK_LOG', [['AZALEA_LEAVES', 3], ['FLOWERING_AZALEA_LEAVES', 2]], DECORATION_NONE, null],
 };
+/** TreeType FALLBACKS: wood types whose blocks only newer servers have (poplar: 26.3+). */
+const FALLBACKS = { 'Poplar': 'Birch' };
 /** TreeType.capLevel: stems of this level and deeper are drawn with the leaf block (mushroom caps). */
 const CAP_LEVELS = { 'Red Mushroom': 1, 'Brown Mushroom': 1 };
 /** TreeType hangingTip (bottom block of a hanging strand; default: the hanging block itself). */
@@ -70,8 +72,8 @@ const ALL_MATERIALS = () => true;
 export function treeTypeMaterials(woodType, hasMaterial = ALL_MATERIALS) {
   let name = Object.hasOwn(TREE_TYPES, woodType) ? woodType : 'Oak';
   let spec = TREE_TYPES[name];
-  while (!hasMaterial(spec[0]) || !hasMaterial(spec[1][0][0])) {
-    name = spec[4];
+  if (FALLBACKS[name] && (!hasMaterial(spec[0]) || !hasMaterial(spec[1][0][0]))) {
+    name = FALLBACKS[name];
     spec = TREE_TYPES[name];
   }
   const [wood, leaves, deco, hangingName] = spec;
@@ -79,12 +81,10 @@ export function treeTypeMaterials(woodType, hasMaterial = ALL_MATERIALS) {
   const hanging = hangingName && hasMaterial(hangingName) ? hangingName : null;
   const tipName = HANGING_TIPS[name] ?? hanging;
   const hangingTip = tipName && hasMaterial(tipName) ? tipName : null;
-  const decoration = deco === DECORATION_HANGING && (!hanging || !hangingTip) ? DECORATION_NONE : deco;
   const capLevel = CAP_LEVELS[name] ?? Infinity;
-  const isHanging = decoration === DECORATION_HANGING;
   return {
-    wood, leaf: leaves[0][0], leafMix: leafMix.length ? leafMix : null, decoration,
-    hanging: isHanging ? hanging : null, hangingTip: isHanging ? hangingTip : null,
+    wood, leaf: leaves[0][0], leafMix: leafMix.length ? leafMix : null, decoration: deco,
+    hanging, hangingTip,
     hangingShape: HANGING_SHAPES[name] ?? [4, 1, 6],
     capLevel, noisyLeaves: !PLAIN_LEAVES.has(name), patchLeaves: PATCH_LEAVES.has(name), type: name,
     leafDroop: LEAF_DROOPS[name] ?? 0,

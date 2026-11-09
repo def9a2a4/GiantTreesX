@@ -20,11 +20,10 @@ function loadTree(db, seed) {
 
 /** TreeRenderer.export() */
 function exportTree(tree, d3d) {
-  const stopLevel = tree.params.stopLevel;
   // stems (TreeRenderer.export)
   tree.traverseTree({
     enterStem(stem) {
-      if (stem.stemlevel < stopLevel || stopLevel === -1) {
+      {
         stem.traverseStem({
           enterSegment(s) {
             const level = s.lpar.level;
