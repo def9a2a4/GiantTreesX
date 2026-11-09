@@ -75,11 +75,15 @@ Large leaf clusters get hidden wood inside them, so leaves far from the branches
 - Patterns may use `-` for "any block".
 - Patterns using a sapling the server doesn't have are skipped, with a note in the log.
 - Two patterns that can't be told apart (for example big and huge rings with the same core block) are reported at startup.
-- Growing from saplings respects protection plugins: no trees in claims or regions where the player can't build.
+- If a protection plugin blocks the click on the core block (a claim, a region), no tree grows. The tree itself isn't checked against claims, so it can reach into a neighbouring one.
+- `planting.enabled: false` turns growing from saplings off.
+- `planting.sizes` turns single sizes off. With `giant: false`, a 5x5 ring grows the huge tree of its inner 3x3 ring.
+- `planting.core` sets the middle block for each size. `planting.particles: false` turns the particles off.
 
 ## Natural spawning
 
 - Configured in one place, the `natural:` section of `config.yml`:
+  - on or off (`enabled`), and in which worlds
   - which trees grow in which biome
   - how often
   - in what mix of sizes, by default 16 big and 4 huge for every giant
@@ -109,6 +113,7 @@ Large leaf clusters get hidden wood inside them, so leaves far from the branches
 
 - Bundled trees load straight from the jar, so plugin updates bring their latest versions.
 - Your own trees, and replacements for bundled ones, go in `plugins/GiantTrees/tree/`.
+- `/gt edit` on a bundled tree first copies it into `plugins/GiantTrees/tree/`, and that copy replaces the bundled tree from then on.
 - The [web viewer](https://def9a2a4.github.io/GiantTreesX/viewer/) lets you start from any bundled tree, change its parameters, see it as Minecraft blocks, and download the file.
 
 ## Other
@@ -121,6 +126,7 @@ Large leaf clusters get hidden wood inside them, so leaves far from the branches
   - The old settings are no longer read: `naturallyGrowTrees`, `worlds`, `treeGrowthPercentChance`, `planting-patterns`, `core`, `bone-meal-consumed` and the rest.
   - The plugin warns at startup while they are still in your `config.yml`, and uses the defaults until you move them.
   - The easiest way: delete `config.yml`, restart to get the new one, and copy your changes back in.
+  - **If you had natural trees turned off** (`naturallyGrowTrees: false`), set `natural.enabled: false` before starting 4.0.0. Otherwise natural trees start spawning in `world`, at the new 4% default.
 - **Old tree files.** `tree.*.xml` and `biome.*.xml` files in the plugin folder are no longer read.
   - The plugin warns at startup. Most of them are just outdated copies of the bundled trees, which have changed; it names the ones that aren't bundled trees at all, which are probably your own.
   - Move only trees you edited or added yourself into `plugins/GiantTrees/tree/`; a file there replaces the bundled tree of the same name. Rename `biome.BIOME-NAME.xml` to `tree.NAME.xml` and list `NAME` under its biome in `natural.trees`.
@@ -132,4 +138,4 @@ Large leaf clusters get hidden wood inside them, so leaves far from the branches
 
 - Thin crimson and warped stems can look lumpy.
 - Some mushroom caps have a one-block bump on top.
-- Worlds loaded after the server starts don't get natural trees.
+- Worlds already loaded when the plugin is enabled (after `/reload`, or a plugin manager loading it late) don't get natural trees until the server restarts.
