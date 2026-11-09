@@ -183,25 +183,78 @@ public class Draw3d {
                                    persist(), WorldChange.Kind.LEAVES, -1, false);
     }
     if (treeType.noisyLeaves) {
-      addLeafCore(pos);
+      addLeafCore(pos, length, width);
     }
   }
 
   /** Stem level given to leaf-cluster cores: a branch for WoodStyler, not a limb for bareBlocks. */
   static final int LEAF_CORE_LEVEL = 4;
+  /** Blocks of leaves left between a leaf-core arm's tip and the cluster's (unnoised) surface. */
+  static final int LEAF_CORE_MARGIN = 2;
+  /** Leaf-core arm directions: the 26 directions to a block's neighbours. */
+  private static final int[][] LEAF_CORE_ARMS = new int[26][];
+  static {
+    int n = 0;
+    for (int dx = -1; dx <= 1; dx++) {
+      for (int dy = -1; dy <= 1; dy++) {
+        for (int dz = -1; dz <= 1; dz++) {
+          if (dx != 0 || dy != 0 || dz != 0) {
+            LEAF_CORE_ARMS[n++] = new int[] {dx, dy, dz};
+          }
+        }
+      }
+    }
+  }
 
   /**
-   * A wood block at the centre of a leaf cluster (unless wood is already there), so leaves far from
-   * the branches still have a log within vanilla's leaf-decay range.
+   * Wood at the centre of a leaf cluster, so leaves far from the branches still have a log within
+   * vanilla's leaf-decay range (6 steps through leaves), plus a star of arms in the 26 neighbour
+   * directions that end {@link #LEAF_CORE_MARGIN} blocks inside the cluster's ellipsoid. Only
+   * buried leaves (all six faces covered) become wood, so none of it shows.
    */
-  private void addLeafCore(final Vector pos) {
-    final Vector core = new Vector(pos.getBlockX(), pos.getBlockY(), pos.getBlockZ());
-    final WorldChange existing = changeTracker.getChange(
-        new WorldChangeKey(core.getBlockX(), core.getBlockY(), core.getBlockZ()));
-    if (existing == null || existing.kind == WorldChange.Kind.LEAVES) {
-      changeTracker.addChange(core, treeType.woodMaterial, orient(Orientation.yMajor),
-                              WorldChange.Kind.WOOD, LEAF_CORE_LEVEL, true);
+  private void addLeafCore(final Vector pos, final double length, final double width) {
+    final int cx = pos.getBlockX();
+    final int cy = pos.getBlockY();
+    final int cz = pos.getBlockZ();
+    if (isLeaf(cx, cy, cz) && buried(cx, cy, cz)) {
+      addCoreWood(cx, cy, cz);
     }
+    // arms end LEAF_CORE_MARGIN blocks inside the cluster's ellipsoid (radii length, width, length)
+    final double h = length - LEAF_CORE_MARGIN;
+    final double v = width - LEAF_CORE_MARGIN;
+    if (h <= 0) {
+      return;
+    }
+    for (final int[] d : LEAF_CORE_ARMS) {
+      if (d[1] != 0 && v <= 0) {
+        continue;
+      }
+      final int reach = (int) Math.floor(1 / Math.sqrt((d[0] * d[0] + d[2] * d[2]) / (h * h)
+                                                       + (d[1] != 0 ? 1 / (v * v) : 0)));
+      for (int i = 1; i <= reach; i++) {
+        final int x = cx + d[0] * i;
+        final int y = cy + d[1] * i;
+        final int z = cz + d[2] * i;
+        if (isLeaf(x, y, z) && buried(x, y, z)) {
+          addCoreWood(x, y, z);
+        }
+      }
+    }
+  }
+
+  /** Every face of the block touches a placed block, so wood there can't be seen. */
+  private boolean buried(final int x, final int y, final int z) {
+    return changeTracker.getChange(new WorldChangeKey(x + 1, y, z)) != null
+        && changeTracker.getChange(new WorldChangeKey(x - 1, y, z)) != null
+        && changeTracker.getChange(new WorldChangeKey(x, y + 1, z)) != null
+        && changeTracker.getChange(new WorldChangeKey(x, y - 1, z)) != null
+        && changeTracker.getChange(new WorldChangeKey(x, y, z + 1)) != null
+        && changeTracker.getChange(new WorldChangeKey(x, y, z - 1)) != null;
+  }
+
+  private void addCoreWood(final int x, final int y, final int z) {
+    changeTracker.addChange(new Vector(x, y, z), treeType.woodMaterial, orient(Orientation.yMajor),
+                            WorldChange.Kind.WOOD, LEAF_CORE_LEVEL, true);
   }
 
   public void drawRootJunction(final Vector pos, final double r) {

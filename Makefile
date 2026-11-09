@@ -40,8 +40,10 @@ server-update:
 
 .PHONY: server-setup
 server-setup: $(SERVER_JAR)
-	mkdir -p $(SERVER_DIR)/plugins
+	mkdir -p $(SERVER_DIR)/plugins/bStats
 	echo "eula=true" > $(SERVER_DIR)/eula.txt
+	# test servers don't report to bStats
+	[ -f $(SERVER_DIR)/plugins/bStats/config.yml ] || echo "enabled: false" > $(SERVER_DIR)/plugins/bStats/config.yml
 	[ -f $(SERVER_DIR)/server.properties ] || printf "server-port=$(SERVER_PORT)\nmotd=GiantTrees test ($(MINECRAFT_VERSION))\n" > $(SERVER_DIR)/server.properties
 	rm -f $(SERVER_DIR)/plugins/GiantTrees*.jar
 	cp target/GiantTrees-*.jar $(SERVER_DIR)/plugins/
@@ -75,8 +77,9 @@ CI_SERVER_DIR := $(TEST_SERVER_DIR)/ci-$(MINECRAFT_VERSION)
 .PHONY: server-test
 server-test: $(SERVER_JAR)
 	rm -rf $(CI_SERVER_DIR)
-	mkdir -p $(CI_SERVER_DIR)/plugins
+	mkdir -p $(CI_SERVER_DIR)/plugins/bStats
 	echo "eula=true" > $(CI_SERVER_DIR)/eula.txt
+	echo "enabled: false" > $(CI_SERVER_DIR)/plugins/bStats/config.yml
 	printf "server-port=25599\nonline-mode=false\nlevel-seed=gianttrees\n" > $(CI_SERVER_DIR)/server.properties
 	cp $$(ls target/GiantTrees-*.jar | grep -v original) $(CI_SERVER_DIR)/plugins/
 	python3 tests/server_test.py --server-dir $(CI_SERVER_DIR) --server-jar $(SERVER_JAR) --java $(JAVA)

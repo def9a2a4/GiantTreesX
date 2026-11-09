@@ -26,6 +26,11 @@ export const TIP_REACH = 2, TIP_SCALE = 0.7;
 export const BARE_TIP_KEEP = 3, BARE_DEPTH = 8, BARE_CELL_SHIFT = 2, BARE_PERCENT = 55;
 /** Draw3d.LEAF_CORE_LEVEL: stem level given to leaf-cluster cores (a branch for WoodStyler, not a limb for bareBlocks). */
 export const LEAF_CORE_LEVEL = 4;
+/** Draw3d.LEAF_CORE_MARGIN: blocks of leaves left between a core arm's tip and the cluster surface. */
+export const LEAF_CORE_MARGIN = 2;
+/** Draw3d.LEAF_CORE_ARMS: the 26 directions to a block's neighbours (faces, edges and corners). */
+const LEAF_CORE_ARMS = [];
+for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) if (dx || dy || dz) LEAF_CORE_ARMS.push([dx, dy, dz]);
 // columns (x, z offsets) carved below a bare limb block: its own and its four neighbours'
 const BARE_COLUMNS = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]];
 const COVER_SIDES = [[0, 1, 0], [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1]];
@@ -325,22 +330,47 @@ export class Draw3d {
   }
 
   /**
-   * Draw3d.addLeafCore: a wood block at the centre of a leaf cluster (unless wood is already
-   * there), so leaves far from the branches still have a log within vanilla's leaf-decay range.
+   * Draw3d.addLeafCore: wood at the centre of a leaf cluster, so
+   * leaves far from the branches still have a log within vanilla's leaf-decay range (6 steps
+   * through leaves), plus a star of arms in the 26 neighbour directions that end LEAF_CORE_MARGIN
+   * blocks inside the cluster's ellipsoid. Only buried leaves (all six faces covered) become
+   * wood, so none of it shows.
    */
-  addLeafCore(pos) {
-    const x = blockFloor(pos.x), y = blockFloor(pos.y), z = blockFloor(pos.z);
-    const i = this.store.index.get(packKey(x, y, z));
-    if (i === undefined || this.store.kind[i] === KIND_LEAF) {
-      this.store.add(x, y, z, KIND_WOOD, LEAF_CORE_LEVEL, Y_MAJOR, this.part, this.wood, true);
+  addLeafCore(pos, length, width) {
+    const store = this.store;
+    const cx = blockFloor(pos.x), cy = blockFloor(pos.y), cz = blockFloor(pos.z);
+    const i0 = store.index.get(packKey(cx, cy, cz));
+    if (i0 !== undefined && store.kind[i0] === KIND_LEAF && this.buried(cx, cy, cz)) {
+      store.add(cx, cy, cz, KIND_WOOD, LEAF_CORE_LEVEL, Y_MAJOR, this.part, this.wood, true);
     }
+    // arms end LEAF_CORE_MARGIN blocks inside the cluster's ellipsoid (radii length, width, length)
+    const H = length - LEAF_CORE_MARGIN, V = width - LEAF_CORE_MARGIN;
+    if (H <= 0) return;
+    for (const [dx, dy, dz] of LEAF_CORE_ARMS) {
+      if (dy !== 0 && V <= 0) continue;
+      const reach = Math.floor(1 / Math.sqrt((dx * dx + dz * dz) / (H * H) + (dy !== 0 ? 1 / (V * V) : 0)));
+      for (let k = 1; k <= reach; k++) {
+        const x = cx + dx * k, y = cy + dy * k, z = cz + dz * k;
+        const j = store.index.get(packKey(x, y, z));
+        if (j !== undefined && store.kind[j] === KIND_LEAF && this.buried(x, y, z)) {
+          store.add(x, y, z, KIND_WOOD, LEAF_CORE_LEVEL, Y_MAJOR, this.part, this.wood, true);
+        }
+      }
+    }
+  }
+
+  /** Draw3d.buried: every face of the block touches a placed block, so wood there can't be seen. */
+  buried(x, y, z) {
+    const idx = this.store.index;
+    return idx.has(packKey(x + 1, y, z)) && idx.has(packKey(x - 1, y, z)) && idx.has(packKey(x, y + 1, z))
+      && idx.has(packKey(x, y - 1, z)) && idx.has(packKey(x, y, z + 1)) && idx.has(packKey(x, y, z - 1));
   }
 
   drawLeafCluster(pos, length, width) {
     this.leafLength = length;
     this.leafWidth = width;
     const skip = this.bareBlocks();
-    if (this.noisyLeaves) { this.drawNoisyLeafCluster(pos, length, width, skip); this.addLeafCore(pos); return; }
+    if (this.noisyLeaves) { this.drawNoisyLeafCluster(pos, length, width, skip); this.addLeafCore(pos, length, width); return; }
     // plotEllipsoid(pos, length, width, length, 0), sheared by leafDroop
     const a = length, b = width, c = length;
     const halfSize = (Math.ceil(Math.max(Math.max(a, b), c)) | 0) + 2;

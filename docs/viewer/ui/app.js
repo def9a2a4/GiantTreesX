@@ -145,6 +145,7 @@ function onWorkerMessage(e) {
     if (d.id !== matId || !S.data) return;
     S.data.mat = d.mat;
     S.data.matNames = d.matNames;
+    if (d.orient) S.data.orient = d.orient; // trunk-core logs stand upright in the styled modes
     S.data.usedStyle = d.usedStyle;
     S.timing.material = d.timing.material;
     rebuildMesh();

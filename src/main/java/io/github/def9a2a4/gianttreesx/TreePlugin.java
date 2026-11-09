@@ -29,6 +29,7 @@ import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
+import org.bstats.bukkit.Metrics;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.WorldInitEvent;
@@ -53,6 +54,7 @@ public class TreePlugin extends JavaPlugin {
 
   @Override
   public void onEnable() {
+    new Metrics(this, 35220);
     this.warnAboutBiomeFiles();
     this.getServer().getPluginManager().registerEvents(new PlantTreeEventHandler(this), this);
     if (this.getConfig().getBoolean("naturallyGrowTrees", true)) {

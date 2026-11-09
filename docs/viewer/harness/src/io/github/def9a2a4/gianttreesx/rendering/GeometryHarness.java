@@ -237,10 +237,14 @@ public final class GeometryHarness {
           final TreeRenderer.Generated generated = run(treeFile, rootFile, seed, ref, tracker, dg);
           scale[0] = generated.tree().params.scale_tree;
           order.addAll(tracker.getChanges());
-          // WoodStyler mutates WorldChange.material in place: snapshot and restore per style
+          // WoodStyler mutates WorldChange.material (and the trunk cores' mutator) in place:
+          // snapshot and restore per style, so the geometry below is the unstyled one
           final Map<WorldChange, Material> original = new IdentityHashMap<>();
+          final Map<WorldChange, java.util.function.UnaryOperator<org.bukkit.block.data.BlockData>>
+              originalMutator = new IdentityHashMap<>();
           for (final WorldChange c : order) {
             original.put(c, c.material);
+            originalMutator.put(c, c.blockDataMutator);
           }
           for (final String spec : styleSpecs) {
             WoodStyler.apply(tracker, parseStyle(spec, generated.treeType().leafMix,
@@ -258,6 +262,7 @@ public final class GeometryHarness {
             styled.add(mats);
             for (final WorldChange c : order) {
               c.material = original.get(c);
+              c.blockDataMutator = originalMutator.get(c);
             }
           }
         } catch (final Throwable t) {

@@ -6,7 +6,7 @@ A Minecraft plugin that grows enormous, procedurally generated trees: giant oaks
 
 **[Browse every tree in 3D in the gallery and viewer](https://def9a2a4.github.io/GiantTreesX/)**: look at them block by block, cut into them, try the wood styles, and edit tree files in your browser.
 
-GiantTreesX is a fork of [GiantTrees](https://github.com/rmichela/GiantTrees) by Ryan Michela, updated for current Paper with new trees, three tree sizes, configurable natural spawning and much faster placement.
+GiantTreesX is maintained by [def9a2a4](https://github.com/def9a2a4). It is a fork of [GiantTrees](https://github.com/rmichela/GiantTrees) by Ryan Michela, updated for current Paper with new trees, three tree sizes, configurable natural spawning and much faster placement. Report bugs on the [GiantTreesX issue tracker](https://github.com/def9a2a4/GiantTreesX/issues), not upstream.
 
 |                    Oak                     |                      Pale Oak                      |                     Mangrove                     |                    Cherry                    |
 | :----------------------------------------: | :------------------------------------------------: | :----------------------------------------------: | :------------------------------------------: |
@@ -76,7 +76,7 @@ By default each biome grows 4 big and 2 huge trees for every giant (`natural-tre
 
 ## Custom Trees
 
-Trees are [Arbaro](http://arbaro.sourceforge.net/) parameter files: `tree.<NAME>.xml` for the tree and an optional `tree.<NAME>.root.xml` for its roots, which grow upside down below it.
+Trees are [Arbaro](https://arbaro.sourceforge.net/) parameter files: `tree.<NAME>.xml` for the tree and an optional `tree.<NAME>.root.xml` for its roots, which grow upside down below it.
 
 The easiest way to make one is the **[web viewer](https://def9a2a4.github.io/GiantTreesX/viewer/)**. Start from any bundled tree, change its parameters and watch it regenerate as Minecraft blocks, then *Download XML*. Put the file in `plugins/GiantTrees/` with a name in capitals, and it works with `/gt` straight away. To make it spawn, list its name under a biome in `natural-trees`; to grow it from saplings, add a pattern to `planting-patterns`. To tune a tree for one biome only, give it its own file (`tree.OAK_PLAINS.xml`) and list that.
 
@@ -96,6 +96,8 @@ No other plugins are needed.
 1. Download `GiantTrees-<version>.jar` from [Modrinth](https://modrinth.com/project/gianttreesx).
 2. Put it in your server's `plugins` folder.
 3. Restart the server.
+
+GiantTreesX reports anonymous usage statistics to [bStats](https://bstats.org/plugin/bukkit/GiantTreesX/35220) (server count, Minecraft and Java versions). Server owners can turn it off for all plugins in `plugins/bStats/config.yml`.
 
 The plugin folder is `plugins/GiantTrees/`. Tree files are unpacked there on first start; files you edit are never overwritten, and deleted ones come back on the next start.
 
@@ -119,9 +121,13 @@ Everything is in `plugins/GiantTrees/config.yml`, and every setting is explained
 
 # Credits
 
-- **[GiantTrees](https://github.com/rmichela/GiantTrees)** by Ryan Michela, with contributions from Ronald Jack Jenkins Jr. and others: the plugin this is forked from.
-- **[Arbaro](http://arbaro.sourceforge.net/)** by Wolfram Diestel: the tree generator, an implementation of Jason Weber and Joseph Penn's *[Creation and Rendering of Realistic Trees](https://dl.acm.org/doi/10.1145/218380.218427)* (SIGGRAPH 1995).
-- John Kennedy's papers on fast Bresenham-type circle and ellipse drawing, which the block drawing code follows.
+GiantTreesX is maintained by [def9a2a4](https://github.com/def9a2a4). It builds on the work of:
+
+- **Ryan Michela** ([rmichela](https://github.com/rmichela)): author of [GiantTrees](https://github.com/rmichela/GiantTrees), the plugin this is forked from.
+- **Ronald Jack Jenkins Jr.** ([rjenkinsjr](https://github.com/rjenkinsjr)): GiantTrees maintainer around 2016.
+- **Capri205** ([Capri205](https://github.com/Capri205)): kept GiantTrees going from 2022 to 2025: updates for Minecraft 1.18 to 1.21, the mangrove, mesa puzzle, cottonwood and cherry trees, custom planting patterns and multiple trees per biome.
+- **Wolfram Diestel**: [Arbaro](https://arbaro.sourceforge.net/), the tree generator, an implementation of Jason Weber and Joseph Penn's *Creation and Rendering of Realistic Trees* (SIGGRAPH 1995; [ACM](https://dl.acm.org/doi/10.1145/218380.218427), [PDF](https://courses.cs.duke.edu/cps124/fall01/resources/p119-weber.pdf)).
+- **John Kennedy** (Santa Monica College): the block drawing code follows his papers on integer-only drawing of [lines](https://web.archive.org/web/20070418050210/http://homepage.smc.edu/kennedy_john/BRESENL.PDF), [circles](https://web.archive.org/web/20120917053124/http://homepage.smc.edu/kennedy_john/BCIRCLE.PDF) and [ellipses](https://web.archive.org/web/20121202050041/http://homepage.smc.edu:80/kennedy_john/BELIPSE.PDF).
 
 
 # License
@@ -132,9 +138,10 @@ What it includes or uses:
 
 | Component | Where | License |
 | --- | --- | --- |
-| GiantTrees (Ryan Michela, Ronald Jack Jenkins Jr.) | the plugin's code | GPLv3+ |
+| GiantTrees (Ryan Michela, Ronald Jack Jenkins Jr., Capri205 and others) | the plugin's code | GPLv3+ |
 | Arbaro (Wolfram Diestel), modified | `src/arbaro/`, inside the plugin jar | GPLv2+; this modified copy is redistributed under GPLv3+ (see [`NOTICE`](src/main/resources/NOTICE)) |
 | Tree parameter files | `src/main/resources/tree.*.xml`, inside the plugin jar | GPLv3+, from GiantTrees and Arbaro |
+| [bStats](https://bstats.org/) Metrics | inside the plugin jar (relocated) | MIT |
 | [three.js](https://threejs.org/) r160 and its OrbitControls | `docs/viewer/vendor/`, the website only | MIT (see [`docs/viewer/vendor/LICENSE`](docs/viewer/vendor/LICENSE)) |
 | [Paper API](https://papermc.io/) | compiled against, not included | GPLv3 / MIT |
 | [Playwright](https://playwright.dev/) | renders the gallery images; development only, not included | Apache 2.0 |

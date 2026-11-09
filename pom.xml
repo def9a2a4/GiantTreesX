@@ -66,6 +66,12 @@
       <version>1.21.11-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>org.bstats</groupId>
+      <artifactId>bstats-bukkit</artifactId>
+      <version>3.1.0</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
   <build>
   
@@ -142,6 +148,13 @@
             </goals>
             <configuration>
               <minimizeJar>true</minimizeJar>
+              <relocations>
+                <!-- bStats must be relocated so it doesn't clash with other plugins' copies -->
+                <relocation>
+                  <pattern>org.bstats</pattern>
+                  <shadedPattern>io.github.def9a2a4.gianttreesx.bstats</shadedPattern>
+                </relocation>
+              </relocations>
             </configuration>
           </execution>
         </executions>

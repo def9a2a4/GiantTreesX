@@ -5,7 +5,7 @@
 //   { type: 'materials', id, style }            re-run only the material pass on the cached geometry
 // Messages out:
 //   { type: 'result', id, n, x, y, z, kind, part, level, mat, matNames, woodTypes, ... }
-//   { type: 'materials', id, mat, matNames, timing }
+//   { type: 'materials', id, mat, matNames, orient, timing }
 //   { type: 'error', id, message, stack }
 //
 // "treeEntries" is [[name, value], ...] (ParamDB contents) so edited params reach the generator
@@ -28,7 +28,7 @@ function toDb(xml, entries) {
   return xml == null ? null : xml;
 }
 
-function materialPass(view, style, seed, groundY) {
+function materialPass(view, style, seed, groundY, orient) {
   const table = new M.MaterialTable();
   const t0 = now();
   const fn = M.woodStyleAssign;
@@ -43,6 +43,7 @@ function materialPass(view, style, seed, groundY) {
       leaves: style.leaves && Object.keys(style.leaves).length ? style.leaves : null,
       seed,
       groundY, // roots reaching the (flat) ground show as muddy roots, as the plugin places them in mud
+      orient, // trunk-core logs stand upright, as the plugin places them
 
     }, table);
     usedStyle = true;
@@ -70,9 +71,10 @@ function handle(d) {
     // the planting block (y = 0 above ground) in store coordinates, which start at the raised ref point
     const groundY = REF.y - result.refPoint.y;
     cache = { result, view, seed: d.seed | 0, groundY };
-    const m = materialPass(view, d.style || {}, d.seed | 0, groundY);
     const s = result.store;
     const n = s.n;
+    const orient = s.orient.slice(0, n);
+    const m = materialPass(view, d.style || {}, d.seed | 0, groundY, orient);
     const out = {
       type: 'result',
       id: d.id,
@@ -83,7 +85,7 @@ function handle(d) {
       kind: s.kind.slice(0, n),
       part: s.part.slice(0, n),
       level: s.level.slice(0, n),
-      orient: s.orient.slice(0, n),
+      orient,
       wood: s.wood.slice(0, n),
       mat: m.mat,
       matNames: m.matNames,
@@ -100,8 +102,10 @@ function handle(d) {
     post(out, [out.x.buffer, out.y.buffer, out.z.buffer, out.kind.buffer, out.part.buffer, out.level.buffer, out.orient.buffer, out.wood.buffer, out.mat.buffer]);
   } else if (d.type === 'materials') {
     if (!cache) throw new Error('no tree generated yet');
-    const m = materialPass(cache.view, d.style || {}, cache.seed, cache.groundY);
-    post({ type: 'materials', id: d.id, mat: m.mat, matNames: m.matNames, usedStyle: m.usedStyle, timing: { material: m.materialMs } }, [m.mat.buffer]);
+    const s = cache.result.store;
+    const orient = s.orient.slice(0, s.n);
+    const m = materialPass(cache.view, d.style || {}, cache.seed, cache.groundY, orient);
+    post({ type: 'materials', id: d.id, mat: m.mat, matNames: m.matNames, orient, usedStyle: m.usedStyle, timing: { material: m.materialMs } }, [m.mat.buffer, orient.buffer]);
   }
 }
 

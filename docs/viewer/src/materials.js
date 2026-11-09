@@ -401,6 +401,9 @@ export function woodDepth(voxels) {
  *        below it becomes its type's groundWood (mangrove roots -> muddy mangrove roots). The
  *        plugin decides this from the actual world when it places the tree (TreeRenderer.
  *        settleRoots), so the equivalence check leaves this unset.
+ * @param {Int8Array} [opts.orient]  optional copy of the voxels' orient to update: trunk-core logs
+ *        (level 0, at or above the planting block) stand upright (1 = yMajor), as WoodStyler sets
+ *        their mutator; mixed and mixed_log only
  * @param {MaterialTable} table
  * @returns {Uint16Array} material id per voxel ('AIR' for carved voxels)
  */
@@ -456,8 +459,11 @@ export function woodStyleAssign(voxels, opts, table) {
       out[i] = air;
     } else if (mode !== 'all_log') {
       if (d === 1) out[i] = styled(barkId, out[i], barkOf);
-      else if (mode === 'mixed') {
-        out[i] = voxels.level[i] === 0 ? styled(coreId, out[i], strippedOf) : styled(branchCoreId, out[i], strippedWoodOf);
+      else {
+        if (mode === 'mixed') {
+          out[i] = voxels.level[i] === 0 ? styled(coreId, out[i], strippedOf) : styled(branchCoreId, out[i], strippedWoodOf);
+        }
+        if (o.orient && voxels.level[i] === 0 && voxels.y[i] >= 0) o.orient[i] = 1; // WoodStyler.UPRIGHT
       }
     }
   }

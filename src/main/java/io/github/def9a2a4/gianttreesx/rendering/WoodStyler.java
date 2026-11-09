@@ -5,7 +5,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import java.util.function.UnaryOperator;
+
+import org.bukkit.Axis;
 import org.bukkit.Material;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Orientable;
 
 /**
  * Assigns final wood and leaf blocks once a tree's geometry is drawn.
@@ -24,6 +29,14 @@ final class WoodStyler {
 
   private WoodStyler() {
   }
+
+  /** Stands an orientable block (a log) upright. */
+  static final UnaryOperator<BlockData> UPRIGHT = blockData -> {
+    if (blockData instanceof Orientable orientable) {
+      orientable.setAxis(Axis.Y);
+    }
+    return blockData;
+  };
 
   static void apply(final WorldChangeTracker tracker, final WoodStyle style, final int seed) {
     final boolean hollow = style.hollowChance > 0
@@ -58,10 +71,17 @@ final class WoodStyler {
         continue;
       } else if (d == 1) {
         change.material = barkOf(change.material);
-      } else if (style.mode == WoodStyle.Mode.MIXED) {
-        // trunk cores are stripped logs, branch cores stripped (bark-less on all sides) wood
-        change.material = change.level == 0 ? strippedOf(change.material)
-            : strippedWoodOf(change.material);
+      } else {
+        if (style.mode == WoodStyle.Mode.MIXED) {
+          // trunk cores are stripped logs, branch cores stripped (bark-less on all sides) wood
+          change.material = change.level == 0 ? strippedOf(change.material)
+              : strippedWoodOf(change.material);
+        }
+        if (change.level == 0 && y >= 0) {
+          // trunk-core logs stand upright, also where a branch starts inside the trunk or the
+          // trunk leans (roots, below the planting block, keep following their spread)
+          change.blockDataMutator = UPRIGHT;
+        }
       }
     }
   }

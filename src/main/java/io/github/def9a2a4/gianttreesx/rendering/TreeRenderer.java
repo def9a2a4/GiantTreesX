@@ -104,6 +104,7 @@ public class TreeRenderer {
         WoodStyler.apply(tracker, WoodStyle.fromConfig(plugin.getConfig(), woodType,
                                                        generated.treeType().leafMix,
                                                        generated.treeType().patchLeaves, logger), seed);
+        LeafDecay.apply(tracker);
         if (!plugin.isEnabled()) {
           return;
         }

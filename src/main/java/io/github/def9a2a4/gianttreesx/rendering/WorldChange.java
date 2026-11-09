@@ -33,7 +33,7 @@ class WorldChange {
   }
 
   public Material material;
-  public final UnaryOperator<BlockData> blockDataMutator;
+  public UnaryOperator<BlockData> blockDataMutator;
   public final Vector location;
   public final Kind kind;
   /** Arbaro stem level for wood (0 = trunk), -1 when not applicable. */

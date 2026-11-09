@@ -1,6 +1,8 @@
 name: ${project.name}
 description: ${project.description}
-author: Ryan Michela
+author: def9a2a4
+contributors: [Ryan Michela, Ronald Jack Jenkins Jr., Capri205]
+website: https://github.com/def9a2a4/GiantTreesX
 version: "${project.version}"
 api-version: ${api-version}
 main: io.github.def9a2a4.gianttreesx.TreePlugin
