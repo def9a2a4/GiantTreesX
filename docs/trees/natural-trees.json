@@ -1,0 +1,140 @@
+{
+  "tree.OAK": [
+    "FOREST"
+  ],
+  "tree.OAK_HUGE": [
+    "FOREST"
+  ],
+  "tree.OAK_BIG": [
+    "FOREST"
+  ],
+  "tree.COTTONWOOD": [
+    "FOREST"
+  ],
+  "tree.COTTONWOOD_HUGE": [
+    "FOREST"
+  ],
+  "tree.COTTONWOOD_BIG": [
+    "FOREST"
+  ],
+  "tree.BIRCH": [
+    "BIRCH_FOREST"
+  ],
+  "tree.BIRCH_HUGE": [
+    "BIRCH_FOREST"
+  ],
+  "tree.BIRCH_BIG": [
+    "BIRCH_FOREST"
+  ],
+  "tree.CHERRY": [
+    "CHERRY_GROVE"
+  ],
+  "tree.CHERRY_HUGE": [
+    "CHERRY_GROVE"
+  ],
+  "tree.CHERRY_BIG": [
+    "CHERRY_GROVE"
+  ],
+  "tree.DARK_OAK": [
+    "DARK_FOREST"
+  ],
+  "tree.DARK_OAK_HUGE": [
+    "DARK_FOREST"
+  ],
+  "tree.DARK_OAK_BIG": [
+    "DARK_FOREST"
+  ],
+  "tree.PALE_OAK": [
+    "PALE_GARDEN"
+  ],
+  "tree.PALE_OAK_HUGE": [
+    "PALE_GARDEN"
+  ],
+  "tree.PALE_OAK_BIG": [
+    "PALE_GARDEN"
+  ],
+  "tree.SWAMP_OAK": [
+    "SWAMP"
+  ],
+  "tree.SWAMP_OAK_HUGE": [
+    "SWAMP"
+  ],
+  "tree.SWAMP_OAK_BIG": [
+    "SWAMP"
+  ],
+  "tree.MANGROVE": [
+    "MANGROVE_SWAMP"
+  ],
+  "tree.MANGROVE_HUGE": [
+    "MANGROVE_SWAMP"
+  ],
+  "tree.MANGROVE_BIG": [
+    "MANGROVE_SWAMP"
+  ],
+  "tree.JUNGLE": [
+    "JUNGLE"
+  ],
+  "tree.JUNGLE_HUGE": [
+    "JUNGLE"
+  ],
+  "tree.SPRUCE": [
+    "TAIGA"
+  ],
+  "tree.SPRUCE_HUGE": [
+    "TAIGA"
+  ],
+  "tree.ACACIA": [
+    "SAVANNA"
+  ],
+  "tree.ACACIA_HUGE": [
+    "SAVANNA"
+  ],
+  "tree.ACACIA_BIG": [
+    "SAVANNA"
+  ],
+  "tree.MESAPUZZLE": [
+    "BADLANDS"
+  ],
+  "tree.MESAPUZZLE_HUGE": [
+    "BADLANDS"
+  ],
+  "tree.MESAPUZZLE_BIG": [
+    "BADLANDS"
+  ],
+  "tree.RED_MUSHROOM": [
+    "MUSHROOM_FIELDS"
+  ],
+  "tree.RED_MUSHROOM_HUGE": [
+    "MUSHROOM_FIELDS"
+  ],
+  "tree.RED_MUSHROOM_BIG": [
+    "MUSHROOM_FIELDS"
+  ],
+  "tree.BROWN_MUSHROOM": [
+    "MUSHROOM_FIELDS"
+  ],
+  "tree.BROWN_MUSHROOM_HUGE": [
+    "MUSHROOM_FIELDS"
+  ],
+  "tree.BROWN_MUSHROOM_BIG": [
+    "MUSHROOM_FIELDS"
+  ],
+  "tree.POPLAR": [
+    "DAPPLED_FOREST"
+  ],
+  "tree.POPLAR_HUGE": [
+    "DAPPLED_FOREST"
+  ],
+  "tree.POPLAR_BIG": [
+    "DAPPLED_FOREST"
+  ],
+  "tree.AZALEA": [
+    "LUSH_CAVES"
+  ],
+  "tree.AZALEA_HUGE": [
+    "LUSH_CAVES"
+  ],
+  "tree.AZALEA_BIG": [
+    "LUSH_CAVES"
+  ]
+}

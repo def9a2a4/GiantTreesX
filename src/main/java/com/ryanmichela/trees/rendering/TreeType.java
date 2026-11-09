@@ -136,10 +136,6 @@ public class TreeType {
    *  placed (TreeRenderer); null to leave them as they are. */
   public final Material groundWoodMaterial;
 
-  public TreeType(final String treeType) {
-    this(treeType, null);
-  }
-
   /**
    * @param logger where to log a one-time notice when the wood type's blocks are missing on this
    *               server and a fallback is used; null for none

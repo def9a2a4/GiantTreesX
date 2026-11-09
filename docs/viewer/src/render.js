@@ -23,33 +23,31 @@ function exportTree(tree, d3d) {
   // stems (TreeRenderer.export)
   tree.traverseTree({
     enterStem(stem) {
-      {
-        stem.traverseStem({
-          enterSegment(s) {
-            const level = s.lpar.level;
-            const ss = s.subsegments;
-            for (let i = 0; i < ss.length - 1; i++) {
-              const l1 = d3d.toMcVector(ss[i].pos);
-              const l2 = d3d.toMcVector(ss[i + 1].pos);
-              const o = orient(l1, l2);
-              d3d.drawCone(l1, ss[i].rad, l2, ss[i + 1].rad, level);
-              const dx = l1.x - l2.x, dy = l1.y - l2.y, dz = l1.z - l2.z;
-              if (Math.sqrt(dx * dx + dy * dy + dz * dz) > 1) {
-                d3d.drawWoodSphere(l2, ss[i + 1].rad, o, level);
-              }
+      stem.traverseStem({
+        enterSegment(s) {
+          const level = s.lpar.level;
+          const ss = s.subsegments;
+          for (let i = 0; i < ss.length - 1; i++) {
+            const l1 = d3d.toMcVector(ss[i].pos);
+            const l2 = d3d.toMcVector(ss[i + 1].pos);
+            const o = orient(l1, l2);
+            d3d.drawCone(l1, ss[i].rad, l2, ss[i + 1].rad, level);
+            const dx = l1.x - l2.x, dy = l1.y - l2.y, dz = l1.z - l2.z;
+            if (Math.sqrt(dx * dx + dy * dy + dz * dz) > 1) {
+              d3d.drawWoodSphere(l2, ss[i + 1].rad, o, level);
             }
-            return true;
-          },
-          visitSubsegment() {
-            return false;
-          },
-        });
-        // the stem's end, for Draw3d.coverBranches
-        const segs = stem.segments;
-        if (segs.length > 0) {
-          const last = segs[segs.length - 1];
-          d3d.markStemEnd(d3d.toMcVector(last.subsegments[last.subsegments.length - 1].pos), last.lpar.level);
-        }
+          }
+          return true;
+        },
+        visitSubsegment() {
+          return false;
+        },
+      });
+      // the stem's end, for Draw3d.coverBranches
+      const segs = stem.segments;
+      if (segs.length > 0) {
+        const last = segs[segs.length - 1];
+        d3d.markStemEnd(d3d.toMcVector(last.subsegments[last.subsegments.length - 1].pos), last.lpar.level);
       }
       return true;
     },

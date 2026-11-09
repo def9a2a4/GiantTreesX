@@ -1,17 +1,29 @@
 {
   "seed": 12345,
+  "categories": {
+    "tree": "Trees",
+    "fungi": "Fungi"
+  },
+  "tiers": [
+    "giant",
+    "huge",
+    "big"
+  ],
   "trees": [
     {
       "name": "tree.ACACIA",
-      "aliases": [
-        "biome.SAVANNA-ACACIA"
+      "spawnsIn": [
+        "SAVANNA"
       ],
-      "hash": "99e481da2c892c4c",
+      "hash": "eb5635164581ef31",
+      "type": "ACACIA",
+      "category": "tree",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Acacia",
-      "blocks": 34002,
-      "height": 57,
-      "width": 91,
+      "blocks": 9769,
+      "height": 50,
+      "width": 60,
       "viewer": "viewer/#tree=tree.ACACIA&seed=12345",
       "images": {
         "hero": {
@@ -20,122 +32,88 @@
         },
         "cut": {
           "src": "gallery/tree.ACACIA/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.ACACIA/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.ACACIA/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
-      "name": "tree.ACACIA_SMALL",
-      "aliases": [
-        "biome.SAVANNA-ACACIA_SMALL"
+      "name": "tree.ACACIA_HUGE",
+      "spawnsIn": [
+        "SAVANNA"
       ],
-      "hash": "1987a5411419077e",
+      "hash": "334bb3f6032eeb9e",
+      "type": "ACACIA",
+      "category": "tree",
+      "tier": "huge",
       "seed": 12345,
       "woodType": "Acacia",
-      "blocks": 4373,
-      "height": 28,
-      "width": 35,
-      "viewer": "viewer/#tree=tree.ACACIA_SMALL&seed=12345",
+      "blocks": 3992,
+      "height": 34,
+      "width": 40,
+      "viewer": "viewer/#tree=tree.ACACIA_HUGE&seed=12345",
       "images": {
         "hero": {
-          "src": "gallery/tree.ACACIA_SMALL/hero.jpg",
+          "src": "gallery/tree.ACACIA_HUGE/hero.jpg",
           "caption": "Tree"
         },
         "cut": {
-          "src": "gallery/tree.ACACIA_SMALL/cut.jpg",
-          "caption": "Cut through the trunk"
+          "src": "gallery/tree.ACACIA_HUGE/cut.jpg",
+          "caption": "Cut open"
         },
         "top": {
-          "src": "gallery/tree.ACACIA_SMALL/top.jpg",
+          "src": "gallery/tree.ACACIA_HUGE/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.ACACIA_SMALL/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
-      "name": "tree.ACACIA-2",
-      "aliases": [
-        "biome.SAVANNA-ACACIA-2"
+      "name": "tree.ACACIA_BIG",
+      "spawnsIn": [
+        "SAVANNA"
       ],
-      "hash": "cf94965bbe789532",
+      "hash": "e189215bc9391a37",
+      "type": "ACACIA",
+      "category": "tree",
+      "tier": "big",
       "seed": 12345,
       "woodType": "Acacia",
-      "blocks": 44384,
-      "height": 65,
-      "width": 106,
-      "viewer": "viewer/#tree=tree.ACACIA-2&seed=12345",
+      "blocks": 848,
+      "height": 16,
+      "width": 21,
+      "viewer": "viewer/#tree=tree.ACACIA_BIG&seed=12345",
       "images": {
         "hero": {
-          "src": "gallery/tree.ACACIA-2/hero.jpg",
+          "src": "gallery/tree.ACACIA_BIG/hero.jpg",
           "caption": "Tree"
         },
         "cut": {
-          "src": "gallery/tree.ACACIA-2/cut.jpg",
-          "caption": "Cut through the trunk"
+          "src": "gallery/tree.ACACIA_BIG/cut.jpg",
+          "caption": "Cut open"
         },
         "top": {
-          "src": "gallery/tree.ACACIA-2/top.jpg",
+          "src": "gallery/tree.ACACIA_BIG/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.ACACIA-2/base.jpg",
-          "caption": "Trunk base and roots"
-        }
-      }
-    },
-    {
-      "name": "tree.ACACIA-2_SMALL",
-      "aliases": [
-        "biome.SAVANNA-ACACIA-2_SMALL"
-      ],
-      "hash": "63b5b648bd466fe6",
-      "seed": 12345,
-      "woodType": "Acacia",
-      "blocks": 6767,
-      "height": 30,
-      "width": 54,
-      "viewer": "viewer/#tree=tree.ACACIA-2_SMALL&seed=12345",
-      "images": {
-        "hero": {
-          "src": "gallery/tree.ACACIA-2_SMALL/hero.jpg",
-          "caption": "Tree"
-        },
-        "cut": {
-          "src": "gallery/tree.ACACIA-2_SMALL/cut.jpg",
-          "caption": "Cut through the trunk"
-        },
-        "top": {
-          "src": "gallery/tree.ACACIA-2_SMALL/top.jpg",
-          "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.ACACIA-2_SMALL/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
       "name": "tree.AZALEA",
-      "aliases": [
-        "biome.MEADOW-AZALEA"
+      "spawnsIn": [
+        "LUSH_CAVES"
       ],
-      "hash": "ae1aeb27a96c0c4b",
+      "hash": "546c2f2d58c8ef8f",
+      "type": "AZALEA",
+      "category": "tree",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Azalea",
-      "blocks": 10048,
-      "height": 37,
-      "width": 35,
+      "blocks": 15283,
+      "height": 50,
+      "width": 45,
       "viewer": "viewer/#tree=tree.AZALEA&seed=12345",
       "images": {
         "hero": {
@@ -144,29 +122,88 @@
         },
         "cut": {
           "src": "gallery/tree.AZALEA/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.AZALEA/top.jpg",
           "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.AZALEA_HUGE",
+      "spawnsIn": [
+        "LUSH_CAVES"
+      ],
+      "hash": "0f3c5e4baf74a7e2",
+      "type": "AZALEA",
+      "category": "tree",
+      "tier": "huge",
+      "seed": 12345,
+      "woodType": "Azalea",
+      "blocks": 6545,
+      "height": 32,
+      "width": 31,
+      "viewer": "viewer/#tree=tree.AZALEA_HUGE&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.AZALEA_HUGE/hero.jpg",
+          "caption": "Tree"
         },
-        "base": {
-          "src": "gallery/tree.AZALEA/base.jpg",
-          "caption": "Trunk base and roots"
+        "cut": {
+          "src": "gallery/tree.AZALEA_HUGE/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.AZALEA_HUGE/top.jpg",
+          "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.AZALEA_BIG",
+      "spawnsIn": [
+        "LUSH_CAVES"
+      ],
+      "hash": "46f9b69715613693",
+      "type": "AZALEA",
+      "category": "tree",
+      "tier": "big",
+      "seed": 12345,
+      "woodType": "Azalea",
+      "blocks": 1193,
+      "height": 19,
+      "width": 20,
+      "viewer": "viewer/#tree=tree.AZALEA_BIG&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.AZALEA_BIG/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.AZALEA_BIG/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.AZALEA_BIG/top.jpg",
+          "caption": "From above"
         }
       }
     },
     {
       "name": "tree.BIRCH",
-      "aliases": [
-        "biome.BIRCH_FOREST-BIRCH"
+      "spawnsIn": [
+        "BIRCH_FOREST"
       ],
-      "hash": "1ad480cbe657f79e",
+      "hash": "cbfe116c922f861c",
+      "type": "BIRCH",
+      "category": "tree",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Birch",
-      "blocks": 45110,
-      "height": 66,
-      "width": 60,
+      "blocks": 33211,
+      "height": 56,
+      "width": 52,
       "viewer": "viewer/#tree=tree.BIRCH&seed=12345",
       "images": {
         "hero": {
@@ -175,122 +212,88 @@
         },
         "cut": {
           "src": "gallery/tree.BIRCH/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.BIRCH/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.BIRCH/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
-      "name": "tree.BIRCH_SMALL",
-      "aliases": [
-        "biome.BIRCH_FOREST-BIRCH_SMALL"
+      "name": "tree.BIRCH_HUGE",
+      "spawnsIn": [
+        "BIRCH_FOREST"
       ],
-      "hash": "a8e6a238015a29ed",
+      "hash": "b01dec001f3ff3fd",
+      "type": "BIRCH",
+      "category": "tree",
+      "tier": "huge",
       "seed": 12345,
       "woodType": "Birch",
-      "blocks": 4388,
+      "blocks": 9013,
       "height": 37,
-      "width": 25,
-      "viewer": "viewer/#tree=tree.BIRCH_SMALL&seed=12345",
+      "width": 33,
+      "viewer": "viewer/#tree=tree.BIRCH_HUGE&seed=12345",
       "images": {
         "hero": {
-          "src": "gallery/tree.BIRCH_SMALL/hero.jpg",
+          "src": "gallery/tree.BIRCH_HUGE/hero.jpg",
           "caption": "Tree"
         },
         "cut": {
-          "src": "gallery/tree.BIRCH_SMALL/cut.jpg",
-          "caption": "Cut through the trunk"
+          "src": "gallery/tree.BIRCH_HUGE/cut.jpg",
+          "caption": "Cut open"
         },
         "top": {
-          "src": "gallery/tree.BIRCH_SMALL/top.jpg",
+          "src": "gallery/tree.BIRCH_HUGE/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.BIRCH_SMALL/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
-      "name": "tree.BIRCH-2",
-      "aliases": [
-        "biome.BIRCH_FOREST-BIRCH-2"
+      "name": "tree.BIRCH_BIG",
+      "spawnsIn": [
+        "BIRCH_FOREST"
       ],
-      "hash": "cbb4726ac80a69b2",
+      "hash": "4805fd11fb47d378",
+      "type": "BIRCH",
+      "category": "tree",
+      "tier": "big",
       "seed": 12345,
       "woodType": "Birch",
-      "blocks": 60811,
-      "height": 67,
-      "width": 81,
-      "viewer": "viewer/#tree=tree.BIRCH-2&seed=12345",
+      "blocks": 1287,
+      "height": 24,
+      "width": 13,
+      "viewer": "viewer/#tree=tree.BIRCH_BIG&seed=12345",
       "images": {
         "hero": {
-          "src": "gallery/tree.BIRCH-2/hero.jpg",
+          "src": "gallery/tree.BIRCH_BIG/hero.jpg",
           "caption": "Tree"
         },
         "cut": {
-          "src": "gallery/tree.BIRCH-2/cut.jpg",
-          "caption": "Cut through the trunk"
+          "src": "gallery/tree.BIRCH_BIG/cut.jpg",
+          "caption": "Cut open"
         },
         "top": {
-          "src": "gallery/tree.BIRCH-2/top.jpg",
+          "src": "gallery/tree.BIRCH_BIG/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.BIRCH-2/base.jpg",
-          "caption": "Trunk base and roots"
-        }
-      }
-    },
-    {
-      "name": "tree.BIRCH-2_SMALL",
-      "aliases": [
-        "biome.BIRCH_FOREST-BIRCH-2_SMALL"
-      ],
-      "hash": "80b7b4c8ed10e44b",
-      "seed": 12345,
-      "woodType": "Birch",
-      "blocks": 6576,
-      "height": 37,
-      "width": 28,
-      "viewer": "viewer/#tree=tree.BIRCH-2_SMALL&seed=12345",
-      "images": {
-        "hero": {
-          "src": "gallery/tree.BIRCH-2_SMALL/hero.jpg",
-          "caption": "Tree"
-        },
-        "cut": {
-          "src": "gallery/tree.BIRCH-2_SMALL/cut.jpg",
-          "caption": "Cut through the trunk"
-        },
-        "top": {
-          "src": "gallery/tree.BIRCH-2_SMALL/top.jpg",
-          "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.BIRCH-2_SMALL/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
       "name": "tree.BROWN_MUSHROOM",
-      "aliases": [
-        "biome.MUSHROOM_FIELDS-BROWN_MUSHROOM"
+      "spawnsIn": [
+        "MUSHROOM_FIELDS"
       ],
-      "hash": "4beb82b016007a23",
+      "hash": "7affe99bca409821",
+      "type": "BROWN_MUSHROOM",
+      "category": "fungi",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Brown Mushroom",
-      "blocks": 11831,
-      "height": 37,
-      "width": 58,
+      "blocks": 18602,
+      "height": 51,
+      "width": 74,
       "viewer": "viewer/#tree=tree.BROWN_MUSHROOM&seed=12345",
       "images": {
         "hero": {
@@ -299,29 +302,88 @@
         },
         "cut": {
           "src": "gallery/tree.BROWN_MUSHROOM/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.BROWN_MUSHROOM/top.jpg",
           "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.BROWN_MUSHROOM_HUGE",
+      "spawnsIn": [
+        "MUSHROOM_FIELDS"
+      ],
+      "hash": "ad1eae2c328a5c2b",
+      "type": "BROWN_MUSHROOM",
+      "category": "fungi",
+      "tier": "huge",
+      "seed": 12345,
+      "woodType": "Brown Mushroom",
+      "blocks": 5966,
+      "height": 32,
+      "width": 48,
+      "viewer": "viewer/#tree=tree.BROWN_MUSHROOM_HUGE&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.BROWN_MUSHROOM_HUGE/hero.jpg",
+          "caption": "Tree"
         },
-        "base": {
-          "src": "gallery/tree.BROWN_MUSHROOM/base.jpg",
-          "caption": "Trunk base and roots"
+        "cut": {
+          "src": "gallery/tree.BROWN_MUSHROOM_HUGE/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.BROWN_MUSHROOM_HUGE/top.jpg",
+          "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.BROWN_MUSHROOM_BIG",
+      "spawnsIn": [
+        "MUSHROOM_FIELDS"
+      ],
+      "hash": "d1f2e664012d82af",
+      "type": "BROWN_MUSHROOM",
+      "category": "fungi",
+      "tier": "big",
+      "seed": 12345,
+      "woodType": "Brown Mushroom",
+      "blocks": 1181,
+      "height": 16,
+      "width": 24,
+      "viewer": "viewer/#tree=tree.BROWN_MUSHROOM_BIG&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.BROWN_MUSHROOM_BIG/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.BROWN_MUSHROOM_BIG/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.BROWN_MUSHROOM_BIG/top.jpg",
+          "caption": "From above"
         }
       }
     },
     {
       "name": "tree.CHERRY",
-      "aliases": [
-        "biome.CHERRY_GROVE-CHERRY"
+      "spawnsIn": [
+        "CHERRY_GROVE"
       ],
-      "hash": "57270ea1f7578a15",
+      "hash": "fb286a54a28a02ea",
+      "type": "CHERRY",
+      "category": "tree",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Cherry",
-      "blocks": 33928,
-      "height": 56,
-      "width": 92,
+      "blocks": 35650,
+      "height": 57,
+      "width": 86,
       "viewer": "viewer/#tree=tree.CHERRY&seed=12345",
       "images": {
         "hero": {
@@ -330,60 +392,88 @@
         },
         "cut": {
           "src": "gallery/tree.CHERRY/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.CHERRY/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.CHERRY/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
-      "name": "tree.CHERRY_SMALL",
-      "aliases": [
-        "biome.CHERRY_GROVE-CHERRY_SMALL"
+      "name": "tree.CHERRY_HUGE",
+      "spawnsIn": [
+        "CHERRY_GROVE"
       ],
-      "hash": "c08c45c80cfa539f",
+      "hash": "738e14993116993a",
+      "type": "CHERRY",
+      "category": "tree",
+      "tier": "huge",
       "seed": 12345,
       "woodType": "Cherry",
-      "blocks": 3501,
-      "height": 29,
-      "width": 27,
-      "viewer": "viewer/#tree=tree.CHERRY_SMALL&seed=12345",
+      "blocks": 11871,
+      "height": 37,
+      "width": 55,
+      "viewer": "viewer/#tree=tree.CHERRY_HUGE&seed=12345",
       "images": {
         "hero": {
-          "src": "gallery/tree.CHERRY_SMALL/hero.jpg",
+          "src": "gallery/tree.CHERRY_HUGE/hero.jpg",
           "caption": "Tree"
         },
         "cut": {
-          "src": "gallery/tree.CHERRY_SMALL/cut.jpg",
-          "caption": "Cut through the trunk"
+          "src": "gallery/tree.CHERRY_HUGE/cut.jpg",
+          "caption": "Cut open"
         },
         "top": {
-          "src": "gallery/tree.CHERRY_SMALL/top.jpg",
+          "src": "gallery/tree.CHERRY_HUGE/top.jpg",
           "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.CHERRY_BIG",
+      "spawnsIn": [
+        "CHERRY_GROVE"
+      ],
+      "hash": "f2d79dc10006a827",
+      "type": "CHERRY",
+      "category": "tree",
+      "tier": "big",
+      "seed": 12345,
+      "woodType": "Cherry",
+      "blocks": 2117,
+      "height": 20,
+      "width": 26,
+      "viewer": "viewer/#tree=tree.CHERRY_BIG&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.CHERRY_BIG/hero.jpg",
+          "caption": "Tree"
         },
-        "base": {
-          "src": "gallery/tree.CHERRY_SMALL/base.jpg",
-          "caption": "Trunk base and roots"
+        "cut": {
+          "src": "gallery/tree.CHERRY_BIG/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.CHERRY_BIG/top.jpg",
+          "caption": "From above"
         }
       }
     },
     {
       "name": "tree.COTTONWOOD",
-      "aliases": [
-        "biome.FOREST-COTTONWOOD"
+      "spawnsIn": [
+        "FOREST"
       ],
-      "hash": "7b9f5e21a05cfc60",
+      "hash": "42e301e631f51abf",
+      "type": "COTTONWOOD",
+      "category": "tree",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Birch",
-      "blocks": 35936,
-      "height": 67,
-      "width": 75,
+      "blocks": 23983,
+      "height": 52,
+      "width": 59,
       "viewer": "viewer/#tree=tree.COTTONWOOD&seed=12345",
       "images": {
         "hero": {
@@ -392,58 +482,86 @@
         },
         "cut": {
           "src": "gallery/tree.COTTONWOOD/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.COTTONWOOD/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.COTTONWOOD/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
-      "name": "tree.COTTONWOOD_SMALL",
-      "aliases": [
-        "biome.FOREST-COTTONWOOD_SMALL"
+      "name": "tree.COTTONWOOD_HUGE",
+      "spawnsIn": [
+        "FOREST"
       ],
-      "hash": "da1b51fc5900def4",
+      "hash": "a27a2dcc8ed3fd4e",
+      "type": "COTTONWOOD",
+      "category": "tree",
+      "tier": "huge",
       "seed": 12345,
       "woodType": "Birch",
-      "blocks": 6537,
-      "height": 36,
-      "width": 34,
-      "viewer": "viewer/#tree=tree.COTTONWOOD_SMALL&seed=12345",
+      "blocks": 12746,
+      "height": 37,
+      "width": 51,
+      "viewer": "viewer/#tree=tree.COTTONWOOD_HUGE&seed=12345",
       "images": {
         "hero": {
-          "src": "gallery/tree.COTTONWOOD_SMALL/hero.jpg",
+          "src": "gallery/tree.COTTONWOOD_HUGE/hero.jpg",
           "caption": "Tree"
         },
         "cut": {
-          "src": "gallery/tree.COTTONWOOD_SMALL/cut.jpg",
-          "caption": "Cut through the trunk"
+          "src": "gallery/tree.COTTONWOOD_HUGE/cut.jpg",
+          "caption": "Cut open"
         },
         "top": {
-          "src": "gallery/tree.COTTONWOOD_SMALL/top.jpg",
+          "src": "gallery/tree.COTTONWOOD_HUGE/top.jpg",
           "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.COTTONWOOD_BIG",
+      "spawnsIn": [
+        "FOREST"
+      ],
+      "hash": "5b1e64c08b13e5ba",
+      "type": "COTTONWOOD",
+      "category": "tree",
+      "tier": "big",
+      "seed": 12345,
+      "woodType": "Birch",
+      "blocks": 1820,
+      "height": 22,
+      "width": 20,
+      "viewer": "viewer/#tree=tree.COTTONWOOD_BIG&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.COTTONWOOD_BIG/hero.jpg",
+          "caption": "Tree"
         },
-        "base": {
-          "src": "gallery/tree.COTTONWOOD_SMALL/base.jpg",
-          "caption": "Trunk base and roots"
+        "cut": {
+          "src": "gallery/tree.COTTONWOOD_BIG/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.COTTONWOOD_BIG/top.jpg",
+          "caption": "From above"
         }
       }
     },
     {
       "name": "tree.CRIMSON_FUNGUS",
-      "aliases": [],
-      "hash": "9b1238edad937085",
+      "spawnsIn": [],
+      "hash": "860dcef3a218878e",
+      "type": "CRIMSON_FUNGUS",
+      "category": "fungi",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Crimson",
-      "blocks": 5554,
-      "height": 38,
-      "width": 32,
+      "blocks": 8943,
+      "height": 51,
+      "width": 41,
       "viewer": "viewer/#tree=tree.CRIMSON_FUNGUS&seed=12345",
       "images": {
         "hero": {
@@ -452,29 +570,84 @@
         },
         "cut": {
           "src": "gallery/tree.CRIMSON_FUNGUS/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.CRIMSON_FUNGUS/top.jpg",
           "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.CRIMSON_FUNGUS_HUGE",
+      "spawnsIn": [],
+      "hash": "8c67ff29557c8882",
+      "type": "CRIMSON_FUNGUS",
+      "category": "fungi",
+      "tier": "huge",
+      "seed": 12345,
+      "woodType": "Crimson",
+      "blocks": 3479,
+      "height": 32,
+      "width": 27,
+      "viewer": "viewer/#tree=tree.CRIMSON_FUNGUS_HUGE&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.CRIMSON_FUNGUS_HUGE/hero.jpg",
+          "caption": "Tree"
         },
-        "base": {
-          "src": "gallery/tree.CRIMSON_FUNGUS/base.jpg",
-          "caption": "Trunk base and roots"
+        "cut": {
+          "src": "gallery/tree.CRIMSON_FUNGUS_HUGE/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.CRIMSON_FUNGUS_HUGE/top.jpg",
+          "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.CRIMSON_FUNGUS_BIG",
+      "spawnsIn": [],
+      "hash": "c5ead60712bcf39d",
+      "type": "CRIMSON_FUNGUS",
+      "category": "fungi",
+      "tier": "big",
+      "seed": 12345,
+      "woodType": "Crimson",
+      "blocks": 1091,
+      "height": 19,
+      "width": 16,
+      "viewer": "viewer/#tree=tree.CRIMSON_FUNGUS_BIG&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.CRIMSON_FUNGUS_BIG/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.CRIMSON_FUNGUS_BIG/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.CRIMSON_FUNGUS_BIG/top.jpg",
+          "caption": "From above"
         }
       }
     },
     {
       "name": "tree.DARK_OAK",
-      "aliases": [
-        "biome.DARK_FOREST-DARK_OAK"
+      "spawnsIn": [
+        "DARK_FOREST"
       ],
-      "hash": "b5e1163be7895f18",
+      "hash": "c13af9a598935781",
+      "type": "DARK_OAK",
+      "category": "tree",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Dark Oak",
-      "blocks": 121832,
-      "height": 69,
-      "width": 102,
+      "blocks": 78834,
+      "height": 59,
+      "width": 86,
       "viewer": "viewer/#tree=tree.DARK_OAK&seed=12345",
       "images": {
         "hero": {
@@ -483,122 +656,88 @@
         },
         "cut": {
           "src": "gallery/tree.DARK_OAK/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.DARK_OAK/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.DARK_OAK/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
-      "name": "tree.DARK_OAK_SMALL",
-      "aliases": [
-        "biome.DARK_FOREST-DARK_OAK_SMALL"
+      "name": "tree.DARK_OAK_HUGE",
+      "spawnsIn": [
+        "DARK_FOREST"
       ],
-      "hash": "5ef26cd3e8b1ec3c",
+      "hash": "40aa8fbdaa133e5c",
+      "type": "DARK_OAK",
+      "category": "tree",
+      "tier": "huge",
       "seed": 12345,
       "woodType": "Dark Oak",
-      "blocks": 10466,
-      "height": 35,
-      "width": 44,
-      "viewer": "viewer/#tree=tree.DARK_OAK_SMALL&seed=12345",
+      "blocks": 20637,
+      "height": 37,
+      "width": 57,
+      "viewer": "viewer/#tree=tree.DARK_OAK_HUGE&seed=12345",
       "images": {
         "hero": {
-          "src": "gallery/tree.DARK_OAK_SMALL/hero.jpg",
+          "src": "gallery/tree.DARK_OAK_HUGE/hero.jpg",
           "caption": "Tree"
         },
         "cut": {
-          "src": "gallery/tree.DARK_OAK_SMALL/cut.jpg",
-          "caption": "Cut through the trunk"
+          "src": "gallery/tree.DARK_OAK_HUGE/cut.jpg",
+          "caption": "Cut open"
         },
         "top": {
-          "src": "gallery/tree.DARK_OAK_SMALL/top.jpg",
+          "src": "gallery/tree.DARK_OAK_HUGE/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.DARK_OAK_SMALL/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
-      "name": "tree.DARK_OAK-2",
-      "aliases": [
-        "biome.DARK_FOREST-DARK_OAK-2"
+      "name": "tree.DARK_OAK_BIG",
+      "spawnsIn": [
+        "DARK_FOREST"
       ],
-      "hash": "8744787ef8872337",
+      "hash": "5f60592934900b83",
+      "type": "DARK_OAK",
+      "category": "tree",
+      "tier": "big",
       "seed": 12345,
       "woodType": "Dark Oak",
-      "blocks": 140608,
-      "height": 72,
-      "width": 118,
-      "viewer": "viewer/#tree=tree.DARK_OAK-2&seed=12345",
+      "blocks": 1698,
+      "height": 19,
+      "width": 19,
+      "viewer": "viewer/#tree=tree.DARK_OAK_BIG&seed=12345",
       "images": {
         "hero": {
-          "src": "gallery/tree.DARK_OAK-2/hero.jpg",
+          "src": "gallery/tree.DARK_OAK_BIG/hero.jpg",
           "caption": "Tree"
         },
         "cut": {
-          "src": "gallery/tree.DARK_OAK-2/cut.jpg",
-          "caption": "Cut through the trunk"
+          "src": "gallery/tree.DARK_OAK_BIG/cut.jpg",
+          "caption": "Cut open"
         },
         "top": {
-          "src": "gallery/tree.DARK_OAK-2/top.jpg",
+          "src": "gallery/tree.DARK_OAK_BIG/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.DARK_OAK-2/base.jpg",
-          "caption": "Trunk base and roots"
-        }
-      }
-    },
-    {
-      "name": "tree.DARK_OAK-2_SMALL",
-      "aliases": [
-        "biome.DARK_FOREST-DARK_OAK-2_SMALL"
-      ],
-      "hash": "5905cb18fae3fcc2",
-      "seed": 12345,
-      "woodType": "Dark Oak",
-      "blocks": 10537,
-      "height": 35,
-      "width": 44,
-      "viewer": "viewer/#tree=tree.DARK_OAK-2_SMALL&seed=12345",
-      "images": {
-        "hero": {
-          "src": "gallery/tree.DARK_OAK-2_SMALL/hero.jpg",
-          "caption": "Tree"
-        },
-        "cut": {
-          "src": "gallery/tree.DARK_OAK-2_SMALL/cut.jpg",
-          "caption": "Cut through the trunk"
-        },
-        "top": {
-          "src": "gallery/tree.DARK_OAK-2_SMALL/top.jpg",
-          "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.DARK_OAK-2_SMALL/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
       "name": "tree.JUNGLE",
-      "aliases": [
-        "biome.JUNGLE-JUNGLE"
+      "spawnsIn": [
+        "JUNGLE"
       ],
-      "hash": "94dce1be5fa2252a",
+      "hash": "4888c1a08facd709",
+      "type": "JUNGLE",
+      "category": "tree",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Jungle",
-      "blocks": 24574,
-      "height": 60,
-      "width": 58,
+      "blocks": 13902,
+      "height": 50,
+      "width": 54,
       "viewer": "viewer/#tree=tree.JUNGLE&seed=12345",
       "images": {
         "hero": {
@@ -607,60 +746,58 @@
         },
         "cut": {
           "src": "gallery/tree.JUNGLE/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.JUNGLE/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.JUNGLE/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
-      "name": "tree.JUNGLE_SMALL",
-      "aliases": [
-        "biome.JUNGLE-JUNGLE_SMALL"
+      "name": "tree.JUNGLE_HUGE",
+      "spawnsIn": [
+        "JUNGLE"
       ],
-      "hash": "406466be638ec418",
+      "hash": "efe6495bb8a4ac70",
+      "type": "JUNGLE",
+      "category": "tree",
+      "tier": "huge",
       "seed": 12345,
       "woodType": "Jungle",
-      "blocks": 4973,
-      "height": 35,
-      "width": 31,
-      "viewer": "viewer/#tree=tree.JUNGLE_SMALL&seed=12345",
+      "blocks": 5124,
+      "height": 36,
+      "width": 38,
+      "viewer": "viewer/#tree=tree.JUNGLE_HUGE&seed=12345",
       "images": {
         "hero": {
-          "src": "gallery/tree.JUNGLE_SMALL/hero.jpg",
+          "src": "gallery/tree.JUNGLE_HUGE/hero.jpg",
           "caption": "Tree"
         },
         "cut": {
-          "src": "gallery/tree.JUNGLE_SMALL/cut.jpg",
-          "caption": "Cut through the trunk"
+          "src": "gallery/tree.JUNGLE_HUGE/cut.jpg",
+          "caption": "Cut open"
         },
         "top": {
-          "src": "gallery/tree.JUNGLE_SMALL/top.jpg",
+          "src": "gallery/tree.JUNGLE_HUGE/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.JUNGLE_SMALL/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
       "name": "tree.MANGROVE",
-      "aliases": [
-        "biome.MANGROVE_SWAMP-MANGROVE"
+      "spawnsIn": [
+        "MANGROVE_SWAMP"
       ],
-      "hash": "fc22d5d672049a59",
+      "hash": "8d6a3a701f1414da",
+      "type": "MANGROVE",
+      "category": "tree",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Mangrove",
-      "blocks": 56739,
-      "height": 72,
-      "width": 93,
+      "blocks": 28971,
+      "height": 61,
+      "width": 63,
       "viewer": "viewer/#tree=tree.MANGROVE&seed=12345",
       "images": {
         "hero": {
@@ -669,60 +806,88 @@
         },
         "cut": {
           "src": "gallery/tree.MANGROVE/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.MANGROVE/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.MANGROVE/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
-      "name": "tree.MANGROVE_SMALL",
-      "aliases": [
-        "biome.MANGROVE_SWAMP-MANGROVE_SMALL"
+      "name": "tree.MANGROVE_HUGE",
+      "spawnsIn": [
+        "MANGROVE_SWAMP"
       ],
-      "hash": "2a45fa8c7d1fb8be",
+      "hash": "9f6b7b324cd27ee5",
+      "type": "MANGROVE",
+      "category": "tree",
+      "tier": "huge",
       "seed": 12345,
       "woodType": "Mangrove",
-      "blocks": 2733,
-      "height": 36,
-      "width": 27,
-      "viewer": "viewer/#tree=tree.MANGROVE_SMALL&seed=12345",
+      "blocks": 7802,
+      "height": 38,
+      "width": 37,
+      "viewer": "viewer/#tree=tree.MANGROVE_HUGE&seed=12345",
       "images": {
         "hero": {
-          "src": "gallery/tree.MANGROVE_SMALL/hero.jpg",
+          "src": "gallery/tree.MANGROVE_HUGE/hero.jpg",
           "caption": "Tree"
         },
         "cut": {
-          "src": "gallery/tree.MANGROVE_SMALL/cut.jpg",
-          "caption": "Cut through the trunk"
+          "src": "gallery/tree.MANGROVE_HUGE/cut.jpg",
+          "caption": "Cut open"
         },
         "top": {
-          "src": "gallery/tree.MANGROVE_SMALL/top.jpg",
+          "src": "gallery/tree.MANGROVE_HUGE/top.jpg",
           "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.MANGROVE_BIG",
+      "spawnsIn": [
+        "MANGROVE_SWAMP"
+      ],
+      "hash": "5c1c40e71e555b09",
+      "type": "MANGROVE",
+      "category": "tree",
+      "tier": "big",
+      "seed": 12345,
+      "woodType": "Mangrove",
+      "blocks": 1448,
+      "height": 22,
+      "width": 20,
+      "viewer": "viewer/#tree=tree.MANGROVE_BIG&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.MANGROVE_BIG/hero.jpg",
+          "caption": "Tree"
         },
-        "base": {
-          "src": "gallery/tree.MANGROVE_SMALL/base.jpg",
-          "caption": "Trunk base and roots"
+        "cut": {
+          "src": "gallery/tree.MANGROVE_BIG/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.MANGROVE_BIG/top.jpg",
+          "caption": "From above"
         }
       }
     },
     {
       "name": "tree.MESAPUZZLE",
-      "aliases": [
-        "biome.BADLANDS-MESAPUZZLE"
+      "spawnsIn": [
+        "BADLANDS"
       ],
-      "hash": "29ec0130753e85d0",
+      "hash": "034ae9b8269b6dc6",
+      "type": "MESAPUZZLE",
+      "category": "tree",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Acacia",
-      "blocks": 45660,
+      "blocks": 43833,
       "height": 46,
-      "width": 73,
+      "width": 72,
       "viewer": "viewer/#tree=tree.MESAPUZZLE&seed=12345",
       "images": {
         "hero": {
@@ -731,60 +896,88 @@
         },
         "cut": {
           "src": "gallery/tree.MESAPUZZLE/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.MESAPUZZLE/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.MESAPUZZLE/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
-      "name": "tree.MESAPUZZLE_SMALL",
-      "aliases": [
-        "biome.BADLANDS-MESAPUZZLE_SMALL"
+      "name": "tree.MESAPUZZLE_HUGE",
+      "spawnsIn": [
+        "BADLANDS"
       ],
-      "hash": "c0251f1b84b6ab8d",
+      "hash": "af5db3571b0b9b17",
+      "type": "MESAPUZZLE",
+      "category": "tree",
+      "tier": "huge",
       "seed": 12345,
       "woodType": "Acacia",
-      "blocks": 5842,
-      "height": 27,
-      "width": 41,
-      "viewer": "viewer/#tree=tree.MESAPUZZLE_SMALL&seed=12345",
+      "blocks": 10904,
+      "height": 29,
+      "width": 44,
+      "viewer": "viewer/#tree=tree.MESAPUZZLE_HUGE&seed=12345",
       "images": {
         "hero": {
-          "src": "gallery/tree.MESAPUZZLE_SMALL/hero.jpg",
+          "src": "gallery/tree.MESAPUZZLE_HUGE/hero.jpg",
           "caption": "Tree"
         },
         "cut": {
-          "src": "gallery/tree.MESAPUZZLE_SMALL/cut.jpg",
-          "caption": "Cut through the trunk"
+          "src": "gallery/tree.MESAPUZZLE_HUGE/cut.jpg",
+          "caption": "Cut open"
         },
         "top": {
-          "src": "gallery/tree.MESAPUZZLE_SMALL/top.jpg",
+          "src": "gallery/tree.MESAPUZZLE_HUGE/top.jpg",
           "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.MESAPUZZLE_BIG",
+      "spawnsIn": [
+        "BADLANDS"
+      ],
+      "hash": "28d03915232b6242",
+      "type": "MESAPUZZLE",
+      "category": "tree",
+      "tier": "big",
+      "seed": 12345,
+      "woodType": "Acacia",
+      "blocks": 2327,
+      "height": 17,
+      "width": 27,
+      "viewer": "viewer/#tree=tree.MESAPUZZLE_BIG&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.MESAPUZZLE_BIG/hero.jpg",
+          "caption": "Tree"
         },
-        "base": {
-          "src": "gallery/tree.MESAPUZZLE_SMALL/base.jpg",
-          "caption": "Trunk base and roots"
+        "cut": {
+          "src": "gallery/tree.MESAPUZZLE_BIG/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.MESAPUZZLE_BIG/top.jpg",
+          "caption": "From above"
         }
       }
     },
     {
       "name": "tree.OAK",
-      "aliases": [
-        "biome.FOREST-OAK"
+      "spawnsIn": [
+        "FOREST"
       ],
-      "hash": "92302c3dba18e3cb",
+      "hash": "b7f693cdcefa0192",
+      "type": "OAK",
+      "category": "tree",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Oak",
-      "blocks": 45110,
-      "height": 66,
-      "width": 60,
+      "blocks": 33243,
+      "height": 56,
+      "width": 52,
       "viewer": "viewer/#tree=tree.OAK&seed=12345",
       "images": {
         "hero": {
@@ -793,60 +986,88 @@
         },
         "cut": {
           "src": "gallery/tree.OAK/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.OAK/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.OAK/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
-      "name": "tree.OAK_SMALL",
-      "aliases": [
-        "biome.FOREST-OAK_SMALL"
+      "name": "tree.OAK_HUGE",
+      "spawnsIn": [
+        "FOREST"
       ],
-      "hash": "974775c20ed1bd40",
+      "hash": "b74e331fbf4f1d97",
+      "type": "OAK",
+      "category": "tree",
+      "tier": "huge",
       "seed": 12345,
       "woodType": "Oak",
-      "blocks": 6953,
-      "height": 35,
-      "width": 38,
-      "viewer": "viewer/#tree=tree.OAK_SMALL&seed=12345",
+      "blocks": 9167,
+      "height": 39,
+      "width": 34,
+      "viewer": "viewer/#tree=tree.OAK_HUGE&seed=12345",
       "images": {
         "hero": {
-          "src": "gallery/tree.OAK_SMALL/hero.jpg",
+          "src": "gallery/tree.OAK_HUGE/hero.jpg",
           "caption": "Tree"
         },
         "cut": {
-          "src": "gallery/tree.OAK_SMALL/cut.jpg",
-          "caption": "Cut through the trunk"
+          "src": "gallery/tree.OAK_HUGE/cut.jpg",
+          "caption": "Cut open"
         },
         "top": {
-          "src": "gallery/tree.OAK_SMALL/top.jpg",
+          "src": "gallery/tree.OAK_HUGE/top.jpg",
           "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.OAK_BIG",
+      "spawnsIn": [
+        "FOREST"
+      ],
+      "hash": "ea20fd7df8b9b28f",
+      "type": "OAK",
+      "category": "tree",
+      "tier": "big",
+      "seed": 12345,
+      "woodType": "Oak",
+      "blocks": 1909,
+      "height": 22,
+      "width": 23,
+      "viewer": "viewer/#tree=tree.OAK_BIG&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.OAK_BIG/hero.jpg",
+          "caption": "Tree"
         },
-        "base": {
-          "src": "gallery/tree.OAK_SMALL/base.jpg",
-          "caption": "Trunk base and roots"
+        "cut": {
+          "src": "gallery/tree.OAK_BIG/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.OAK_BIG/top.jpg",
+          "caption": "From above"
         }
       }
     },
     {
       "name": "tree.PALE_OAK",
-      "aliases": [
-        "biome.PALE_GARDEN-PALE_OAK"
+      "spawnsIn": [
+        "PALE_GARDEN"
       ],
-      "hash": "492814ee298706f6",
+      "hash": "2d9724cfb262d272",
+      "type": "PALE_OAK",
+      "category": "tree",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Pale Oak",
-      "blocks": 60538,
-      "height": 59,
-      "width": 68,
+      "blocks": 53527,
+      "height": 56,
+      "width": 64,
       "viewer": "viewer/#tree=tree.PALE_OAK&seed=12345",
       "images": {
         "hero": {
@@ -855,29 +1076,88 @@
         },
         "cut": {
           "src": "gallery/tree.PALE_OAK/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.PALE_OAK/top.jpg",
           "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.PALE_OAK_HUGE",
+      "spawnsIn": [
+        "PALE_GARDEN"
+      ],
+      "hash": "5fd6b17816060fa7",
+      "type": "PALE_OAK",
+      "category": "tree",
+      "tier": "huge",
+      "seed": 12345,
+      "woodType": "Pale Oak",
+      "blocks": 14167,
+      "height": 37,
+      "width": 49,
+      "viewer": "viewer/#tree=tree.PALE_OAK_HUGE&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.PALE_OAK_HUGE/hero.jpg",
+          "caption": "Tree"
         },
-        "base": {
-          "src": "gallery/tree.PALE_OAK/base.jpg",
-          "caption": "Trunk base and roots"
+        "cut": {
+          "src": "gallery/tree.PALE_OAK_HUGE/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.PALE_OAK_HUGE/top.jpg",
+          "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.PALE_OAK_BIG",
+      "spawnsIn": [
+        "PALE_GARDEN"
+      ],
+      "hash": "644fc05acc226561",
+      "type": "PALE_OAK",
+      "category": "tree",
+      "tier": "big",
+      "seed": 12345,
+      "woodType": "Pale Oak",
+      "blocks": 2667,
+      "height": 22,
+      "width": 24,
+      "viewer": "viewer/#tree=tree.PALE_OAK_BIG&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.PALE_OAK_BIG/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.PALE_OAK_BIG/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.PALE_OAK_BIG/top.jpg",
+          "caption": "From above"
         }
       }
     },
     {
       "name": "tree.POPLAR",
-      "aliases": [
-        "biome.DAPPLED_FOREST-POPLAR"
+      "spawnsIn": [
+        "DAPPLED_FOREST"
       ],
-      "hash": "7f91e784f1eaa3a8",
+      "hash": "195f1f9eaaf6c906",
+      "type": "POPLAR",
+      "category": "tree",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Poplar",
-      "blocks": 9456,
-      "height": 70,
-      "width": 30,
+      "blocks": 23549,
+      "height": 57,
+      "width": 54,
       "viewer": "viewer/#tree=tree.POPLAR&seed=12345",
       "images": {
         "hero": {
@@ -886,29 +1166,88 @@
         },
         "cut": {
           "src": "gallery/tree.POPLAR/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.POPLAR/top.jpg",
           "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.POPLAR_HUGE",
+      "spawnsIn": [
+        "DAPPLED_FOREST"
+      ],
+      "hash": "932260a72e74393a",
+      "type": "POPLAR",
+      "category": "tree",
+      "tier": "huge",
+      "seed": 12345,
+      "woodType": "Poplar",
+      "blocks": 9363,
+      "height": 39,
+      "width": 36,
+      "viewer": "viewer/#tree=tree.POPLAR_HUGE&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.POPLAR_HUGE/hero.jpg",
+          "caption": "Tree"
         },
-        "base": {
-          "src": "gallery/tree.POPLAR/base.jpg",
-          "caption": "Trunk base and roots"
+        "cut": {
+          "src": "gallery/tree.POPLAR_HUGE/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.POPLAR_HUGE/top.jpg",
+          "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.POPLAR_BIG",
+      "spawnsIn": [
+        "DAPPLED_FOREST"
+      ],
+      "hash": "7fff93824787142e",
+      "type": "POPLAR",
+      "category": "tree",
+      "tier": "big",
+      "seed": 12345,
+      "woodType": "Poplar",
+      "blocks": 2159,
+      "height": 22,
+      "width": 23,
+      "viewer": "viewer/#tree=tree.POPLAR_BIG&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.POPLAR_BIG/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.POPLAR_BIG/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.POPLAR_BIG/top.jpg",
+          "caption": "From above"
         }
       }
     },
     {
       "name": "tree.RED_MUSHROOM",
-      "aliases": [
-        "biome.MUSHROOM_FIELDS-RED_MUSHROOM"
+      "spawnsIn": [
+        "MUSHROOM_FIELDS"
       ],
-      "hash": "a85a098d38f7ec59",
+      "hash": "8638d61bf6678551",
+      "type": "RED_MUSHROOM",
+      "category": "fungi",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Red Mushroom",
-      "blocks": 8606,
-      "height": 41,
-      "width": 38,
+      "blocks": 11847,
+      "height": 52,
+      "width": 45,
       "viewer": "viewer/#tree=tree.RED_MUSHROOM&seed=12345",
       "images": {
         "hero": {
@@ -917,28 +1256,87 @@
         },
         "cut": {
           "src": "gallery/tree.RED_MUSHROOM/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.RED_MUSHROOM/top.jpg",
           "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.RED_MUSHROOM_HUGE",
+      "spawnsIn": [
+        "MUSHROOM_FIELDS"
+      ],
+      "hash": "63c80785dc493dad",
+      "type": "RED_MUSHROOM",
+      "category": "fungi",
+      "tier": "huge",
+      "seed": 12345,
+      "woodType": "Red Mushroom",
+      "blocks": 4163,
+      "height": 32,
+      "width": 30,
+      "viewer": "viewer/#tree=tree.RED_MUSHROOM_HUGE&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.RED_MUSHROOM_HUGE/hero.jpg",
+          "caption": "Tree"
         },
-        "base": {
-          "src": "gallery/tree.RED_MUSHROOM/base.jpg",
-          "caption": "Trunk base and roots"
+        "cut": {
+          "src": "gallery/tree.RED_MUSHROOM_HUGE/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.RED_MUSHROOM_HUGE/top.jpg",
+          "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.RED_MUSHROOM_BIG",
+      "spawnsIn": [
+        "MUSHROOM_FIELDS"
+      ],
+      "hash": "c57b66626a7407ca",
+      "type": "RED_MUSHROOM",
+      "category": "fungi",
+      "tier": "big",
+      "seed": 12345,
+      "woodType": "Red Mushroom",
+      "blocks": 959,
+      "height": 17,
+      "width": 19,
+      "viewer": "viewer/#tree=tree.RED_MUSHROOM_BIG&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.RED_MUSHROOM_BIG/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.RED_MUSHROOM_BIG/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.RED_MUSHROOM_BIG/top.jpg",
+          "caption": "From above"
         }
       }
     },
     {
       "name": "tree.SPRUCE",
-      "aliases": [
-        "biome.TAIGA-SPRUCE"
+      "spawnsIn": [
+        "TAIGA"
       ],
-      "hash": "6940439aac0e6b85",
+      "hash": "5acee1456fc6dc5f",
+      "type": "SPRUCE",
+      "category": "tree",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Spruce",
-      "blocks": 6315,
-      "height": 51,
+      "blocks": 6922,
+      "height": 52,
       "width": 31,
       "viewer": "viewer/#tree=tree.SPRUCE&seed=12345",
       "images": {
@@ -948,58 +1346,56 @@
         },
         "cut": {
           "src": "gallery/tree.SPRUCE/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.SPRUCE/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.SPRUCE/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
-      "name": "tree.SPRUCE_SMALL",
-      "aliases": [
-        "biome.TAIGA-SPRUCE_SMALL"
+      "name": "tree.SPRUCE_HUGE",
+      "spawnsIn": [
+        "TAIGA"
       ],
-      "hash": "d5e4bf07a56e4435",
+      "hash": "08bd510343d09b4c",
+      "type": "SPRUCE",
+      "category": "tree",
+      "tier": "huge",
       "seed": 12345,
       "woodType": "Spruce",
-      "blocks": 1676,
-      "height": 33,
-      "width": 22,
-      "viewer": "viewer/#tree=tree.SPRUCE_SMALL&seed=12345",
+      "blocks": 1870,
+      "height": 36,
+      "width": 20,
+      "viewer": "viewer/#tree=tree.SPRUCE_HUGE&seed=12345",
       "images": {
         "hero": {
-          "src": "gallery/tree.SPRUCE_SMALL/hero.jpg",
+          "src": "gallery/tree.SPRUCE_HUGE/hero.jpg",
           "caption": "Tree"
         },
         "cut": {
-          "src": "gallery/tree.SPRUCE_SMALL/cut.jpg",
-          "caption": "Cut through the trunk"
+          "src": "gallery/tree.SPRUCE_HUGE/cut.jpg",
+          "caption": "Cut open"
         },
         "top": {
-          "src": "gallery/tree.SPRUCE_SMALL/top.jpg",
+          "src": "gallery/tree.SPRUCE_HUGE/top.jpg",
           "caption": "From above"
-        },
-        "base": {
-          "src": "gallery/tree.SPRUCE_SMALL/base.jpg",
-          "caption": "Trunk base and roots"
         }
       }
     },
     {
       "name": "tree.SWAMP_OAK",
-      "aliases": [
-        "biome.SWAMP-SWAMP_OAK"
+      "spawnsIn": [
+        "SWAMP"
       ],
-      "hash": "7f91b5c2651970ce",
+      "hash": "6ca530ef9ce02614",
+      "type": "SWAMP_OAK",
+      "category": "tree",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Swamp Oak",
-      "blocks": 32901,
+      "blocks": 29590,
       "height": 55,
       "width": 47,
       "viewer": "viewer/#tree=tree.SWAMP_OAK&seed=12345",
@@ -1010,27 +1406,86 @@
         },
         "cut": {
           "src": "gallery/tree.SWAMP_OAK/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.SWAMP_OAK/top.jpg",
           "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.SWAMP_OAK_HUGE",
+      "spawnsIn": [
+        "SWAMP"
+      ],
+      "hash": "b330b0699ca4e9a1",
+      "type": "SWAMP_OAK",
+      "category": "tree",
+      "tier": "huge",
+      "seed": 12345,
+      "woodType": "Swamp Oak",
+      "blocks": 12708,
+      "height": 38,
+      "width": 35,
+      "viewer": "viewer/#tree=tree.SWAMP_OAK_HUGE&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.SWAMP_OAK_HUGE/hero.jpg",
+          "caption": "Tree"
         },
-        "base": {
-          "src": "gallery/tree.SWAMP_OAK/base.jpg",
-          "caption": "Trunk base and roots"
+        "cut": {
+          "src": "gallery/tree.SWAMP_OAK_HUGE/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.SWAMP_OAK_HUGE/top.jpg",
+          "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.SWAMP_OAK_BIG",
+      "spawnsIn": [
+        "SWAMP"
+      ],
+      "hash": "0e341f2d1bbe3790",
+      "type": "SWAMP_OAK",
+      "category": "tree",
+      "tier": "big",
+      "seed": 12345,
+      "woodType": "Swamp Oak",
+      "blocks": 2273,
+      "height": 22,
+      "width": 20,
+      "viewer": "viewer/#tree=tree.SWAMP_OAK_BIG&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.SWAMP_OAK_BIG/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.SWAMP_OAK_BIG/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.SWAMP_OAK_BIG/top.jpg",
+          "caption": "From above"
         }
       }
     },
     {
       "name": "tree.WARPED_FUNGUS",
-      "aliases": [],
-      "hash": "58c7f37aa28aced6",
+      "spawnsIn": [],
+      "hash": "ae6f8bb1fe213446",
+      "type": "WARPED_FUNGUS",
+      "category": "fungi",
+      "tier": "giant",
       "seed": 12345,
       "woodType": "Warped",
-      "blocks": 6184,
-      "height": 41,
-      "width": 33,
+      "blocks": 8745,
+      "height": 51,
+      "width": 40,
       "viewer": "viewer/#tree=tree.WARPED_FUNGUS&seed=12345",
       "images": {
         "hero": {
@@ -1039,15 +1494,67 @@
         },
         "cut": {
           "src": "gallery/tree.WARPED_FUNGUS/cut.jpg",
-          "caption": "Cut through the trunk"
+          "caption": "Cut open"
         },
         "top": {
           "src": "gallery/tree.WARPED_FUNGUS/top.jpg",
           "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.WARPED_FUNGUS_HUGE",
+      "spawnsIn": [],
+      "hash": "abdb98cd98b77782",
+      "type": "WARPED_FUNGUS",
+      "category": "fungi",
+      "tier": "huge",
+      "seed": 12345,
+      "woodType": "Warped",
+      "blocks": 3500,
+      "height": 33,
+      "width": 29,
+      "viewer": "viewer/#tree=tree.WARPED_FUNGUS_HUGE&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.WARPED_FUNGUS_HUGE/hero.jpg",
+          "caption": "Tree"
         },
-        "base": {
-          "src": "gallery/tree.WARPED_FUNGUS/base.jpg",
-          "caption": "Trunk base and roots"
+        "cut": {
+          "src": "gallery/tree.WARPED_FUNGUS_HUGE/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.WARPED_FUNGUS_HUGE/top.jpg",
+          "caption": "From above"
+        }
+      }
+    },
+    {
+      "name": "tree.WARPED_FUNGUS_BIG",
+      "spawnsIn": [],
+      "hash": "299ed85dedd1d758",
+      "type": "WARPED_FUNGUS",
+      "category": "fungi",
+      "tier": "big",
+      "seed": 12345,
+      "woodType": "Warped",
+      "blocks": 1018,
+      "height": 19,
+      "width": 16,
+      "viewer": "viewer/#tree=tree.WARPED_FUNGUS_BIG&seed=12345",
+      "images": {
+        "hero": {
+          "src": "gallery/tree.WARPED_FUNGUS_BIG/hero.jpg",
+          "caption": "Tree"
+        },
+        "cut": {
+          "src": "gallery/tree.WARPED_FUNGUS_BIG/cut.jpg",
+          "caption": "Cut open"
+        },
+        "top": {
+          "src": "gallery/tree.WARPED_FUNGUS_BIG/top.jpg",
+          "caption": "From above"
         }
       }
     }

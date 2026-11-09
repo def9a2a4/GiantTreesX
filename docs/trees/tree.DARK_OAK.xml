@@ -22,12 +22,12 @@
     <param name='WoodType' value='Dark Oak' />
     <param name='Shape' value='2' />
     <param name='Levels' value='3' />
-    <param name='Scale' value='50.0' />
-    <param name='ScaleV' value='5.0' />
+    <param name='Scale' value='42.0' />
+    <param name='ScaleV' value='3.0' />
     <param name='BaseSize' value='0.3' />
-    <param name='Ratio' value='0.18' />
+    <param name='Ratio' value='0.12' />
     <param name='RatioPower' value='2.0' />
-    <param name='Flare' value='0.3' />
+    <param name='Flare' value='0.0' />
     <param name='Lobes' value='0' />
     <param name='LobeDepth' value='0.0' />
     <param name='Smooth' value='0.2' />
