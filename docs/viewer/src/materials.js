@@ -184,7 +184,7 @@ export function setAssignMaterials(fn) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// WoodStyler port (com.ryanmichela.trees.rendering.WoodStyler + WoodStyle)
+// WoodStyler port (io.github.def9a2a4.gianttreesx.rendering.WoodStyler + WoodStyle)
 
 /** config.yml defaults of the `wood` section (WoodStyle.fromConfig falls back to the same). */
 export const WOOD_STYLE_DEFAULTS = Object.freeze({ style: 'mixed', hollowChance: 0, hollowWallThickness: 2, leaves: null });

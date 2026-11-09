@@ -17,8 +17,8 @@ BUILD="$HERE/harness/build"
 command -v node >/dev/null || { echo "tree-preview check: node not found" >&2; exit 2; }
 
 # 1. plugin classes
-if [ ! -f "$REPO/target/classes/com/ryanmichela/trees/rendering/WoodStyler.class" ] \
-   || [ -n "$(find "$REPO/src/main/java" "$REPO/src/arbaro/java" -name '*.java' -newer "$REPO/target/classes/com/ryanmichela/trees/rendering/WoodStyler.class" -print -quit)" ]; then
+if [ ! -f "$REPO/target/classes/io/github/def9a2a4/gianttreesx/rendering/WoodStyler.class" ] \
+   || [ -n "$(find "$REPO/src/main/java" "$REPO/src/arbaro/java" -name '*.java' -newer "$REPO/target/classes/io/github/def9a2a4/gianttreesx/rendering/WoodStyler.class" -print -quit)" ]; then
   echo "tree-preview check: compiling the plugin (mvn -B -q compile)" >&2
   (cd "$REPO" && mvn -B -q compile)
 fi

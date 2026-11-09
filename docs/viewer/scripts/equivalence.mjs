@@ -94,7 +94,7 @@ const jobsFile = join(work, 'jobs.txt');
 writeFileSync(jobsFile, jobs.map((j) => [j.id, j.t.file, j.t.rootFile ?? '-', j.seed, j.ref.x, j.ref.y, j.ref.z, styles.join(';') || '-'].join('|')).join('\n') + '\n');
 if (!quiet) process.stderr.write(`running Java harness on ${jobs.length} jobs (${styles.length} styles each)...\n`);
 try {
-  execFileSync(javaBin(), ['-cp', readFileSync(cpFile, 'utf8').trim(), 'com.ryanmichela.trees.rendering.GeometryHarness', jobsFile, work], { stdio: ['ignore', 'ignore', quiet ? 'ignore' : 'inherit'] });
+  execFileSync(javaBin(), ['-cp', readFileSync(cpFile, 'utf8').trim(), 'io.github.def9a2a4.gianttreesx.rendering.GeometryHarness', jobsFile, work], { stdio: ['ignore', 'ignore', quiet ? 'ignore' : 'inherit'] });
 } catch (e) {
   console.error('Java harness failed: ' + e.message);
   process.exit(2);

@@ -86,7 +86,7 @@ turns into a block difference.
 
 ## Files
 
-- `src/com/ryanmichela/trees/rendering/GeometryHarness.java`: the job runner. It sits in the
+- `src/io/github/def9a2a4/gianttreesx/rendering/GeometryHarness.java`: the job runner. It sits in the
   plugin's package to reach package-private classes such as `WoodStyler`. Its class comment
   documents the jobs file and the JSON it writes.
 - `build.sh`: compiles it against `target/classes` plus the `provided` classpath (paper-api).

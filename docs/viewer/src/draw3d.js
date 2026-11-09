@@ -1,4 +1,4 @@
-// Port of com.ryanmichela.trees.rendering.Draw3d + Orientation (geometry only).
+// Port of io.github.def9a2a4.gianttreesx.rendering.Draw3d + Orientation (geometry only).
 import { blockFloor, roundToInt } from './jmath.js';
 import { SimplexNoiseGenerator, positionHash } from './noise.js';
 import { KIND_WOOD, KIND_LEAF, PART_JUNCTION, packKey } from './voxels.js';

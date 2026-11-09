@@ -12,7 +12,7 @@ else
   JAVAC=javac
 fi
 mkdir -p "$HERE/build"
-if [ ! -d "$REPO/target/classes/com/ryanmichela/trees/rendering" ]; then
+if [ ! -d "$REPO/target/classes/io/github/def9a2a4/gianttreesx/rendering" ]; then
   echo "target/classes missing - run 'mvn -B -q package' in $REPO first" >&2
   exit 1
 fi
@@ -23,6 +23,6 @@ fi
 rm -rf "$HERE/build/classes"
 "$JAVAC" -nowarn --release 21 -d "$HERE/build/classes" \
   -cp "$REPO/target/classes:$(cat "$CP_FILE")" \
-  "$HERE"/src/com/ryanmichela/trees/rendering/*.java
+  "$HERE"/src/io/github/def9a2a4/gianttreesx/rendering/*.java
 echo "$REPO/target/classes:$HERE/build/classes:$(cat "$CP_FILE")" > "$HERE/build/run-classpath.txt"
 echo "harness built: $HERE/build/classes"
