@@ -357,7 +357,7 @@ wood:
   # mixed_log: wood blocks on the outside, plain logs inside (4.0's "mixed")
   style: mixed
   # Percent chance (0-100) that a tree's trunk is hollow above the ground.
-  hollow_chance: 0
+  hollow_chance: 20
   # Blocks of wall, bark included, left around a hollow trunk.
   hollow_wall_thickness: 2
 
