@@ -24,6 +24,8 @@ export const TIP_REACH = 2, TIP_SCALE = 0.7;
 // from every limb end, in a 2^BARE_CELL_SHIFT-block cell picked BARE_PERCENT times in 100, keeps the
 // BARE_DEPTH blocks below it free of leaves
 export const BARE_TIP_KEEP = 3, BARE_DEPTH = 8, BARE_CELL_SHIFT = 2, BARE_PERCENT = 55;
+/** Draw3d.LEAF_CORE_LEVEL: stem level given to leaf-cluster cores (a branch for WoodStyler, not a limb for bareBlocks). */
+export const LEAF_CORE_LEVEL = 4;
 // columns (x, z offsets) carved below a bare limb block: its own and its four neighbours'
 const BARE_COLUMNS = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]];
 const COVER_SIDES = [[0, 1, 0], [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1]];
@@ -322,11 +324,23 @@ export class Draw3d {
     }
   }
 
+  /**
+   * Draw3d.addLeafCore: a wood block at the centre of a leaf cluster (unless wood is already
+   * there), so leaves far from the branches still have a log within vanilla's leaf-decay range.
+   */
+  addLeafCore(pos) {
+    const x = blockFloor(pos.x), y = blockFloor(pos.y), z = blockFloor(pos.z);
+    const i = this.store.index.get(packKey(x, y, z));
+    if (i === undefined || this.store.kind[i] === KIND_LEAF) {
+      this.store.add(x, y, z, KIND_WOOD, LEAF_CORE_LEVEL, Y_MAJOR, this.part, this.wood, true);
+    }
+  }
+
   drawLeafCluster(pos, length, width) {
     this.leafLength = length;
     this.leafWidth = width;
     const skip = this.bareBlocks();
-    if (this.noisyLeaves) { this.drawNoisyLeafCluster(pos, length, width, skip); return; }
+    if (this.noisyLeaves) { this.drawNoisyLeafCluster(pos, length, width, skip); this.addLeafCore(pos); return; }
     // plotEllipsoid(pos, length, width, length, 0), sheared by leafDroop
     const a = length, b = width, c = length;
     const halfSize = (Math.ceil(Math.max(Math.max(a, b), c)) | 0) + 2;

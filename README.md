@@ -1,209 +1,151 @@
-# GiantTrees
+# GiantTreesX
 
-![Screenshot](doc/herotree.png)
+[![Download on Modrinth](https://img.shields.io/badge/download-modrinth-00AF5C?style=for-the-badge&logo=modrinth&logoColor=white)](https://modrinth.com/project/gianttreesx) [![Join the Discord](https://img.shields.io/badge/discord-join-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://def9a2a4.github.io/discord.html) [![Tree gallery](https://img.shields.io/badge/tree-gallery-2F7D32?style=for-the-badge)](https://def9a2a4.github.io/GiantTreesX/)
 
-_This plugin now only uses official Bukkit APIs, so it should be future proof. Recently tested with Spigot 1.15._
+A Minecraft plugin that grows enormous, procedurally generated trees: giant oaks and spruces, mangroves on stilt roots, pale oaks hung with moss, autumn poplars, huge mushrooms and nether fungi. Grow them from saplings with bone meal, summon them with a command, or let them spawn in new chunks. Every tree is different, and none of it needs a client mod or resource pack.
 
-Giant Trees is a plugin for adding procedurally generated giant trees to your Spigot world. Giant trees are generated in 
-three ways:
+**[Browse every tree in 3D in the gallery and viewer](https://def9a2a4.github.io/GiantTreesX/)**: look at them block by block, cut into them, try the wood styles, and edit tree files in your browser.
 
-* Grow trees in creative/survival mode by planting saplings and fertilizing with bone meal
-* Summon trees with a command
-* Generate trees naturally when new forested biomes spawn
+GiantTreesX is a fork of [GiantTrees](https://github.com/rmichela/GiantTrees) by Ryan Michela, updated for current Paper with new trees, three tree sizes, configurable natural spawning and much faster placement.
 
-Giant Trees is based on the tree generation algorithm described in Creation and Rendering of Realistic Trees by 
-Jason Weber and Joseph Penn as implemented by Wolfram Diestel in Arbaro.
+|                    Oak                     |                      Pale Oak                      |                     Mangrove                     |                    Cherry                    |
+| :----------------------------------------: | :------------------------------------------------: | :----------------------------------------------: | :------------------------------------------: |
+| ![Oak](docs/gallery/tree.OAK/hero.jpg)     | ![Pale Oak](docs/gallery/tree.PALE_OAK/hero.jpg)   | ![Mangrove](docs/gallery/tree.MANGROVE/hero.jpg) | ![Cherry](docs/gallery/tree.CHERRY/hero.jpg) |
+|                 **Poplar**                 |                  **Red Mushroom**                  |                **Crimson Fungus**                |                  **Spruce**                  |
+| ![Poplar](docs/gallery/tree.POPLAR/hero.jpg) | ![Red Mushroom](docs/gallery/tree.RED_MUSHROOM/hero.jpg) | ![Crimson Fungus](docs/gallery/tree.CRIMSON_FUNGUS/hero.jpg) | ![Spruce](docs/gallery/tree.SPRUCE/hero.jpg) |
 
-* http://sourceforge.net/projects/arbaro/
-* http://ftp.cs.duke.edu/courses/fall02/cps124/resources/p119-weber.pdf
-
-**Tree gallery and viewer:** see every tree in 3D as blocks, cut into them and edit tree files
-in your browser at https://def9a2a4.github.io/GiantTreesX/
-
-## Version 4.0
-Runs on Paper 1.21.4 through 1.21.11 and 26.1 through 26.3 (one jar).
-
-* **Wood styles.** The new `wood` config section picks how trunks and branches are built:
-  `all_log` (the old look), `mixed` (wood blocks with bark on all sides outside, logs in the
-  core; the default) or `mixed_stripped` (stripped logs in the core). `hollow_chance` gives some
-  trunks a hollow interior. `wood_types` overrides any of this per wood type and can set a
-  weighted mix of leaf blocks.
-* **Less lag.** Trees are placed in batches of `BLOCKS_PER_TICK` every `TICK_DELAY` ticks, from
-  the bottom up, instead of all at once.
-* **Safer.** Trees no longer replace chests, spawners or other block entities, or the blocks in
-  `protected_blocks`.
-* **Growing** a tree only needs the configured `bone-meal-consumed` amount in your inventory
-  (plain bone meal; renamed bone meal doesn't count, and 0 makes it free), not exactly 64 in
-  hand. Grown and `/gt` trees no longer all share one shape per world.
-* `tree-create <species> <world> <x> <z>` works from the console.
-* **Three tree sizes.** Tree types come as a giant, a huge and a big tree (jungle and spruce
-  have no big tree: vanilla's 2x2 trees fill that size), all of which work with `tree-create`
-  and spawn naturally:
-
-  | Size  | Tree file              | Height      | Trunk radius | Sapling pattern                  | Bone meal                      |
-  |-------|------------------------|-------------|--------------|----------------------------------|--------------------------------|
-  | giant | `tree.<NAME>.xml`      | 40 to 60    | up to 6      | 5x5 ring                         | `bone-meal-consumed` (64)      |
-  | huge  | `tree.<NAME>_HUGE.xml` | 25 to 40    | up to 4      | full 3x3 ring                    | `bone-meal-consumed-huge` (32) |
-  | big   | `tree.<NAME>_BIG.xml`  | about 14-24 | 2 to 3       | 3x3 plus: saplings N, E, S and W | `bone-meal-consumed-big` (16)  |
-
-  The plus shape's corners don't matter: a `-` in a pattern matches any block (and is left
-  alone when the tree grows). The most specific pattern that fits wins: a 5x5 ring before the
-  3x3 ring inside it, a full 3x3 ring before a plus. Mixed patterns (mesapuzzle, cottonwood,
-  swamp oak, azalea) have mixed 3x3 rings and pluses too; see `config.yml`.
-* **Natural trees are set in `config.yml`**, not by copies of tree files. `natural-trees` lists
-  the trees of each biome (`FOREST: [OAK, COTTONWOOD]`); a name grows every size of that tree.
-  `natural-tree-sizes` sets how often each size is picked (by default 4 big and 2 huge trees for
-  every giant), and a biome can set its own chance, tree weights and sizes:
-  ```yaml
-  natural-trees:
-    PLAINS:
-      chance: 0.2                 # percent per chunk, instead of treeGrowthPercentChance
-      trees: {OAK: 3, BIRCH: 1}   # 3 oaks for every birch
-      sizes: {giant: 0}           # no giant trees here
-  ```
-  Biome variants share an entry unless they have their own (`FOREST` also covers
-  `FLOWER_FOREST`; the list is in `config.yml`). To add a custom tree, put `tree.<NAME>.xml` (and
-  `tree.<NAME>.root.xml`) in the plugin folder, name in capitals, and list `<NAME>` under a biome;
-  it also works with `tree-create`. To tune a tree for one biome only, give it its own file
-  (`tree.OAK_PLAINS.xml`) and list that. New tree files spawn without a restart; config changes
-  need one. Unknown tree and biome names are logged at startup. Natural trees grow only on
-  soil, never on or in another tree, and in water only in swamps.
-* **Azalea trees grow above lush caves**, like vanilla: `LUSH_CAVES` trees spawn on
-  soil in any biome, but only where there is a lush cave somewhere below. An azalea tree (natural,
-  grown or `tree-create`) gets vanilla's root system: a column of rooted dirt under its trunk,
-  down toward the cave (at most 20 blocks, through stone and soil only), with hanging roots where
-  it comes out of the cave ceiling.
-* **New trees.** Pale oak with hanging pale moss (pale garden), a weeping swamp oak hung with
-  vines (swamp), red and brown giant mushrooms (mushroom fields), autumn-coloured poplars with
-  a mix of yellow, orange and red leaves (dappled forest, Minecraft 26.3+), azalea (over lush
-  caves), and huge crimson and warped fungi (planting and `tree-create` only). Each has a planting pattern;
-  see `config.yml` for the sapling letters. On servers older than 26.3 poplar patterns are
-  skipped and a poplar tree file grows as a birch.
-* **Organic leaf clusters.** Leaf clusters have lumpy, uneven outsides with small gaps and
-  protrusions instead of smooth spheres and discs (mushroom and fungus caps keep their smooth
-  domes). Huge crimson fungi grow weeping vines hanging from under the cap.
-
-Existing configs keep working: missing settings fall back to the defaults above (a config
-without `natural-trees` grows the bundled trees). An older
-`planting-patterns` section has neither the 3x3 patterns nor the new trees' patterns; copy them
-from the bundled `config.yml` to grow those from saplings.
-
-**Upgrading: `biome.*.xml` files are no longer read.** Natural trees come from `natural-trees`
-in `config.yml` and the `tree.*.xml` files. The plugin never deletes files, and warns at
-startup while `biome.*.xml` files are still in its folder: delete them. If you edited or added
-one, rename it to `tree.<NAME>.xml` (and its `.root.xml`) and list `<NAME>` under its biome in
-`natural-trees`. `natural-tree-weights` is gone too (`natural-tree-sizes` and per-biome
-weights replace it); an old one is ignored with a warning.
-
-Upgrading from an earlier 4.0 build with small trees: the `*_SMALL` trees are now `*_HUGE`, and the
-`-2` variants (`ACACIA-2`, `BIRCH-2`, `DARK_OAK-2`) are gone. Remove the old `tree.*_SMALL*` and
-`tree.*-2*` files from the plugin folder and rename `*_small` planting patterns to `*_huge`. An old
-`bone-meal-consumed-small` still sets the huge cost.
-
-### Development
-`make server` builds the plugin and runs a local Paper test server in `test-server/` (gitignored;
-`MINECRAFT_VERSION=1.21.11` for another version). `make server-test` runs the integration test
-that CI runs on every push.
-
-`make preview` serves the website in `docs/` (the gallery and the viewer, published by GitHub
-Pages) and `make gallery` re-renders the gallery; see `docs/viewer/README.md`.
-
-`scripts/` has command-line tools for tuning tree files: block counts and sizes over many seeds,
-screenshots and contact sheets, and showing, diffing and editing params; see `scripts/README.md`.
-
-## IMPORTANT NOTES for version 3.2
-Version 3.2 added custom biome trees as `biome.<biome>-<name>.xml` files. Since 4.0 these files
-are no longer read: list trees under their biome in `natural-trees` in `config.yml` instead (see
-above).
-
-Feel free to send in your trees for inclusion in the plugin!
-
-## IMPORTANT NOTES for version 3.1
-The 3.1 version uses a new configuration file format. You cannot use the old configuration file with this version.
-If you do the plugin will detect an incorrect configuration and disable the tree generation. You must wipe out
-the old GiantTrees folder in the plugins folder and let it create a new config and then you can put back any
-settings you changed. The 3.1 version and the new config file format allows for custom trees beyond the standard
-saplings and now gives you the option of changing patterns for the base tree set too. For example, the new mesapuzzle
-tree has a pattern that is made from both Acacia and Oak saplings. Each tree in the game has it's own recipe now and
-doesn't use the 'S' sapling generic pattern. Core block is indicated by an 'X'. Check the config file for details.
-
-You now need to right click the core block and not the saplings in order to generate the tree.
-
-The pattern matching routine has also been changed to be simpler and I think, more flexible for future updates.
-It uses a series of 90 degree rotations of the recipes in an attempt to match a sapling pattern laid out in the 5x5
-grid. This means you can put put a complex pattern but not have to worry about compass orientation. It currently
-doesn't flip the pattern, but that might be something to add later.
-
-Do not use the reload command on your server. Restart the server for changes to take effect.
-If you encounter lag, try reducing the number of blocks updated per tick in the config. Dark Oak is really laggy!
-Ensure you have at least 2GB of memory allocated to the server.
-
-Report any issues on the github repository.
-
-## Planting Giant Trees
-
-To plant a giant tree in creative/survival mode, perform the following steps:
-
-1. Flatten a 5x5 area of dirt or grass
-1. Place the core block as defined in the config (default EMERALD_BLOCK) in the center
-1. Surround the core block with two rings of saplings according to the pattern for the tree you want
-   (one full ring for a huge tree, or just the four saplings north, east, south and west of it for a
-   big one)
-1. Right click the core block with bone meal (64 for a giant tree, 32 for a huge one, 16 for a big one)
-1. Stand back (default of 3 seconds to get out of the way)
+**WARNING:** BACK UP YOUR WORLD. Giant trees replace a lot of blocks, and there is no undo.
 
 
-![Screenshot](doc/planting.png)
+# Features
+
+- **18 tree types**: oak, birch, spruce, jungle, acacia, dark oak, cherry, mangrove, pale oak, swamp oak, cottonwood, mesa puzzle, azalea, poplar (26.3+), red and brown mushrooms, crimson and warped fungi.
+- **Three sizes of each**: giant (40 to 60 blocks tall), huge (25 to 40) and big (about 14 to 24). Jungle and spruce have no big tree; vanilla's 2x2 trees fill that size.
+- **Decorations**: vines on jungle trunks and on mangrove and swamp oak leaves, pale moss under pale oaks, weeping vines under crimson fungi, muddy mangrove roots, and vanilla-style rooted dirt and hanging roots under azaleas.
+- **Wood styles**: build trunks from logs only, or with bark on the outside and plain or stripped logs in the core. Trunks can be hollow. Any wood type can get its own style and a weighted mix of leaf blocks.
+- **Natural spawning**, configured per biome: which trees, how often, and in which sizes. Azaleas spawn above lush caves, like vanilla.
+- **Gentle on the server**: trees are worked out off the main thread and placed from the bottom up in small batches.
+- **Safe**: trees never replace chests, spawners or other block entities, or any block you list in `protected_blocks`.
+- **Custom trees**: design your own in the [web viewer](https://def9a2a4.github.io/GiantTreesX/viewer/) and drop the file in the plugin folder.
+
+## Growing Trees
+
+1. Clear a 5x5 area of dirt or grass.
+2. Put the core block (an emerald block by default) in the middle.
+3. Plant saplings around it in the tree's pattern. The pattern's shape picks the size.
+4. Right-click the core block with bone meal in your inventory.
+5. Stand back: the tree starts growing after 3 seconds.
+
+| Size  | Pattern around the core                     | Bone meal | Tree file              |
+| ----- | ------------------------------------------- | --------- | ---------------------- |
+| giant | two full rings (5x5)                        | 64        | `tree.<NAME>.xml`      |
+| huge  | one full ring (3x3)                         | 32        | `tree.<NAME>_HUGE.xml` |
+| big   | a plus: saplings north, east, south and west | 16        | `tree.<NAME>_BIG.xml`  |
+
+Most trees use their own sapling all round. Mixed patterns (mesa puzzle: acacia and oak; cottonwood: birch and oak; swamp oak: oak with blue orchids; azalea: azalea and flowering azalea), the mushrooms and the fungi are listed with every pattern in [`config.yml`](src/main/resources/config.yml). Patterns match in any rotation. The bone meal costs are configurable; set one to 0 to make that size free.
+
+![Planting a giant tree](doc/planting.png)
+
+## Natural Trees
+
+Trees spawn in newly generated chunks of the worlds listed in `worlds`. `natural-trees` in `config.yml` says which trees grow in which biome; a name grows every size of that tree:
+
+```yaml
+natural-trees:
+  FOREST: [OAK, COTTONWOOD]
+  PALE_GARDEN: [PALE_OAK]
+  LUSH_CAVES: [AZALEA]          # above lush caves, in any biome
+  PLAINS:                       # a biome can also set its own chance, weights and sizes
+    chance: 0.2                 # percent per chunk, instead of treeGrowthPercentChance
+    trees: {OAK: 3, BIRCH: 1}   # 3 oaks for every birch
+    sizes: {giant: 0}           # no giant trees here
+```
+
+By default each biome grows 4 big and 2 huge trees for every giant (`natural-tree-sizes`). Natural trees grow only on soil, never on or in another tree, and in water only in swamps. Biome variants share their biome's entry (`FOREST` also covers flower and windswept forests) unless you give them their own. Unknown tree or biome names are logged at startup.
 
 ## Commands
-To create a giant tree with a command, use the /tree-create or /gt command, followed by the name of the tree. Tree names 
-are found in the plugin's data directory. For example, to summon a giant acacia tree, use the command
 
-```
-/gt tree.ACACIA
-```
+| Command                                     | Description                                                                 | Permission                         |
+| ------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------- |
+| `/gt <tree>`                                | Grow a tree where you stand, e.g. `/gt tree.OAK_HUGE`                       | `gianttrees.create` (default: op)  |
+| `/gt <tree> <world> <x> <z>`                | Grow a tree at a position; works from the console                           | `gianttrees.create` (default: op)  |
+| `/tree-edit <tree>`                         | Open a tree file in the old Arbaro desktop editor (console only, needs a display) | console                     |
+| *(right-click a planted pattern with bone meal)* | Grow a tree from saplings                                              | `gianttrees.grow` (default: everyone) |
 
-To edit the model for an existing tree, or create a new tree model, use the /tree-edit command. This command can only 
-be used from the server console, and opens the editor as a desktop window, so the server needs a graphical display.
-On a headless server, copy the plugin jar and the tree file to a desktop and run `java -jar GiantTrees-<version>.jar tree.ACACIA.xml`.
+`/gt` is short for `/tree-create`. Tree names are the files in the plugin folder without `.xml`.
 
-```
-/tree-edit tree.ACACIA
-```
+## Custom Trees
 
-## Naturally Growing Trees
+Trees are [Arbaro](http://arbaro.sourceforge.net/) parameter files: `tree.<NAME>.xml` for the tree and an optional `tree.<NAME>.root.xml` for its roots, which grow upside down below it.
 
-By default, Giant Trees will grow naturally in newly generated chunks in the default overworld (the world called 
-"world"). To add giant trees to more worlds, increase the frequency of tree growth, or disable natural tree growth
-altogether, edit the plugin's config.yml.
+The easiest way to make one is the **[web viewer](https://def9a2a4.github.io/GiantTreesX/viewer/)**. Start from any bundled tree, change its parameters and watch it regenerate as Minecraft blocks, then *Download XML*. Put the file in `plugins/GiantTrees/` with a name in capitals, and it works with `/gt` straight away. To make it spawn, list its name under a biome in `natural-trees`; to grow it from saplings, add a pattern to `planting-patterns`. To tune a tree for one biome only, give it its own file (`tree.OAK_PLAINS.xml`) and list that.
 
-## Making Your Own Giant Tree Species
 
-You can make your own species of giant tree. Start by using the /tree-edit command from the server console, giving it
-the name of the tree you want to edit or create. (For new trees, ignore the file not found error). As an alternative,
-you can double-click the Giant Trees plugin .jar file to start the visual tree editor.
+# Installation
 
-![Screenshot](doc/arbaro.png)
+## Requirements
 
-Design your tree using the visual tree editor. When you are done, click save and exit the visual editor. To add roots to
-your tree, create another tree with the same name as your tree, with .root added to the end. For example, 
-`/tree-edit tree.ACACIA.root`. Root trees are rendered upside down in the world and scaled to match their tree.
+- **Paper 1.21.4 through 1.21.11, or 26.1 through 26.3** (one jar), or a Paper fork. CI runs on 1.21.11 and 26.3. Poplar trees need 26.3; on older servers they grow as birch and the poplar patterns are skipped.
+- **Java 21 or newer.** Minecraft 26.x servers themselves require Java 25.
+- **Spigot and Folia are not supported.**
 
-## Permissions
+No other plugins are needed.
 
-* `gianttrees.create` (default OP) - Allows the creation of a giant tree using the tree-create command.
-* `gianttrees.grow` (default true) - Allows a player to grow a giant tree by fertilizing a grid of saplings.
+## Install
 
-## Installation
+1. Download `GiantTrees-<version>.jar` from [Modrinth](https://modrinth.com/project/gianttreesx).
+2. Put it in your server's `plugins` folder.
+3. Restart the server.
 
-1. Make sure you have Apache Maven installed.
-1. Clone this repo.
-1. Run `mvn package` in the plugin directory.
-1. Copy the Giant Trees jar file from the `target` directory to your server's `plugins` directory.
-1. Restart your server.
+The plugin folder is `plugins/GiantTrees/`. Tree files are unpacked there on first start; files you edit are never overwritten, and deleted ones come back on the next start.
 
-or the simple way:
+## Upgrading from GiantTrees
 
-1. Download the jar file from the latest release in the github repository
-1. Move the jar file to the plugins folder
-1. Restart your server.
+Old configs keep working: settings they lack fall back to the defaults. Copy the new `planting-patterns` from the bundled [`config.yml`](src/main/resources/config.yml) to grow the new trees and sizes from saplings.
+
+`biome.*.xml` files are no longer read; natural trees come from `natural-trees` instead. The plugin warns at startup while such files are in its folder. Delete them, or for one you edited, rename it to `tree.<NAME>.xml` and list `<NAME>` under its biome. `natural-tree-weights` is replaced by `natural-tree-sizes` and is ignored with a warning.
+
+
+# Configuration
+
+Everything is in `plugins/GiantTrees/config.yml`, and every setting is explained in the [bundled copy](src/main/resources/config.yml). Restart the server after changing it.
+
+- **Natural spawning**: `naturallyGrowTrees`, `worlds`, `treeGrowthPercentChance`, `natural-tree-sizes`, `natural-trees`
+- **Planting**: `planting-patterns`, `core`, `bone-meal-consumed`, `bone-meal-consumed-huge`, `bone-meal-consumed-big`, `generation-delay`
+- **Looks**: `wood` (`style`: `all_log`, `mixed` or `mixed_stripped`; `hollow_chance`; `hollow_wall_thickness`) and `wood_types` (the same per wood type, plus a weighted `leaves` mix)
+- **Safety**: `protect_block_entities`, `protected_blocks`
+- **Performance**: `BLOCKS_PER_TICK`, `TICK_DELAY`
+
+
+# Credits
+
+- **[GiantTrees](https://github.com/rmichela/GiantTrees)** by Ryan Michela, with contributions from Ronald Jack Jenkins Jr. and others: the plugin this is forked from.
+- **[Arbaro](http://arbaro.sourceforge.net/)** by Wolfram Diestel: the tree generator, an implementation of Jason Weber and Joseph Penn's *[Creation and Rendering of Realistic Trees](https://dl.acm.org/doi/10.1145/218380.218427)* (SIGGRAPH 1995).
+- John Kennedy's papers on fast Bresenham-type circle and ellipse drawing, which the block drawing code follows.
+
+
+# License
+
+GiantTreesX is free software under the **[GNU General Public License v3](LICENSE)** or later, like the GiantTrees it is forked from.
+
+What it includes or uses:
+
+| Component | Where | License |
+| --- | --- | --- |
+| GiantTrees (Ryan Michela, Ronald Jack Jenkins Jr.) | the plugin's code | GPLv3+ |
+| Arbaro (Wolfram Diestel), modified | `src/arbaro/`, inside the plugin jar | GPLv2+; this modified copy is redistributed under GPLv3+ (see [`NOTICE`](src/main/resources/NOTICE)) |
+| Tree parameter files | `src/main/resources/tree.*.xml`, inside the plugin jar | GPLv3+, from GiantTrees and Arbaro |
+| [three.js](https://threejs.org/) r160 and its OrbitControls | `docs/viewer/vendor/`, the website only | MIT (see [`docs/viewer/vendor/LICENSE`](docs/viewer/vendor/LICENSE)) |
+| [Paper API](https://papermc.io/) | compiled against, not included | GPLv3 / MIT |
+| [Playwright](https://playwright.dev/) | renders the gallery images; development only, not included | Apache 2.0 |
+
+The viewer's block textures are drawn by code; no Minecraft assets are included. Minecraft is a trademark of Mojang; this project is not affiliated with Mojang or Microsoft.
+
+
+# Developing
+
+You need **Java 21** and **Maven**. `mvn package` builds the jar into `target/`.
+
+- `make server` builds the plugin and runs a local Paper test server in `test-server/` (`MINECRAFT_VERSION=1.21.11` for another version). `make server-test` runs the integration test that CI runs on every push.
+- `make preview` serves the website in `docs/` (the gallery and the viewer); `make gallery` re-renders the gallery. See [`docs/viewer/README.md`](docs/viewer/README.md). The viewer is a JavaScript port of the plugin's generator, and CI checks it against the Java code block for block.
+- [`scripts/`](scripts/README.md) has command-line tools for tuning tree files: block counts and sizes over many seeds, screenshots and contact sheets, and showing, comparing and editing parameters.

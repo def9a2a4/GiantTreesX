@@ -182,6 +182,26 @@ public class Draw3d {
       changeTracker.addChange(loc, treeType.leafMaterial,
                                    persist(), WorldChange.Kind.LEAVES, -1, false);
     }
+    if (treeType.noisyLeaves) {
+      addLeafCore(pos);
+    }
+  }
+
+  /** Stem level given to leaf-cluster cores: a branch for WoodStyler, not a limb for bareBlocks. */
+  static final int LEAF_CORE_LEVEL = 4;
+
+  /**
+   * A wood block at the centre of a leaf cluster (unless wood is already there), so leaves far from
+   * the branches still have a log within vanilla's leaf-decay range.
+   */
+  private void addLeafCore(final Vector pos) {
+    final Vector core = new Vector(pos.getBlockX(), pos.getBlockY(), pos.getBlockZ());
+    final WorldChange existing = changeTracker.getChange(
+        new WorldChangeKey(core.getBlockX(), core.getBlockY(), core.getBlockZ()));
+    if (existing == null || existing.kind == WorldChange.Kind.LEAVES) {
+      changeTracker.addChange(core, treeType.woodMaterial, orient(Orientation.yMajor),
+                              WorldChange.Kind.WOOD, LEAF_CORE_LEVEL, true);
+    }
   }
 
   public void drawRootJunction(final Vector pos, final double r) {
