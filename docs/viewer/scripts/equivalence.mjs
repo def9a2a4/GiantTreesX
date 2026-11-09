@@ -38,14 +38,16 @@ const quick = flag('quick');
 const quiet = flag('quiet');
 const tolerance = Number(opt('tolerance', '0.001'));
 
-// Style specs: mode/hollowChance/wallThickness/leaves ('-' or MAT:w+MAT:w), as GeometryHarness parses.
+// Style specs: mode/hollowChance/wallThickness/leaves ('-' or MAT:w+MAT:w)[/patch|block], as
+// GeometryHarness parses. Without the last part a leaf mix follows the wood type's patchLeaves.
 const DEFAULT_STYLES = [
   'all_log/0/2/-',
   'mixed/0/2/-',
-  'mixed_stripped/0/2/-',
+  'mixed_log/0/2/-',
   'mixed/100/2/-',
   'all_log/100/1/-',
   'mixed_stripped/100/3/OAK_LEAVES:9+FLOWERING_AZALEA_LEAVES:1+AZALEA_LEAVES:2',
+  'mixed_log/0/2/OAK_LEAVES:9+FLOWERING_AZALEA_LEAVES:1+AZALEA_LEAVES:2/patch',
   'mixed/37.5/2/CHERRY_LEAVES:1',
 ];
 const seeds = opt('seeds', quick ? '12345,-559038737' : '1,12345,-559038737').split(',').map(Number);
@@ -54,9 +56,10 @@ const treeFilter = opt('trees', null)?.split(',');
 const styles = flag('no-styles') ? [] : opt('styles', DEFAULT_STYLES.join(';')).split(';').filter(Boolean);
 
 function styleOpts(spec, seed, hasMaterial) {
-  const [style, hollow, wall, leaves] = spec.split('/');
+  const [style, hollow, wall, leaves, patch] = spec.split('/');
   return {
     style,
+    patchLeaves: patch === undefined ? undefined : patch === 'patch',
     hollowChance: Number(hollow),
     hollowWallThickness: Number(wall),
     leaves: leaves === '-' ? null : Object.fromEntries(leaves.split('+').map((kv) => { const [m, w] = kv.split(':'); return [m, Number(w)]; })),

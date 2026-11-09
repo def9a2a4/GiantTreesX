@@ -20,6 +20,12 @@ export const COVER_REACH_BRANCH = 3, COVER_REACH_TRUNK = 1;
 // a branch end with no leaves within TIP_REACH blocks gets a leaf cluster TIP_SCALE times the size
 // of the tree's own
 export const TIP_REACH = 2, TIP_SCALE = 0.7;
+// bare undersides (cherry, Draw3d.bareUndersides): limb (level 1) wood more than BARE_TIP_KEEP blocks
+// from every limb end, in a 2^BARE_CELL_SHIFT-block cell picked BARE_PERCENT times in 100, keeps the
+// BARE_DEPTH blocks below it free of leaves
+export const BARE_TIP_KEEP = 3, BARE_DEPTH = 8, BARE_CELL_SHIFT = 2, BARE_PERCENT = 55;
+// columns (x, z offsets) carved below a bare limb block: its own and its four neighbours'
+const BARE_COLUMNS = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]];
 const COVER_SIDES = [[0, 1, 0], [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1]];
 
 /** Orientation.orient(l1, l2) on Bukkit vectors */
@@ -91,10 +97,13 @@ export class Draw3d {
     this.capLevel = Infinity; // TreeType.capLevel, set by render.js
     this.noisyLeaves = false; // TreeType.noisyLeaves, set by render.js
     this.leafDroop = 0; // TreeType.leafDroop, set by render.js
+    this.bareUndersides = false; // Draw3d.bareUndersides (cherry leaves), set by render.js
+    this.bare = null; // packed keys kept free of leaves, see bareBlocks
     this.cache = new Map();
     this.leafCache = new Map();
     this.branchWood = new Set(); // packed keys of trunk and branch wood drawn (insertion order), see coverBranches
     this.stemEnds = []; // [x, y, z] of branch ends, see markStemEnd
+    this.limbEnds = []; // ends of the level 1 branches (limbs), see bareBlocks
     this.leafLength = 0; // size of the last leaf cluster drawn
     this.leafWidth = 0;
   }
@@ -144,16 +153,62 @@ export class Draw3d {
   }
 
   /**
+   * Draw3d.bareBlocks: the blocks leaves stay out of (computed once, at the first leaf cluster,
+   * when all stems are drawn): for bareUndersides types, the BARE_DEPTH blocks below each limb
+   * block (level 1) more than BARE_TIP_KEEP blocks from every limb end, down to the next wood,
+   * where the block's cell is picked (BARE_PERCENT in 100). Empty for other types.
+   */
+  bareBlocks() {
+    if (this.bare !== null) return this.bare;
+    this.bare = new Set();
+    if (!this.bareUndersides || this.inverted) return this.bare;
+    const store = this.store, seed = this.refPoint.hash;
+    const keep2 = BARE_TIP_KEEP * BARE_TIP_KEEP;
+    const ends = this.limbEnds.map((e) => [blockFloor(e.x), blockFloor(e.y), blockFloor(e.z)]);
+    for (const key of this.branchWood) {
+      const i = store.index.get(key);
+      if (store.kind[i] !== KIND_WOOD || store.level[i] !== 1) continue;
+      const x = store.x[i], y = store.y[i], z = store.z[i];
+      const h = positionHash(seed, x >> BARE_CELL_SHIFT, y >> BARE_CELL_SHIFT, z >> BARE_CELL_SHIFT, 11);
+      if ((h >>> 8) % 100 >= BARE_PERCENT) continue;
+      let nearEnd = false;
+      for (const [ex, ey, ez] of ends) {
+        const dx = x - ex, dy = y - ey, dz = z - ez;
+        if (dx * dx + dy * dy + dz * dz <= keep2) { nearEnd = true; break; }
+      }
+      if (nearEnd) continue;
+      // the column below the block and below its four horizontal neighbours, each down to the
+      // next wood, so the bare limb shows from the side as well as from straight below
+      for (const [sx, sz] of BARE_COLUMNS) {
+        for (let d = 1; d <= BARE_DEPTH; d++) {
+          const k = packKey(x + sx, y - d, z + sz);
+          const j = store.index.get(k);
+          if (j !== undefined && store.kind[j] === KIND_WOOD) break;
+          this.bare.add(k);
+        }
+      }
+    }
+    return this.bare;
+  }
+
+  /**
    * Draw3d.coverBranches, after the leaves: a branch should have leaves atop it and at its ends.
    * 1. Each branch end (markStemEnd) with no leaves within TIP_REACH gets a leaf cluster.
    * 2. Branch wood (not roots) within COVER_REACH_BRANCH of leaves gets leaves in the empty blocks
    *    above and beside it; trunk wood within COVER_REACH_TRUNK only above it (where it ends in
    *    the crown). Bare limbs well below the canopy stay bare.
    * 3. Wood still showing amid leaves (two or more leaf faces) gets leaves above and beside it.
-   * Off for plain-leaved types (mushrooms, fungi).
+   * Off for plain-leaved types (mushrooms, fungi), except that a mushroom's stem top gets a cap
+   * block over it where it reaches the cap's top, so no stem shows through the cap.
    */
   coverBranches() {
-    if (!this.noisyLeaves || this.inverted) return;
+    if (this.inverted) return;
+    if (!this.noisyLeaves) {
+      if (this.capLevel !== Infinity) {
+        this.coverPass((x, y, z, level) => (level === 0 && this.leafWithin(x, y, z, COVER_REACH_TRUNK) ? 1 : 0));
+      }
+      return;
+    }
     const tipLength = this.leafLength * TIP_SCALE, tipWidth = this.leafWidth * TIP_SCALE;
     if (tipLength > 0) {
       for (const end of this.stemEnds) {
@@ -185,7 +240,8 @@ export class Draw3d {
       const n = sides(x, y, z, store.level[i]);
       for (let k = 0; k < n; k++) {
         const [dx, dy, dz] = COVER_SIDES[k];
-        if (!store.has(x + dx, y + dy, z + dz)) cover.add(packKey(x + dx, y + dy, z + dz));
+        const key2 = packKey(x + dx, y + dy, z + dz);
+        if (!store.has(x + dx, y + dy, z + dz) && !this.bareBlocks().has(key2)) cover.add(key2);
       }
     }
     for (const key of cover) {
@@ -209,7 +265,10 @@ export class Draw3d {
 
   /** Draw3d.markStemEnd: a stem's last point; branch ends (level 1 up) get covered by coverBranches. */
   markStemEnd(pos, level) {
-    if (level >= 1 && level < this.capLevel && !this.inverted) this.stemEnds.push(pos);
+    if (level >= 1 && level < this.capLevel && !this.inverted) {
+      this.stemEnds.push(pos);
+      if (level === 1) this.limbEnds.push(pos);
+    }
   }
 
   /** Whether a leaf block lies within reach (Chebyshev distance) of a block. */
@@ -266,7 +325,8 @@ export class Draw3d {
   drawLeafCluster(pos, length, width) {
     this.leafLength = length;
     this.leafWidth = width;
-    if (this.noisyLeaves) { this.drawNoisyLeafCluster(pos, length, width); return; }
+    const skip = this.bareBlocks();
+    if (this.noisyLeaves) { this.drawNoisyLeafCluster(pos, length, width, skip); return; }
     // plotEllipsoid(pos, length, width, length, 0), sheared by leafDroop
     const a = length, b = width, c = length;
     const halfSize = (Math.ceil(Math.max(Math.max(a, b), c)) | 0) + 2;
@@ -282,7 +342,8 @@ export class Draw3d {
           const noiseOffset = this.calculateNoiseOffset(x + px, y + py, z + pz, 1, 0);
           if (left <= 1 + noiseOffset) {
             // new Vector(x,y,z).add(pos) -> block coords via floor
-            store.add(blockFloor(x + pos.x), blockFloor(y + pos.y), blockFloor(z + pos.z), KIND_LEAF, -1, -1, this.part, this.wood, false);
+            const lx = blockFloor(x + pos.x), ly = blockFloor(y + pos.y), lz = blockFloor(z + pos.z);
+            if (skip.size === 0 || !skip.has(packKey(lx, ly, lz))) store.add(lx, ly, lz, KIND_LEAF, -1, -1, this.part, this.wood, false);
           }
         }
       }
@@ -297,7 +358,7 @@ export class Draw3d {
    * length (none up to LEAF_CLEAN_SIZE, full from LEAF_FULL_SIZE) and shrinks where the cluster is
    * thinner than LEAF_FULL_RADIUS, so small clusters stay clean and don't vanish.
    */
-  drawNoisyLeafCluster(pos, length, width) {
+  drawNoisyLeafCluster(pos, length, width, skip) {
     const a = length, b = width, c = length;
     const halfSize = (Math.ceil(Math.max(Math.max(a, b), c)) | 0) + 3;
     const px = blockFloor(pos.x), py = blockFloor(pos.y), pz = blockFloor(pos.z);
@@ -339,7 +400,10 @@ export class Draw3d {
               }
             }
           }
-          if (inside) store.add(blockFloor(x + pos.x), blockFloor(y + pos.y), blockFloor(z + pos.z), KIND_LEAF, -1, -1, this.part, this.wood, false);
+          if (inside) {
+            const lx = blockFloor(x + pos.x), ly = blockFloor(y + pos.y), lz = blockFloor(z + pos.z);
+            if (skip.size === 0 || !skip.has(packKey(lx, ly, lz))) store.add(lx, ly, lz, KIND_LEAF, -1, -1, this.part, this.wood, false);
+          }
         }
       }
     }

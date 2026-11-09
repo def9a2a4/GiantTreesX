@@ -7,7 +7,8 @@ Runs a real Paper server (already set up by `make server-setup`) twice:
    nothing went wrong (no errors, exceptions, or legacy-material warnings).
 2. placement: grows trees from the console at known spots and inspects the placed blocks with
    vanilla `execute if block`: planted on the soil surface, bark on the outside, the configured
-   core block, a hollow trunk, a malformed wood setting only warns, huge and big trees
+   core block (stripped log in the trunk for mixed and its mixed_stripped alias, a plain log for
+   mixed_log), a hollow trunk, a malformed wood setting only warns, huge and big trees
    (tree.OAK_HUGE, tree.OAK_BIG) stay within their height, and an azalea tree gets a capped
    column of rooted dirt under it.
 
@@ -237,8 +238,11 @@ def phase_placement(args) -> list[str]:
         args.server_dir,
         args.config,
         0,
-        "wood:\n  style: mixed_stripped\n  hollow_chance: 0\n  hollow_wall_thickness: 2\n"
+        "wood:\n  style: mixed\n  hollow_chance: 0\n  hollow_wall_thickness: 2\n"
         "wood_types:\n  Dark Oak:\n    style: mixed\n    hollow_chance: 100\n"
+        # mixed_log keeps plain logs inside; mixed_stripped (the 4.0 name) is an alias of mixed
+        "  Pale Oak:\n    style: mixed_log\n"
+        "  Poplar:\n    style: mixed_stripped\n"
         # a malformed number must fall back to the default with a warning, not stop the tree
         "  Oak:\n    hollow_wall_thickness: thick\n",
     )
@@ -262,7 +266,7 @@ def phase_placement(args) -> list[str]:
         trees = [
             ("tree.OAK", 3000, 3000, "oak", "minecraft:stripped_oak_log", None),
             ("tree.DARK_OAK", 3400, 3000, "dark_oak", "minecraft:air", None),
-            ("tree.PALE_OAK", 3800, 3000, "pale_oak", "minecraft:stripped_pale_oak_log", None),
+            ("tree.PALE_OAK", 3800, 3000, "pale_oak", "minecraft:pale_oak_log", None),
             # mushroom stems have no bark or stripped variant: the core stays a stem
             ("tree.RED_MUSHROOM", 4200, 3000, None, "minecraft:mushroom_stem", None),
             # poplar blocks exist from 26.3 on; older servers grow the poplar file as a birch
@@ -319,6 +323,9 @@ def phase_placement(args) -> list[str]:
         server.stop()
     if not any("Invalid hollow_wall_thickness 'thick'" in l for l in server.all_lines):
         failures.append("placement: no warning for the malformed hollow_wall_thickness")
+    if any("Unknown wood style" in l for l in server.all_lines):
+        failures.append("placement: a configured wood style (mixed_log or the mixed_stripped alias) "
+                        "was not recognised")
     failures += [f"placement: {p}" for p in scan_problems(server.all_lines)]
     return failures
 

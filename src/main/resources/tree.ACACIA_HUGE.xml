@@ -22,19 +22,19 @@
     <param name='WoodType' value='Acacia' />
     <param name='Shape' value='3' />
     <param name='Levels' value='2' />
-    <param name='Scale' value='32.0' />
+    <param name='Scale' value='33.0' />
     <param name='ScaleV' value='3.0' />
-    <param name='BaseSize' value='0.93' />
-    <param name='Ratio' value='0.085' />
+    <param name='BaseSize' value='0.96' />
+    <param name='Ratio' value='0.07' />
     <param name='RatioPower' value='2.0' />
     <param name='Flare' value='0.0' />
     <param name='Lobes' value='0' />
     <param name='LobeDepth' value='0.0' />
     <param name='Smooth' value='0.1' />
-    <param name='Leaves' value='9' />
+    <param name='Leaves' value='3' />
     <param name='LeafShape' value='0' />
-    <param name='LeafScale' value='9.0' />
-    <param name='LeafScaleX' value='0.27' />
+    <param name='LeafScale' value='12' />
+    <param name='LeafScaleX' value='0.13' />
     <param name='LeafQuality' value='1.0' />
     <param name='LeafStemLen' value='0.1' />
     <param name='LeafDistrib' value='3' />
@@ -58,21 +58,21 @@
     <param name='0Length' value='1.0' />
     <param name='0LengthV' value='0.0' />
     <param name='0Taper' value='1.0' />
-    <param name='0SegSplits' value='0.11' />
+    <param name='0SegSplits' value='0.24' />
     <param name='0SplitAngle' value='70' />
     <param name='0SplitAngleV' value='10' />
     <param name='0CurveRes' value='12' />
-    <param name='0Curve' value='15' />
+    <param name='0Curve' value='0' />
     <param name='0CurveBack' value='0' />
-    <param name='0CurveV' value='30' />
+    <param name='0CurveV' value='15' />
     <!-- level 1 -->
     <param name='1DownAngle' value='85' />
     <param name='1DownAngleV' value='8' />
     <param name='1Rotate' value='140' />
     <param name='1RotateV' value='30' />
-    <param name='1Branches' value='90' />
+    <param name='1Branches' value='100' />
     <param name='1BranchDist' value='1.0' />
-    <param name='1Length' value='0.2' />
+    <param name='1Length' value='0.06' />
     <param name='1LengthV' value='0.04' />
     <param name='1Taper' value='1.0' />
     <param name='1SegSplits' value='0.0' />

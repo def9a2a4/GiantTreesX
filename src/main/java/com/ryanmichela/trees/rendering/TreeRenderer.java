@@ -102,7 +102,8 @@ public class TreeRenderer {
             (smooth, type, orientation) -> new Draw3d(refPoint, smooth, type, tracker, orientation));
         final String woodType = generated.tree().params.WoodType;
         WoodStyler.apply(tracker, WoodStyle.fromConfig(plugin.getConfig(), woodType,
-                                                       generated.treeType().leafMix, logger), seed);
+                                                       generated.treeType().leafMix,
+                                                       generated.treeType().patchLeaves, logger), seed);
         if (!plugin.isEnabled()) {
           return;
         }

@@ -254,16 +254,20 @@ public class PlantTreeEventHandler implements Listener {
 		}
 
 		final Tier tier = Tier.of(recipe.getTreeName(), recipe.getSize(), recipe.getWildcards());
-		final ItemStack cost = new ItemStack(Material.BONE_MEAL, boneMeal.get(tier));
-		if (!event.getPlayer().getInventory().containsAtLeast(cost, cost.getAmount())) {
-			event.getPlayer().sendMessage("You need " + cost.getAmount() + " bone meal to grow this tree");
+		// a cost of 0 (or less) is free; ItemStack rejects an amount below 1
+		final int amount = boneMeal.get(tier);
+		final ItemStack cost = amount > 0 ? new ItemStack(Material.BONE_MEAL, amount) : null;
+		if (cost != null && !event.getPlayer().getInventory().containsAtLeast(cost, amount)) {
+			event.getPlayer().sendMessage("You need " + amount + " bone meal to grow this tree");
 			return;
 		}
 
 		final String treeType = recipe.getTreeName().toUpperCase(Locale.ROOT);
 		final File treeFile = treeFile(recipe);
 		event.setCancelled(true);
-		event.getPlayer().getInventory().removeItem(cost);
+		if (cost != null) {
+			event.getPlayer().getInventory().removeItem(cost);
+		}
 		event.getPlayer().sendMessage("Stand back! Generating " + tier.article + treeType + " tree!");
 		clearBlocks(clickedBlock, matched);
 		renderer.renderTree(clickedBlock.getLocation(), treeFile,

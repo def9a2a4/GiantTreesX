@@ -350,9 +350,11 @@ generation-delay: 3
 
 # How tree wood and leaves are turned into blocks.
 wood:
-  # all_log:        every wood block is a log (the look before GiantTrees 4.0)
-  # mixed:          wood blocks (bark on all sides) on the outside, logs in the core
-  # mixed_stripped: wood blocks on the outside, stripped logs in the core
+  # all_log:   every wood block is a log (the look before GiantTrees 4.0)
+  # mixed:     wood blocks (bark on all sides) on the outside; inside, stripped logs in the trunk
+  #            and stripped wood in the branches (mushroom stems have no stripped form and stay
+  #            stems). mixed_stripped, the 4.0 name, still works and means the same.
+  # mixed_log: wood blocks on the outside, plain logs inside (4.0's "mixed")
   style: mixed
   # Percent chance (0-100) that a tree's trunk is hollow above the ground.
   hollow_chance: 0
@@ -365,9 +367,11 @@ wood:
 # Any key from the wood section can be overridden, and "leaves" sets a weighted mix of
 # leaf blocks (default: the wood type's own leaves; Poplar mixes yellow, orange and red poplar
 # leaves, Azalea plain and flowering azalea leaves, Crimson and Warped add some shroomlights).
-# A mix grows in patches about a leaf cluster wide, each mostly one leaf picked by weight, with up
-# to 10% of the leaves next to it in this list mixed in (yellow, orange, red: yellow patches get
-# only orange). Leaves weighing at most a tenth of the mix are scattered over single blocks.
+# Each leaf block is picked on its own by weight, except for Poplar, whose mix (its own or one
+# set here) grows in patches about a leaf cluster wide, each mostly one leaf picked by weight,
+# with up to 10% of the leaves next to it in this list mixed in (yellow, orange, red: yellow
+# patches get only orange); leaves weighing at most a tenth of its mix are scattered over single
+# blocks.
 wood_types: {}
   # Oak:
   #   hollow_chance: 10
@@ -375,7 +379,7 @@ wood_types: {}
   #     OAK_LEAVES: 9
   #     FLOWERING_AZALEA_LEAVES: 1
   # Dark Oak:
-  #   style: mixed_stripped
+  #   style: mixed_log
   #   hollow_chance: 25
 
 # Trees never replace blocks with block entities (chests, spawners, signs, ...) or the blocks

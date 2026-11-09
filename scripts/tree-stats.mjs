@@ -3,7 +3,7 @@
 // plugin's generator (docs/viewer/src/render.js), so no server or browser is needed.
 import { cli, die, parseSeeds, resolveAll, readText, RES } from './lib/common.mjs';
 import { renderTree } from '../docs/viewer/src/render.js';
-import { makeVoxelView, MaterialTable, woodStyleAssign, WOOD_STYLE_MODES } from '../docs/viewer/src/materials.js';
+import { makeVoxelView, MaterialTable, woodStyleAssign, woodStyleMode, WOOD_STYLE_MODES } from '../docs/viewer/src/materials.js';
 import { KIND_WOOD, KIND_LEAF, PART_ROOT } from '../docs/viewer/src/voxels.js';
 
 const USAGE = `
@@ -49,7 +49,7 @@ const { values: o, positionals } = cli(USAGE, {
   dir: { type: 'string', short: 'd', default: RES },
 });
 if (!positionals.length) die(USAGE.trim());
-if (!WOOD_STYLE_MODES.includes(o.style)) die(`--style must be one of ${WOOD_STYLE_MODES.join(', ')}`);
+if (!woodStyleMode(o.style)) die(`--style must be one of ${WOOD_STYLE_MODES.join(', ')}`);
 if (!['text', 'csv', 'json'].includes(o.format)) die('--format must be text, csv or json');
 const seeds = parseSeeds(o.seeds);
 const trunkAt = parseSeeds(o['trunk-at']);

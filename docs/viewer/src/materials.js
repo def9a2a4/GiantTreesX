@@ -45,6 +45,9 @@ const HANGING_SHAPES = { 'Crimson': [6, 1, 9] };
 const GROUND_WOODS = { 'Mangrove_roots': 'MUDDY_MANGROVE_ROOTS' };
 /** TreeType.noisyLeaves: false keeps the plain (Smooth-noised) ellipsoid leaf clusters. */
 const PLAIN_LEAVES = new Set(['Red Mushroom', 'Brown Mushroom', 'Crimson', 'Warped']);
+/** TreeType.patchLeaves: leaf mixes (default or configured) grow in patches (makeLeafMix); the
+ *  other types pick every leaf block by weight on its own (pickLeaf), e.g. azalea. */
+const PATCH_LEAVES = new Set(['Poplar']);
 /** TreeType.leafDroop: leaf clusters sink this many blocks per block outward from the trunk. */
 const LEAF_DROOPS = { 'Spruce': 0.6 };
 export const WOOD_TYPES = Object.freeze(Object.keys(TREE_TYPES));
@@ -61,7 +64,8 @@ const ALL_MATERIALS = () => true;
  *        i.e. the newest Minecraft); missing blocks make the type fall back like the plugin does
  * @returns {{ wood: string, leaf: string, leafMix: [string, number][] | null, decoration: string,
  *             hanging: string | null, hangingTip: string | null,
- *             hangingShape: [number, number, number], capLevel: number, noisyLeaves: boolean, type: string }}  type = the wood type actually used
+ *             hangingShape: [number, number, number], capLevel: number, noisyLeaves: boolean,
+ *             patchLeaves: boolean, type: string }}  type = the wood type actually used
  */
 export function treeTypeMaterials(woodType, hasMaterial = ALL_MATERIALS) {
   let name = Object.hasOwn(TREE_TYPES, woodType) ? woodType : 'Oak';
@@ -82,7 +86,7 @@ export function treeTypeMaterials(woodType, hasMaterial = ALL_MATERIALS) {
     wood, leaf: leaves[0][0], leafMix: leafMix.length ? leafMix : null, decoration,
     hanging: isHanging ? hanging : null, hangingTip: isHanging ? hangingTip : null,
     hangingShape: HANGING_SHAPES[name] ?? [4, 1, 6],
-    capLevel, noisyLeaves: !PLAIN_LEAVES.has(name), type: name,
+    capLevel, noisyLeaves: !PLAIN_LEAVES.has(name), patchLeaves: PATCH_LEAVES.has(name), type: name,
     leafDroop: LEAF_DROOPS[name] ?? 0,
     groundWood: GROUND_WOODS[name] && hasMaterial(GROUND_WOODS[name]) ? GROUND_WOODS[name] : null,
   };
@@ -184,9 +188,17 @@ export function setAssignMaterials(fn) {
 
 /** config.yml defaults of the `wood` section (WoodStyle.fromConfig falls back to the same). */
 export const WOOD_STYLE_DEFAULTS = Object.freeze({ style: 'mixed', hollowChance: 0, hollowWallThickness: 2, leaves: null });
-export const WOOD_STYLE_MODES = Object.freeze(['all_log', 'mixed', 'mixed_stripped']);
+export const WOOD_STYLE_MODES = Object.freeze(['all_log', 'mixed', 'mixed_log']);
+/** Other accepted names (WoodStyle.Mode.parse): 4.0's mixed_stripped is now mixed. */
+export const WOOD_STYLE_ALIASES = Object.freeze({ mixed_stripped: 'mixed' });
+/** WoodStyle.Mode.parse: the canonical mode for a config name (case-insensitive), or null if unknown. */
+export function woodStyleMode(name) {
+  const s = String(name).trim().toLowerCase();
+  if (WOOD_STYLE_MODES.includes(s)) return s;
+  return Object.hasOwn(WOOD_STYLE_ALIASES, s) ? WOOD_STYLE_ALIASES[s] : null;
+}
 
-// Material.getMaterial() lookups made by WoodStyler.barkOf / strippedOf. Only names that exist
+// Material.getMaterial() lookups made by WoodStyler.barkOf / strippedOf / strippedWoodOf. Only names that exist
 // in the server's Material enum may be produced; this lists every vanilla log/stem family.
 const LOG_FAMILIES = ['OAK', 'SPRUCE', 'BIRCH', 'JUNGLE', 'ACACIA', 'DARK_OAK', 'MANGROVE', 'CHERRY', 'PALE_OAK', 'POPLAR'];
 const STEM_FAMILIES = ['CRIMSON', 'WARPED'];
@@ -208,7 +220,40 @@ export function strippedOf(log) {
   return log;
 }
 
-// WoodStyler.LeafMix: leaves come in patches. Space is split into jittered Voronoi cells
+/** WoodStyler.strippedWoodOf: OAK_LOG -> STRIPPED_OAK_WOOD, CRIMSON_STEM -> STRIPPED_CRIMSON_HYPHAE; else strippedOf. */
+export function strippedWoodOf(log) {
+  if (log.endsWith('_LOG')) return orSame('STRIPPED_' + log.slice(0, -4) + '_WOOD', strippedOf(log));
+  if (log.endsWith('_STEM')) return orSame('STRIPPED_' + log.slice(0, -5) + '_HYPHAE', strippedOf(log));
+  return log;
+}
+
+const GOLDEN = 0x9e3779b97f4a7c15n;
+const MIX = 0xbf58476d1ce4e5b9n;
+const s64 = (v) => BigInt.asIntN(64, v);
+
+/**
+ * WoodStyler.pickLeaf: position-hashed weighted pick per block (wood types without patchLeaves).
+ * @param {[string, number][]} entries  [material, weight] in config (LinkedHashMap) order, weights > 0
+ * @param {number} total  sum of weights (Java int)
+ */
+export function pickLeaf(entries, total, x, y, z, seed) {
+  let h = BigInt(seed | 0);
+  h = s64(h * GOLDEN + BigInt(x | 0));
+  h = s64(h * GOLDEN + BigInt(y | 0));
+  h = s64(h * GOLDEN + BigInt(z | 0));
+  h = s64(h ^ (BigInt.asUintN(64, h) >> 31n));
+  h = s64(h * MIX);
+  h = s64(h ^ (BigInt.asUintN(64, h) >> 29n));
+  const t = BigInt(total);
+  let roll = Number(((h % t) + t) % t); // Math.floorMod(h, (long) total)
+  for (const [m, w] of entries) {
+    roll -= w;
+    if (roll < 0) return m;
+  }
+  return entries[0][0];
+}
+
+// WoodStyler.LeafMix (wood types with patchLeaves): leaves come in patches. Space is split into jittered Voronoi cells
 // LEAF_CELL blocks apart (about a leaf cluster); each cell gets one primary leaf picked with the
 // mix weights, and up to LEAF_MAX_BLEND percent of its blocks (a per-cell amount) take a leaf next
 // to the primary in the mix order. Leaves weighing at most a tenth of the mix are accents, never
@@ -338,13 +383,18 @@ export function woodDepth(voxels) {
  *
  * @param voxels view from makeVoxelView
  * @param {object} opts
- * @param {'all_log'|'mixed'|'mixed_stripped'} [opts.style='mixed']  unknown values -> 'mixed' (as fromConfig)
+ * @param {'all_log'|'mixed'|'mixed_log'|'mixed_stripped'} [opts.style='mixed']  mixed: bark outside,
+ *        stripped logs inside the trunk (stem level 0) and stripped wood inside branches; mixed_log:
+ *        bark outside, logs inside; mixed_stripped is an alias of mixed; unknown values -> 'mixed'
+ *        (as fromConfig)
  * @param {number} [opts.hollowChance=0]  percent 0-100 (clamped, as fromConfig)
  * @param {boolean} [opts.forceHollow=false]  preview-only: carve the trunk regardless of the roll
  * @param {number} [opts.hollowWallThickness=2]  >= 1 (clamped, as fromConfig)
  * @param {Object<string, number>|null} [opts.leaves=null]  weighted leaf mix {MATERIAL: weight},
  *        insertion order matters (= config order); null/empty -> the wood type's own leaves (the
  *        tree's TreeType leafMix when it has one, as WoodStyle.fromConfig)
+ * @param {boolean} [opts.patchLeaves]  grow the leaf mix in patches (makeLeafMix) or pick each block
+ *        (pickLeaf); default: the tree's TreeType patchLeaves, as WoodStyle.fromConfig
  * @param {(name: string) => boolean} [opts.hasMaterial]  see treeTypeMaterials
  * @param {number} opts.seed  the tree seed (same int passed to renderTree)
  * @param {number} [opts.groundY]  preview-only: store y of the ground surface. Root wood at or
@@ -356,16 +406,19 @@ export function woodDepth(voxels) {
  */
 export function woodStyleAssign(voxels, opts, table) {
   const o = { ...WOOD_STYLE_DEFAULTS, ...(opts || {}) };
-  const mode = WOOD_STYLE_MODES.includes(String(o.style).toLowerCase()) ? String(o.style).toLowerCase() : 'mixed';
+  const mode = woodStyleMode(o.style) ?? 'mixed';
   const hollowChance = Math.max(0, Math.min(100, +o.hollowChance || 0));
   const wall = Math.max(1, (o.hollowWallThickness | 0) || 0);
   const seed = o.seed | 0;
   let leafEntries = o.leaves ? Object.entries(o.leaves).map(([m, w]) => [m, w | 0]).filter(([, w]) => w > 0) : [];
-  if (!leafEntries.length && voxels.woodTypes.length) {
-    // woodTypes[0] is the tree file's WoodType (render.js registers it first)
-    leafEntries = treeTypeMaterials(voxels.woodTypes[0], o.hasMaterial || undefined).leafMix || [];
-  }
-  const leafMix = leafEntries.length ? makeLeafMix(leafEntries) : null;
+  // woodTypes[0] is the tree file's WoodType (render.js registers it first)
+  const ownType = voxels.woodTypes.length ? treeTypeMaterials(voxels.woodTypes[0], o.hasMaterial || undefined) : null;
+  if (!leafEntries.length && ownType) leafEntries = ownType.leafMix || [];
+  const patchLeaves = typeof o.patchLeaves === 'boolean' ? o.patchLeaves : !!(ownType && ownType.patchLeaves);
+  let leafTotal = 0;
+  for (const [, w] of leafEntries) leafTotal = (leafTotal + w) | 0;
+  const leafMix = !leafEntries.length ? null : patchLeaves ? makeLeafMix(leafEntries)
+    : (x, y, z, seed) => pickLeaf(leafEntries, leafTotal, x, y, z, seed);
 
   const out = defaultAssignMaterials(voxels, opts, table);
   const hollow = !!o.forceHollow || rollHollow(seed, hollowChance);
@@ -374,7 +427,8 @@ export function woodStyleAssign(voxels, opts, table) {
 
   const air = hollow ? table.id('AIR') : -1;
   const barkId = new Map(); // base id -> styled id
-  const coreId = new Map();
+  const coreId = new Map(); // trunk cores: stripped logs
+  const branchCoreId = new Map(); // branch cores: stripped wood
   const styled = (cache, id, fn) => {
     let v = cache.get(id);
     if (v === undefined) { v = table.id(fn(table.names[id])); cache.set(id, v); }
@@ -402,7 +456,9 @@ export function woodStyleAssign(voxels, opts, table) {
       out[i] = air;
     } else if (mode !== 'all_log') {
       if (d === 1) out[i] = styled(barkId, out[i], barkOf);
-      else if (mode === 'mixed_stripped') out[i] = styled(coreId, out[i], strippedOf);
+      else if (mode === 'mixed') {
+        out[i] = voxels.level[i] === 0 ? styled(coreId, out[i], strippedOf) : styled(branchCoreId, out[i], strippedWoodOf);
+      }
     }
   }
   return out;

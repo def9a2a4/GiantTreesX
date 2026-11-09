@@ -37,8 +37,9 @@ import org.bukkit.util.Vector;
  *
  * Usage: GeometryHarness <jobs-file> <out-dir>
  *   jobs-file lines: id|treeFile|rootFile-or-dash|seed|refX|refY|refZ[|styles]
- *     styles: ';'-separated WoodStyle specs mode/hollowChance/wallThickness/leaves, where leaves
- *     is '-' or MATERIAL:weight+MATERIAL:weight (e.g. mixed_stripped/100/2/OAK_LEAVES:3+AZALEA_LEAVES:1)
+ *     styles: ';'-separated WoodStyle specs mode/hollowChance/wallThickness/leaves[/patch], where
+ *     leaves is '-' or MATERIAL:weight+MATERIAL:weight (e.g. mixed/100/2/OAK_LEAVES:3+AZALEA_LEAVES:1)
+ *     and patch, if given, is 'patch' or 'block' (overrides the wood type's TreeType.patchLeaves)
  *   writes <out-dir>/<id>.json :
  *   {"id":..,"seed":..,"refHash":..,"scaleTree":..,"drawCalls":..,"drawDigest":..,
  *    "absentMaterials":[TreeType block names this API version lacks],
@@ -169,9 +170,11 @@ public final class GeometryHarness {
 
   /**
    * Parses mode/hollowChance/wallThickness/leaves (see class comment). '-' leaves means the wood
-   * type's own leaves, as WoodStyle.fromConfig resolves them (its default mix, if any).
+   * type's own leaves, as WoodStyle.fromConfig resolves them (its default mix, if any); an optional
+   * fifth part 'patch' or 'block' overrides the type's {@code patchLeaves}.
    */
-  static WoodStyle parseStyle(final String spec, final Map<Material, Integer> defaultLeaves) {
+  static WoodStyle parseStyle(final String spec, final Map<Material, Integer> defaultLeaves,
+                              final boolean patchLeaves) {
     final String[] p = spec.split("/");
     final Map<Material, Integer> leaves = new LinkedHashMap<>();
     if (!"-".equals(p[3])) {
@@ -182,8 +185,9 @@ public final class GeometryHarness {
     } else {
       leaves.putAll(defaultLeaves);
     }
-    return new WoodStyle(WoodStyle.Mode.valueOf(p[0].toUpperCase(Locale.ROOT)),
-        Double.parseDouble(p[1]), Integer.parseInt(p[2]), leaves);
+    return new WoodStyle(WoodStyle.Mode.parse(p[0]),
+        Double.parseDouble(p[1]), Integer.parseInt(p[2]), leaves,
+        p.length > 4 ? "patch".equals(p[4]) : patchLeaves);
   }
 
   /** TreeRenderer.generate, refPoint raised as renderTree does, every Draw3d call recorded. */
@@ -239,7 +243,8 @@ public final class GeometryHarness {
             original.put(c, c.material);
           }
           for (final String spec : styleSpecs) {
-            WoodStyler.apply(tracker, parseStyle(spec, generated.treeType().leafMix), seed);
+            WoodStyler.apply(tracker, parseStyle(spec, generated.treeType().leafMix,
+                                               generated.treeType().patchLeaves), seed);
             final int[] mats = new int[order.size()];
             for (int i = 0; i < mats.length; i++) {
               final String name = order.get(i).material.name();

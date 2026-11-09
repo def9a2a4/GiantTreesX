@@ -197,6 +197,7 @@ export function renderTree(o) {
   d3d.capLevel = treeType.capLevel;
   d3d.noisyLeaves = treeType.noisyLeaves;
   d3d.leafDroop = treeType.leafDroop;
+  d3d.bareUndersides = treeType.leaf === 'CHERRY_LEAVES'; // Draw3d.bareUndersides
   exportTree(tree, d3d);
 
   let vineInfo = null;

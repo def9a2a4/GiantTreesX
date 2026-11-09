@@ -18,6 +18,7 @@
 package com.ryanmichela.trees.rendering;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,6 +26,7 @@ import java.util.function.UnaryOperator;
 
 import org.bukkit.Axis;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Orientable;
 import org.bukkit.block.data.type.Leaves;
@@ -64,6 +66,17 @@ public class Draw3d {
    *  size of the tree's own. */
   static final int TIP_REACH = 2;
   static final double TIP_SCALE = 0.7;
+  /**
+   * Bare undersides (cherry, {@link #bareUndersides}): limb (level 1) wood more than BARE_TIP_KEEP
+   * blocks from every limb end, in a 2^BARE_CELL_SHIFT-block cell picked BARE_PERCENT times in
+   * 100, keeps the BARE_DEPTH blocks below it free of leaves, so some limbs show under the canopy.
+   */
+  static final int BARE_TIP_KEEP = 3;
+  static final int BARE_DEPTH = 8;
+  static final int BARE_CELL_SHIFT = 2;
+  static final int BARE_PERCENT = 55;
+  /** Columns (x, z offsets) carved below a bare limb block: its own and its four neighbours'. */
+  private static final int[][] BARE_COLUMNS = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}};
   /** Up, then the four horizontal sides. */
   private static final int[][] COVER_SIDES = {{0, 1, 0}, {1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1}};
   private static final int[][] FACES = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
@@ -87,6 +100,11 @@ public class Draw3d {
   private final Set<WorldChangeKey> branchWood = new LinkedHashSet<>();
   /** Branch ends, see {@link #markStemEnd}. */
   private final List<Vector>        stemEnds = new ArrayList<>();
+  /** Ends of the level 1 branches (limbs), see {@link #bareBlocks}. */
+  private final List<Vector>        limbEnds = new ArrayList<>();
+  /** Blocks kept free of leaves below mid-branch wood (cherry); null until the first leaf
+   *  cluster, see {@link #bareBlocks}. */
+  private Set<WorldChangeKey>       bare;
   /** Size of the last leaf cluster drawn. */
   private double                    leafLength;
   private double                    leafWidth;
@@ -155,7 +173,12 @@ public class Draw3d {
     final List<Vector> points = treeType.noisyLeaves
         ? plotNoisyEllipsoid(pos, length, width, length)
         : plotEllipsoid(pos, length, width, length);
+    final Set<WorldChangeKey> skip = bareBlocks();
     for (final Vector loc : points) {
+      if (!skip.isEmpty()
+          && skip.contains(new WorldChangeKey(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()))) {
+        continue;
+      }
       changeTracker.addChange(loc, treeType.leafMaterial,
                                    persist(), WorldChange.Kind.LEAVES, -1, false);
     }
@@ -195,7 +218,75 @@ public class Draw3d {
   public void markStemEnd(final Vector pos, final int level) {
     if (level >= 1 && level < treeType.capLevel && renderOrientation == RenderOrientation.NORMAL) {
       stemEnds.add(pos);
+      if (level == 1) {
+        limbEnds.add(pos);
+      }
     }
+  }
+
+  /** Cherry trees show some branch wood under their canopy, like vanilla's. */
+  private boolean bareUndersides() {
+    return treeType.leafMaterial == Material.CHERRY_LEAVES
+           && renderOrientation == RenderOrientation.NORMAL;
+  }
+
+  /**
+   * The blocks leaves stay out of (computed once, at the first leaf cluster, when all stems are
+   * drawn): for {@link #bareUndersides} types, the BARE_DEPTH blocks below each limb block (level
+   * 1) more than BARE_TIP_KEEP blocks from every limb end, down to the next wood, where the
+   * block's cell of 2^BARE_CELL_SHIFT blocks is picked (BARE_PERCENT in 100). Tops and branch ends
+   * keep their leaves. Empty for other types.
+   */
+  private Set<WorldChangeKey> bareBlocks() {
+    if (bare != null) {
+      return bare;
+    }
+    bare = new HashSet<>();
+    if (!bareUndersides()) {
+      return bare;
+    }
+    final int seed = refPoint.hashCode();
+    final int keep2 = BARE_TIP_KEEP * BARE_TIP_KEEP;
+    for (final WorldChangeKey key : branchWood) {
+      final WorldChange change = changeTracker.getChange(key);
+      if (change.kind != WorldChange.Kind.WOOD || change.level != 1) {
+        continue;
+      }
+      final int x = key.x();
+      final int y = key.y();
+      final int z = key.z();
+      final int h = LeafDecorator.hash(seed, x >> BARE_CELL_SHIFT, y >> BARE_CELL_SHIFT,
+                                       z >> BARE_CELL_SHIFT, 11);
+      if (((h >>> 8) % 100) >= BARE_PERCENT) {
+        continue;
+      }
+      boolean nearEnd = false;
+      for (final Vector end : limbEnds) {
+        final int dx = x - end.getBlockX();
+        final int dy = y - end.getBlockY();
+        final int dz = z - end.getBlockZ();
+        if (((dx * dx) + (dy * dy) + (dz * dz)) <= keep2) {
+          nearEnd = true;
+          break;
+        }
+      }
+      if (nearEnd) {
+        continue;
+      }
+      // the column below the block and below its four horizontal neighbours, each down to the
+      // next wood, so the bare limb shows from the side as well as from straight below
+      for (final int[] side : BARE_COLUMNS) {
+        for (int d = 1; d <= BARE_DEPTH; d++) {
+          final WorldChangeKey below = new WorldChangeKey(x + side[0], y - d, z + side[1]);
+          final WorldChange c = changeTracker.getChange(below);
+          if (c != null && c.kind == WorldChange.Kind.WOOD) {
+            break;
+          }
+          bare.add(below);
+        }
+      }
+    }
+    return bare;
   }
 
   /** Decides how many of {@link #COVER_SIDES} to cover around a wood block. */
@@ -214,10 +305,17 @@ public class Draw3d {
    * <li>Wood still showing amid leaves (two or more leaf faces) gets leaves above and beside
    * it.</li>
    * </ol>
-   * Off for plain-leaved types (mushrooms, fungi).
+   * Off for plain-leaved types (mushrooms, fungi), except that a mushroom's stem top gets a cap
+   * block over it where it reaches the cap's top, so no stem shows through the cap.
    */
   public void coverBranches() {
-    if (!treeType.noisyLeaves || renderOrientation != RenderOrientation.NORMAL) {
+    if (renderOrientation != RenderOrientation.NORMAL) {
+      return;
+    }
+    if (!treeType.noisyLeaves) {
+      if (treeType.capLevel != Integer.MAX_VALUE) {
+        coverPass((x, y, z, level) -> level == 0 && leafWithin(x, y, z, COVER_REACH_TRUNK) ? 1 : 0);
+      }
       return;
     }
     final double tipLength = leafLength * TIP_SCALE;
@@ -254,7 +352,7 @@ public class Draw3d {
         final WorldChangeKey side = new WorldChangeKey(key.x() + COVER_SIDES[k][0],
                                                        key.y() + COVER_SIDES[k][1],
                                                        key.z() + COVER_SIDES[k][2]);
-        if (changeTracker.getChange(side) == null) {
+        if (changeTracker.getChange(side) == null && !bareBlocks().contains(side)) {
           cover.add(side);
         }
       }

@@ -93,6 +93,8 @@ public class TreeType {
   private static final Map<String, Integer> CAP_LEVELS = Map.of("Red Mushroom", 1, "Brown Mushroom", 1);
   /** Mushroom caps and fungus wart domes stay smooth ({@link #noisyLeaves} false). */
   private static final Set<String> SMOOTH_LEAVES = Set.of("Red Mushroom", "Brown Mushroom", "Crimson", "Warped");
+  /** Leaf mixes that grow in patches ({@link #patchLeaves}); the others are picked per block. */
+  private static final Set<String> PATCH_LEAVES = Set.of("Poplar");
   /** Drooping boughs ({@link #leafDroop}). */
   private static final Map<String, Double> LEAF_DROOPS = Map.of("Spruce", 0.6);
   /** Bottom block of a hanging strand when not the hanging block itself (with its tip state). */
@@ -124,6 +126,10 @@ public class TreeType {
   public final int capLevel;
   /** Leaf clusters get an uneven, lumpy surface (Draw3d); false keeps plain ellipsoids. */
   public final boolean noisyLeaves;
+  /** A leaf mix (the default one or a configured one) grows in patches about a leaf cluster wide
+   *  (WoodStyler.LeafMix), like autumn poplar crowns; false picks every leaf block on its own
+   *  by weight (WoodStyler.pickLeaf), e.g. azalea's sprinkled flowering leaves. */
+  public final boolean patchLeaves;
   /** Leaf clusters sink this many blocks per block outward from the trunk (Draw3d); 0 for none. */
   public final double leafDroop;
   /** {@link #woodMaterial} blocks placed into solid ground become this block when the tree is
@@ -172,6 +178,7 @@ public class TreeType {
     this.hangingMax = shape[2];
     this.capLevel = CAP_LEVELS.getOrDefault(name, Integer.MAX_VALUE);
     this.noisyLeaves = !SMOOTH_LEAVES.contains(name);
+    this.patchLeaves = PATCH_LEAVES.contains(name);
     this.leafDroop = LEAF_DROOPS.getOrDefault(name, 0.0);
     this.groundWoodMaterial = GROUND_WOODS.containsKey(name)
         ? Material.getMaterial(GROUND_WOODS.get(name)) : null;

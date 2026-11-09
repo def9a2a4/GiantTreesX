@@ -6,6 +6,7 @@ import { readFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
 import { join, extname, normalize, resolve, dirname, relative } from 'node:path';
 import { createRequire } from 'node:module';
 import { cli, die, parseSeeds, resolveAll, splitList, RES, REPO, TEMP, VIEWER } from './lib/common.mjs';
+import { WOOD_STYLE_MODES, woodStyleMode } from '../docs/viewer/src/materials.js';
 
 // shot() options (see shot() in docs/viewer/ui/app.js) and default image size per view
 const VIEWS = {
@@ -17,7 +18,7 @@ const VIEWS = {
   base: { size: [480, 480], view: { azimuth: 40, elevation: 10, zoom: 2.6, focusY: 2, showLeaves: false } },
   wood: { size: [480, 600], view: { azimuth: 40, elevation: 14, showLeaves: false } },
 };
-const STYLES = ['all_log', 'mixed', 'mixed_stripped'];
+const STYLES = WOOD_STYLE_MODES; // mixed_stripped is still accepted, as an alias of mixed
 
 const USAGE = `
 Usage: node scripts/tree-shots.mjs [options] TREE...
@@ -77,7 +78,7 @@ if (!positionals.length) die(USAGE.trim());
 // ---- options ----
 const seeds = parseSeeds(o.seeds);
 const styles = splitList([o.style]);
-for (const s of styles) if (!STYLES.includes(s)) die(`unknown style ${s} (${STYLES.join(', ')})`);
+for (const s of styles) if (!woodStyleMode(s)) die(`unknown style ${s} (${STYLES.join(', ')})`);
 const size = o.size ? o.size.split('x').map(Number) : null;
 if (size && (size.length !== 2 || size.some((n) => !(n > 0)))) die('--size must look like 640x800');
 const views = [];
@@ -150,7 +151,7 @@ async function setStyle(style, hollow) {
     box.dispatchEvent(new Event('change'));
     sel.value = style;
     sel.dispatchEvent(new Event('change'));
-  }, [style, hollow]);
+  }, [woodStyleMode(style), hollow]);
   await page.waitForFunction(() => {
     const p = window.__treePreview;
     return p.isIdle() && (window.__shotsOldMat === null || p.S.data.mat !== window.__shotsOldMat);

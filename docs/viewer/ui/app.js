@@ -584,15 +584,16 @@ $('clearSlice').onclick = () => {
 
 /**
  * The view-cut plane: vertical, facing away from the camera (the view direction with its up/down
- * part removed, so a tilted camera still cuts the trunk straight down), through the orbit target
- * moved `depth` along it.
+ * part removed, so a tilted camera still cuts the trunk straight down), through the trunk axis
+ * (x = z = 0.5, where the plugin plants the tree) moved `depth` along it, so lopsided crowns
+ * don't leave the trunk in front of the cut.
  */
 function viewCutPlane() {
   const n = new THREE.Vector3().subVectors(controls.target, camera.position);
   n.y = 0;
   if (n.lengthSq() < 1e-6) n.set(0, 0, -1); // looking straight down: cut along z
   n.normalize();
-  const p0 = controls.target.clone().addScaledVector(n, view.viewCutDepth);
+  const p0 = new THREE.Vector3(0.5, 0, 0.5).addScaledVector(n, view.viewCutDepth);
   return { nx: n.x, ny: n.y, nz: n.z, d: -n.dot(p0) };
 }
 
@@ -1165,7 +1166,7 @@ function isIdle() {
  * azimuth/elevation in degrees around the tree; zoom > 1 moves closer; focus 0..1 picks the
  * height the camera looks at (0 = lowest block, 1 = top; default: the middle), focusY an absolute
  * height (0 = the ground the tree is planted on); viewCut = depth
- * of a camera-facing cut plane relative to the tree's centre, or null for none.
+ * of a camera-facing cut plane relative to the trunk, or null for none.
  */
 function shot({ azimuth = 40, elevation = 18, zoom = 1, focus = null, focusY = null, viewCut = null, showLeaves = true, showRoots = true }) {
   view.showLeaves = showLeaves;

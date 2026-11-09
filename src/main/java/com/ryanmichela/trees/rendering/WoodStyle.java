@@ -19,10 +19,18 @@ public class WoodStyle {
   public enum Mode {
     /** Every wood block is a log (the pre-4.0 look). */
     ALL_LOG,
-    /** Bark-on-all-sides wood blocks on the outside, logs in the core. */
+    /** Bark-on-all-sides wood blocks on the outside; inside, stripped logs in the trunk (stem
+     *  level 0, roots' main stems included) and stripped wood in branches. */
     MIXED,
-    /** Bark-on-all-sides wood blocks on the outside, stripped logs in the core. */
-    MIXED_STRIPPED
+    /** Bark-on-all-sides wood blocks on the outside, plain logs inside. */
+    MIXED_LOG;
+
+    /** A config name, case-insensitive; {@code mixed_stripped} (4.0's stripped style) is an
+     *  alias of {@link #MIXED}. Throws IllegalArgumentException for unknown names. */
+    public static Mode parse(final String name) {
+      final String upper = name.trim().toUpperCase(Locale.ROOT);
+      return "MIXED_STRIPPED".equals(upper) ? MIXED : valueOf(upper);
+    }
   }
 
   public final Mode mode;
@@ -32,31 +40,37 @@ public class WoodStyle {
   public final int hollowWallThickness;
   /** Weighted leaf blocks; empty means "use the wood type's own (single) leaf block". */
   public final Map<Material, Integer> leaves;
+  /** Whether {@link #leaves} grow in patches ({@link WoodStyler.LeafMix}) rather than being
+   *  picked per block; the wood type's {@link TreeType#patchLeaves}. */
+  public final boolean patchLeaves;
 
   public WoodStyle(final Mode mode, final double hollowChance,
-                   final int hollowWallThickness, final Map<Material, Integer> leaves) {
+                   final int hollowWallThickness, final Map<Material, Integer> leaves,
+                   final boolean patchLeaves) {
     this.mode = mode;
     this.hollowChance = hollowChance;
     this.hollowWallThickness = hollowWallThickness;
     this.leaves = leaves;
+    this.patchLeaves = patchLeaves;
   }
 
   /**
    * Resolves the style for {@code woodType} (the tree file's WoodType param, e.g. "Dark Oak"):
    * keys under {@code wood_types.<woodType>} win over the same keys under {@code wood}.
    * {@code defaultLeaves} (the wood type's own {@link TreeType#leafMix}) is used when the config
-   * sets no leaves.
+   * sets no leaves. Leaves, configured or not, grow in patches when {@code patchLeaves} (the wood
+   * type's {@link TreeType#patchLeaves}).
    */
   public static WoodStyle fromConfig(final ConfigurationSection config, final String woodType,
                                      final Map<Material, Integer> defaultLeaves,
-                                     final Logger logger) {
+                                     final boolean patchLeaves, final Logger logger) {
     final ConfigurationSection base = config.getConfigurationSection("wood");
     final ConfigurationSection override = config.getConfigurationSection("wood_types." + woodType);
 
     final String modeName = pick(override, base, "style", "mixed");
     Mode mode;
     try {
-      mode = Mode.valueOf(modeName.toUpperCase(Locale.ROOT));
+      mode = Mode.parse(modeName);
     } catch (final IllegalArgumentException e) {
       warnOnce(logger, "Unknown wood style '" + modeName + "', using mixed");
       mode = Mode.MIXED;
@@ -86,7 +100,7 @@ public class WoodStyle {
       // the wood type's own leaves, which for some (e.g. Poplar) are a mix
       leaves.putAll(defaultLeaves);
     }
-    return new WoodStyle(mode, hollowChance, wallThickness, leaves);
+    return new WoodStyle(mode, hollowChance, wallThickness, leaves, patchLeaves);
   }
 
   /**

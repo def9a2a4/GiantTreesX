@@ -32,8 +32,9 @@ Runs on Paper 1.21.4 through 1.21.11 and 26.1 through 26.3 (one jar).
   the bottom up, instead of all at once.
 * **Safer.** Trees no longer replace chests, spawners or other block entities, or the blocks in
   `protected_blocks`.
-* **Growing** a tree only needs the configured `bone-meal-consumed` amount in your inventory,
-  not exactly 64 in hand. Grown and `/gt` trees no longer all share one shape per world.
+* **Growing** a tree only needs the configured `bone-meal-consumed` amount in your inventory
+  (plain bone meal; renamed bone meal doesn't count, and 0 makes it free), not exactly 64 in
+  hand. Grown and `/gt` trees no longer all share one shape per world.
 * `tree-create <species> <world> <x> <z>` works from the console.
 * **Three tree sizes.** Tree types come as a giant, a huge and a big tree (jungle and spruce
   have no big tree: vanilla's 2x2 trees fill that size), all of which work with `tree-create`

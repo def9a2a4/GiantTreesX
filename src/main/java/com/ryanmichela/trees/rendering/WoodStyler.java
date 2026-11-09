@@ -12,7 +12,9 @@ import org.bukkit.Material;
  * <p>
  * Every wood block gets a depth: 1 for blocks with a non-wood face neighbour (the outer layer),
  * 2 for blocks touching only wood but next to a depth-1 block, and so on inward. The
- * {@link WoodStyle} then picks bark, core and hollow blocks from that depth.
+ * {@link WoodStyle} then picks bark, core and hollow blocks from that depth; whether a core block
+ * belongs to the trunk or a branch is its stem level ({@link WorldChange#level}: 0 is the trunk,
+ * and a branch block inside the trunk keeps level 0, see WorldChangeTracker).
  */
 final class WoodStyler {
 
@@ -28,7 +30,8 @@ final class WoodStyler {
                            && new Random(seed).nextDouble() * 100 < style.hollowChance;
     final boolean needsDepth = style.mode != WoodStyle.Mode.ALL_LOG || hollow;
     final Map<Long, Integer> depth = needsDepth ? woodDepth(tracker) : null;
-    final LeafMix leafMix = style.leaves.isEmpty() ? null : new LeafMix(style.leaves);
+    final LeafMix leafMix = style.leaves.isEmpty() || !style.patchLeaves ? null
+        : new LeafMix(style.leaves);
 
     for (final WorldChange change : tracker.getChanges()) {
       final int x = change.location.getBlockX();
@@ -38,6 +41,8 @@ final class WoodStyler {
       if (change.kind == WorldChange.Kind.LEAVES) {
         if (leafMix != null) {
           change.material = leafMix.pick(x, y, z, seed);
+        } else if (!style.leaves.isEmpty()) {
+          change.material = pickLeaf(style.leaves, x, y, z, seed);
         }
         continue;
       }
@@ -49,12 +54,14 @@ final class WoodStyler {
       if (hollow && change.level == 0 && y >= 1 && d > style.hollowWallThickness) {
         // only the trunk above the base is carved, so the tree stays anchored
         change.material = Material.AIR;
-      } else if (style.mode == WoodStyle.Mode.MIXED || style.mode == WoodStyle.Mode.MIXED_STRIPPED) {
-        if (d == 1) {
-          change.material = barkOf(change.material);
-        } else if (style.mode == WoodStyle.Mode.MIXED_STRIPPED) {
-          change.material = strippedOf(change.material);
-        }
+      } else if (style.mode == WoodStyle.Mode.ALL_LOG) {
+        continue;
+      } else if (d == 1) {
+        change.material = barkOf(change.material);
+      } else if (style.mode == WoodStyle.Mode.MIXED) {
+        // trunk cores are stripped logs, branch cores stripped (bark-less on all sides) wood
+        change.material = change.level == 0 ? strippedOf(change.material)
+            : strippedWoodOf(change.material);
       }
     }
   }
@@ -125,13 +132,55 @@ final class WoodStyler {
     return log;
   }
 
+  /** OAK_LOG -> STRIPPED_OAK_WOOD, CRIMSON_STEM -> STRIPPED_CRIMSON_HYPHAE; else
+   *  {@link #strippedOf}. */
+  static Material strippedWoodOf(final Material log) {
+    final String name = log.name();
+    if (name.endsWith("_LOG")) {
+      return orSame("STRIPPED_" + name.substring(0, name.length() - 4) + "_WOOD", strippedOf(log));
+    }
+    if (name.endsWith("_STEM")) {
+      return orSame("STRIPPED_" + name.substring(0, name.length() - 5) + "_HYPHAE", strippedOf(log));
+    }
+    return log;
+  }
+
+  /**
+   * A weighted leaf pick per block (wood types without {@link TreeType#patchLeaves}, e.g.
+   * azalea), from the position and tree seed only. Kept in sync with pickLeaf in
+   * docs/viewer/src/materials.js.
+   */
+  static Material pickLeaf(final Map<Material, Integer> weights, final int x, final int y,
+                           final int z, final int seed) {
+    int total = 0;
+    for (final int w : weights.values()) {
+      total += w;
+    }
+    long h = seed;
+    h = h * 0x9E3779B97F4A7C15L + x;
+    h = h * 0x9E3779B97F4A7C15L + y;
+    h = h * 0x9E3779B97F4A7C15L + z;
+    h ^= (h >>> 31);
+    h *= 0xBF58476D1CE4E5B9L;
+    h ^= (h >>> 29);
+    int roll = (int) Math.floorMod(h, (long) total);
+    for (final Map.Entry<Material, Integer> e : weights.entrySet()) {
+      roll -= e.getValue();
+      if (roll < 0) {
+        return e.getKey();
+      }
+    }
+    return weights.keySet().iterator().next();
+  }
+
   private static Material orSame(final String name, final Material fallback) {
     final Material material = Material.getMaterial(name);
     return material != null ? material : fallback;
   }
 
   /**
-   * A weighted leaf mix, picked per block from the position and tree seed only, so the result
+   * A weighted leaf mix for wood types with {@link TreeType#patchLeaves} (poplar), picked per
+   * block from the position and tree seed only, so the result
    * doesn't depend on iteration order. Kept in sync with LeafMix in docs/viewer/src/materials.js.
    * <p>
    * Leaves come in patches instead of per-block noise: space is split into jittered Voronoi cells
