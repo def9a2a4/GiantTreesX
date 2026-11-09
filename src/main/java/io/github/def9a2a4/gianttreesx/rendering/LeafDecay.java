@@ -15,9 +15,8 @@ import org.bukkit.block.data.type.Leaves;
  * The tracker places blocks without physics, so leaves would keep the default distance (7, "no log
  * nearby") and decay on their first random tick. This pass computes vanilla's distance instead:
  * 1 next to a log, otherwise one more than the nearest neighbouring leaf, through leaves only, up
- * to 6. Leaves in range become non-persistent with that distance. The few still out of range
- * (Draw3d's leaf-cluster cores reach almost all of them) stay persistent rather than rotting away
- * as soon as the tree is placed.
+ * to 6. Every leaf becomes non-persistent with that distance; the few still out of range (Draw3d's
+ * leaf-cluster cores reach about 99.85% of leaves) get 7 and rot soon after the tree is placed.
  */
 final class LeafDecay {
 
@@ -63,10 +62,9 @@ final class LeafDecay {
     }
     for (final Map.Entry<WorldChangeKey, WorldChange> e : leaves.entrySet()) {
       final Integer d = distance.get(e.getKey());
-      if (d != null) {
-        final WorldChange change = e.getValue();
-        change.blockDataMutator = decaying(change.blockDataMutator, d);
-      }
+      final WorldChange change = e.getValue();
+      change.blockDataMutator = decaying(change.blockDataMutator,
+                                         d != null ? d : MAX_DISTANCE + 1);
     }
   }
 
