@@ -1,6 +1,6 @@
 # GiantTreesX 4.0.0
 
-The first release of GiantTreesX, a fork of [GiantTrees](https://github.com/rmichela/GiantTrees) 3.2. It runs on current Paper, adds new trees and three tree sizes, and reworks how trees look, spawn and get placed.
+The first release of GiantTreesX, a fork of [Capri205's GiantTrees](https://github.com/Capri205/GiantTrees) 3.2 (itself a fork of [Ryan Michela's GiantTrees](https://github.com/rmichela/GiantTrees)). Everything below is compared with GiantTrees 3.2. It runs on current Paper, adds new trees and three tree sizes, and reworks how trees look, spawn and get placed.
 
 **Back up your world before updating.** Giant trees replace a lot of blocks, and there is no undo.
 
@@ -22,6 +22,7 @@ Browse every tree in 3D in the [gallery and viewer](https://def9a2a4.github.io/G
   - red and brown mushrooms
   - crimson and warped fungi; crimson ones grow weeping vines
 - 18 tree types in all.
+- Crimson and warped fungi grow only from saplings and with `/gt grow`, not naturally.
 - Poplar needs Minecraft 26.3. On older servers it grows as birch, and its sapling patterns are skipped.
 - The existing trees were redone:
   - Acacia, mangrove, jungle, cherry and spruce were reshaped.
@@ -57,6 +58,7 @@ Every tree type comes in three sizes:
 - **Hollow trunks:** 20% of trees have hollow trunks by default (`hollow_chance`).
 - **Per wood type:** any wood type can get its own style and a weighted mix of leaf blocks (`wood_types`).
 - **Bug fixes from the original code:**
+  - every log stood upright; logs now follow the direction of their branch
   - floating wood blocks
   - mirrored branches
   - flat 5-block discs at the ends of some branches
@@ -72,6 +74,7 @@ Large leaf clusters get hidden wood inside them, so leaves far from the branches
 - Big trees grow from a full 3x3 ring around a bone block, the same ring as a huge tree with a different middle block.
 - Particles spread out to the width of the trunk while the tree is on its way.
 - You no longer need exactly a full stack of 64 bone meal in your hand. Any bone meal in your hand starts it, the cost comes out of your whole inventory, and the plugin tells you if you don't have enough.
+- A bone meal cost of 0 makes that size free.
 - Patterns may use `-` for "any block".
 - Patterns using a sapling the server doesn't have are skipped, with a note in the log.
 - Two patterns that can't be told apart (for example big and huge rings with the same core block) are reported at startup.
@@ -89,6 +92,7 @@ Large leaf clusters get hidden wood inside them, so leaves far from the branches
   - in what mix of sizes, by default 16 big and 4 huge for every giant
   - by default 4% of new chunks in a tree biome grow a tree, about 8 times as many natural trees as GiantTrees 3.2 (mostly big ones)
   - a biome can set its own chance, tree weights and sizes
+- Any biome can get trees, including datapack biomes, by listing it; no code change needed.
 - Biome copies of tree files (`biome.*.xml`) are no longer used.
 - Azaleas spawn above lush caves, like vanilla.
 - Natural trees grow only on soil, never on or in another tree, and in water only in swamps. This works on Minecraft 26.x, which changed which blocks count as dirt.
@@ -98,15 +102,17 @@ Large leaf clusters get hidden wood inside them, so leaves far from the branches
 - `/gianttrees`, or `/gt` for short, replaces `tree-create` and `tree-edit`:
   - `/gt help`
   - `/gt grow <type> <size> [x z [world]]`, also from the console; without a position the tree grows at your feet (in caves and the Nether too)
-  - `/gt edit`
+  - `/gt edit`, which now works on Linux and macOS too (`tree-edit` only worked on Windows), and explains when the server has no display
 - Arguments tab-complete, and leaving one out shows clickable choices.
 - Permissions are unchanged: `gianttrees.create` (default: op) and `gianttrees.grow` (default: everyone).
 
 ## Performance and safety
 
-- Trees are generated off the main thread and placed from the bottom up in small batches. Set the batches with `BLOCKS_PER_TICK` and `TICK_DELAY`.
+- Trees are placed from the bottom up in small batches, so they visibly grow. `BLOCKS_PER_TICK` and `TICK_DELAY` were in the config before but never read, and a whole tree landed in one tick; now they set the batches.
 - Trees never replace chests, spawners or other block entities (`protect_block_entities`), or any block in `protected_blocks` (bedrock, barriers, portals and so on by default).
 - The jar no longer bundles a copy of the server's own classes.
+- No more "Initializing Legacy Material Support" warning the first time someone grows a tree.
+- A tree biome without tree files no longer logs a SEVERE error for every new chunk.
 - Trees grown from saplings vary with their position. Before, every tree of one type grown in a world had the same shape.
 
 ## Custom trees
@@ -118,12 +124,13 @@ Large leaf clusters get hidden wood inside them, so leaves far from the branches
 
 ## Other
 
+- For plugin developers: the code moved from `com.ryanmichela.trees` to `io.github.def9a2a4.gianttreesx`.
 - Anonymous usage statistics through [bStats](https://bstats.org/plugin/bukkit/GiantTreesX/35220). Turn them off for all plugins in `plugins/bStats/config.yml`.
 
 ## Upgrading from GiantTrees
 
 - **New config layout.** Natural spawning settings moved to `natural:` and planting settings to `planting:`.
-  - The old settings are no longer read: `naturallyGrowTrees`, `worlds`, `treeGrowthPercentChance`, `planting-patterns`, `core`, `bone-meal-consumed` and the rest.
+  - The old settings are no longer read: `naturallyGrowTrees`, `worlds`, `treeGrowthPercentChance`, `planting-patterns`, `core`, `bone-meal-consumed` and the rest. `SIMPLE_LIGHTING` is gone; it did nothing.
   - The plugin warns at startup while they are still in your `config.yml`, and uses the defaults until you move them.
   - The easiest way: delete `config.yml`, restart to get the new one, and copy your changes back in.
   - **If you had natural trees turned off** (`naturallyGrowTrees: false`), set `natural.enabled: false` before starting 4.0.0. Otherwise natural trees start spawning in `world`, at the new 4% default.
@@ -133,6 +140,7 @@ Large leaf clusters get hidden wood inside them, so leaves far from the branches
   - Delete the rest.
 - **Commands.** Replace `tree-create` and `tree-edit` with `/gt grow` and `/gt edit` in any scripts.
 - **Existing trees.** Trees grown before the update keep their old leaves, which never decay.
+- **New trees look different.** Trunks now have bark outside and stripped logs inside, and 20% are hollow. For something closer to the old look, set `wood.style: all_log` and `wood.hollow_chance: 0` (logs still follow their branches).
 
 ## Known issues
 
