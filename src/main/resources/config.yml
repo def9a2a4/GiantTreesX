@@ -74,19 +74,23 @@ planting:
     giant: 64
     huge: 32
     big: 16
-  # the block in the middle of every pattern (X)
-  core: EMERALD_BLOCK
-  # Three sizes, by the shape of the pattern around the core block (in the center):
-  #   5 x 5 ring        giant tree (tree.OAK.xml)
-  #   full 3 x 3 ring   huge tree  (tree.OAK_HUGE.xml)
-  #   3 x 3 plus        big tree   (tree.OAK_BIG.xml)
-  # The plus shape has saplings north, east, south and west of the core; its corners are "-"
-  # (don't care), so whatever stands there is ignored and left alone.
+  # the block in the middle of each size's patterns (X); one block name (e.g. "core: EMERALD_BLOCK")
+  # sets it for every size
+  core:
+    giant: EMERALD_BLOCK
+    huge: EMERALD_BLOCK
+    big: BONE_BLOCK
+  # Three sizes, by the pattern around the core block (in the center):
+  #   5 x 5 ring, emerald block   giant tree (tree.OAK.xml)
+  #   3 x 3 ring, emerald block   huge tree  (tree.OAK_HUGE.xml)
+  #   3 x 3 ring, bone block      big tree   (tree.OAK_BIG.xml)
+  # A "-" cell (don't care) matches any block, which is ignored and left alone.
   # The most specific pattern that fits wins: a 5 x 5 ring before the 3 x 3 ring inside it, a
-  # full 3 x 3 ring before a plus. Patterns are matched in all four 90 degree rotations.
+  # pattern without "-" cells before one with them. Patterns are matched in all four 90 degree
+  # rotations. If two sizes share a core block, give their patterns different saplings.
   # The name of a pattern is the tree file it grows: oak_huge grows tree.OAK_HUGE.xml. Its size
   # goes by the name: *_huge is huge, *_big big; other names go by shape (5 x 5 giant, full
-  # 3 x 3 huge, else big).
+  # 3 x 3 huge, else big). The size picks the core block the pattern uses.
   # Each row in the pattern represents one row of blocks placed horizontally on the ground.
   # All rows must be as long as there are rows (a square).
   # Each character in the pattern represents one of the following saplings:
@@ -278,73 +282,73 @@ planting:
       - YZY
       - ZXZ
       - YZY
-    # 3 x 3 plus shapes: big trees. Only the saplings north, east,
-    # south and west of the core count; the corners (-) can be anything.
+    # 3 x 3 rings around a big tree's core (a bone block by default): big trees. The same rings
+    # as the huge trees above, which have an emerald block in the middle.
     # Jungle and spruce have no big tree: vanilla's 2 x 2 jungle and spruce trees fill that size.
     acacia_big:
-      - "-A-"
+      - AAA
       - AXA
-      - "-A-"
+      - AAA
     oak_big:
-      - "-O-"
+      - OOO
       - OXO
-      - "-O-"
+      - OOO
     birch_big:
-      - "-B-"
+      - BBB
       - BXB
-      - "-B-"
+      - BBB
     cherry_big:
-      - "-C-"
+      - CCC
       - CXC
-      - "-C-"
+      - CCC
     dark_oak_big:
-      - "-D-"
+      - DDD
       - DXD
-      - "-D-"
+      - DDD
     mangrove_big:
-      - "-M-"
+      - MMM
       - MXM
-      - "-M-"
+      - MMM
     pale_oak_big:
-      - "-P-"
+      - PPP
       - PXP
-      - "-P-"
+      - PPP
     poplar_big:
-      - "-L-"
+      - LLL
       - LXL
-      - "-L-"
+      - LLL
     red_mushroom_big:
-      - "-R-"
+      - RRR
       - RXR
-      - "-R-"
+      - RRR
     brown_mushroom_big:
-      - "-N-"
+      - NNN
       - NXN
-      - "-N-"
+      - NNN
     crimson_fungus_big:
-      - "-F-"
+      - FFF
       - FXF
-      - "-F-"
+      - FFF
     warped_fungus_big:
-      - "-W-"
+      - WWW
       - WXW
-      - "-W-"
+      - WWW
     mesapuzzle_big:
-      - "-A-"
+      - AOA
       - OXO
-      - "-A-"
+      - AOA
     cottonwood_big:
-      - "-B-"
-      - OXO
-      - "-B-"
+      - OBO
+      - BXB
+      - OBO
     swamp_oak_big:
-      - "-H-"
+      - HOH
       - OXO
-      - "-H-"
+      - HOH
     azalea_big:
-      - "-Y-"
+      - YZY
       - ZXZ
-      - "-Y-"
+      - YZY
 
 # Giant trees can possibly smother players if they don't get out of the way.
 # How many seconds should Giant Trees wait before adding a tree to the world?

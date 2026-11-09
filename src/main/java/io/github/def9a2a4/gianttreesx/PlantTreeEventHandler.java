@@ -45,7 +45,7 @@ public class PlantTreeEventHandler implements Listener {
 
   /** widest pattern accepted; patterns are 3x3 or 5x5 squares with the core in the centre */
   private static final int MAX_PATTERN_SIZE = 5;
-  /** pattern code for a "don't care" cell, which matches any block (e.g. the plus shape's corners) */
+  /** pattern code for a "don't care" cell, which matches any block */
   private static final char ANY_BLOCK = '-';
 
   /** Tree size tiers: what a pattern grows, and so what it costs. */
@@ -58,7 +58,7 @@ public class PlantTreeEventHandler implements Listener {
       this.article = article;
     }
 
-    /** Its key in the config's planting.sizes and planting.bone-meal sections. */
+    /** Its key in the config's planting.sizes, planting.bone-meal and planting.core sections. */
     String key() {
       return this.name().toLowerCase(Locale.ROOT);
     }
@@ -82,11 +82,13 @@ public class PlantTreeEventHandler implements Listener {
     }
   }
 
-  private Material coreblock;
+  /** The block in the middle of each size's patterns (X): by default emerald for giant and huge
+   *  trees, bone block for big ones, so the same 3x3 ring grows either. */
+  private final Map<Tier, Material> coreBlocks = new EnumMap<>(Tier.class);
   private final Plugin plugin;
   /**
    * sorted most specific first: 5x5 before 3x3, and among patterns of one size those with fewer
-   * "don't care" cells first, so a full 3x3 ring wins over the plus shape inside it
+   * "don't care" cells first, so a full ring wins over a pattern with gaps inside it
    */
   private final List<PhysicalCraftingRecipe> recipes = new ArrayList<>();
   private final Map<Tier, Integer> boneMeal = new EnumMap<>(Tier.class);
@@ -134,11 +136,20 @@ public class PlantTreeEventHandler implements Listener {
 			boneMeal.put(tier, config.getInt("planting.bone-meal." + tier.key()));
 		}
 
-		// matchMaterial ignores case and accepts "minecraft:emerald_block"
-		coreblock = Material.matchMaterial(config.getString("planting.core", "EMERALD_BLOCK"));
-		if (coreblock == null || !coreblock.isBlock()) {
-			plugin.getLogger().warning("Warning: Invalid core block provided. Default to EMERALD_BLOCK");
-			coreblock = Material.EMERALD_BLOCK;
+		// planting.core: one block for every size (older configs), or one per size
+		for (final Tier tier : Tier.values()) {
+			final String name = config.isConfigurationSection("planting.core")
+					? config.getString("planting.core." + tier.key())
+					: config.getString("planting.core");
+			final Material fallback = tier == Tier.BIG ? Material.BONE_BLOCK : Material.EMERALD_BLOCK;
+			// matchMaterial ignores case and accepts "minecraft:emerald_block"
+			Material core = name == null ? fallback : Material.matchMaterial(name);
+			if (core == null || !core.isBlock()) {
+				plugin.getLogger().warning("Invalid core block '" + name + "' for " + tier.key()
+						+ " trees, using " + fallback);
+				core = fallback;
+			}
+			coreBlocks.put(tier, core);
 		}
 
 		// the server's own patterns, or the bundled ones when its config has none
@@ -146,13 +157,15 @@ public class PlantTreeEventHandler implements Listener {
 				config.get("planting.patterns", null) instanceof ConfigurationSection own ? own
 						: config.getDefaults().getConfigurationSection("planting.patterns");
 		for (final String pattern : patternSection.getKeys(false)) {
-			final Material[][] patternmaterials = parsePattern(pattern, patternSection.getStringList(pattern));
+			final List<String> rows = patternSection.getStringList(pattern);
+			final int wildcards = (int) String.join("", rows).chars().filter(c -> c == ANY_BLOCK).count();
+			final Tier tier = Tier.of(pattern, rows.size(), wildcards);
+			final Material[][] patternmaterials = parsePattern(pattern, rows, coreBlocks.get(tier));
 			if (patternmaterials != null) {
 				final PhysicalCraftingRecipe recipe = new PhysicalCraftingRecipe(pattern, patternmaterials);
 				// a size turned off in planting.sizes: its patterns are left out, so a smaller
 				// pattern inside the laid-out saplings can match instead
-				if (!config.getBoolean("planting.sizes."
-						+ Tier.of(pattern, recipe.getSize(), recipe.getWildcards()).key())) {
+				if (!config.getBoolean("planting.sizes." + tier.key())) {
 					continue;
 				}
 				if (!treeFile(recipe).exists()) {
@@ -167,11 +180,12 @@ public class PlantTreeEventHandler implements Listener {
 	}
 
 	/**
-	 * Parses one planting pattern: a 3x3 or 5x5 square of sapling codes with X (the core block)
-	 * in the centre and - for "don't care" cells (returned as null). Logs the problem and returns
-	 * null when the pattern is invalid.
+	 * Parses one planting pattern: a 3x3 or 5x5 square of sapling codes with X (the core block,
+	 * {@code core}) in the centre and - for "don't care" cells (returned as null). Logs the
+	 * problem and returns null when the pattern is invalid.
 	 */
-	private Material[][] parsePattern(final String pattern, final List<String> patternrows) {
+	private Material[][] parsePattern(final String pattern, final List<String> patternrows,
+	                                  final Material core) {
 		final int size = patternrows.size();
 		if (size != 3 && size != 5) {
 			plugin.getLogger().severe("Error: Invalid dimensions for pattern " + pattern + ". Needs to be a 3x3 or 5x5 matrix.");
@@ -193,7 +207,7 @@ public class PlantTreeEventHandler implements Listener {
 					return null;
 				}
 				if (code == 'X') {
-					patternmaterials[row][col] = coreblock;
+					patternmaterials[row][col] = core;
 				} else if (code == ANY_BLOCK) {
 					patternmaterials[row][col] = null;
 				} else if (unavailableCodes.contains(code)) {
@@ -223,7 +237,7 @@ public class PlantTreeEventHandler implements Listener {
 			return;
 		}
 		final ItemStack itemInMainHand = event.getPlayer().getInventory().getItemInMainHand();
-		if (clickedBlock.getType() != this.coreblock || itemInMainHand.getType() != Material.BONE_MEAL) {
+		if (!coreBlocks.containsValue(clickedBlock.getType()) || itemInMainHand.getType() != Material.BONE_MEAL) {
 			return;
 		}
 
@@ -232,7 +246,7 @@ public class PlantTreeEventHandler implements Listener {
 		}
 
 		// recipes are sorted most specific first: a 5x5 ring wins over the 3x3 ring inside it,
-		// and a full 3x3 ring over the plus shape inside that
+		// and a full ring over a pattern with gaps; the core block tells huge and big rings apart
 		// a pattern whose tree file is missing (e.g. jungle_big or spruce_big from an older
 		// config: those types have no big tree) is skipped, so a less specific one can still win
 		PhysicalCraftingRecipe recipe = null;
