@@ -87,6 +87,12 @@ public class PhysicalCraftingRecipe {
    *
    * @param worldblocks - size x size blocks around the clicked core block
    */
+  /** Whether {@code other} is the same pattern, in some rotation: the two could never be told apart. */
+  public boolean samePattern(final PhysicalCraftingRecipe other) {
+    return this.size == other.size && this.matchingOrientation(other.orientations[0]) != null
+           && other.matchingOrientation(this.orientations[0]) != null;
+  }
+
   public Material[][] matchingOrientation(Material[][] worldblocks) {
     for (final Material[][] orientation : this.orientations) {
       if (fits(orientation, worldblocks)) {

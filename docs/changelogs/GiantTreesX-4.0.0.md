@@ -74,6 +74,8 @@ Large leaf clusters get hidden wood inside them, so leaves far from the branches
 - You no longer need exactly a full stack of 64 bone meal in your hand. Any bone meal in your hand starts it, the cost comes out of your whole inventory, and the plugin tells you if you don't have enough.
 - Patterns may use `-` for "any block".
 - Patterns using a sapling the server doesn't have are skipped, with a note in the log.
+- Two patterns that can't be told apart (for example big and huge rings with the same core block) are reported at startup.
+- Growing from saplings respects protection plugins: no trees in claims or regions where the player can't build.
 
 ## Natural spawning
 
@@ -81,6 +83,7 @@ Large leaf clusters get hidden wood inside them, so leaves far from the branches
   - which trees grow in which biome
   - how often
   - in what mix of sizes, by default 16 big and 4 huge for every giant
+  - by default 4% of new chunks in a tree biome grow a tree, about 8 times as many natural trees as GiantTrees 3.2 (mostly big ones)
   - a biome can set its own chance, tree weights and sizes
 - Biome copies of tree files (`biome.*.xml`) are no longer used.
 - Azaleas spawn above lush caves, like vanilla.
@@ -90,7 +93,7 @@ Large leaf clusters get hidden wood inside them, so leaves far from the branches
 
 - `/gianttrees`, or `/gt` for short, replaces `tree-create` and `tree-edit`:
   - `/gt help`
-  - `/gt grow <type> <size> [x z [world]]`, also from the console
+  - `/gt grow <type> <size> [x z [world]]`, also from the console; without a position the tree grows at your feet (in caves and the Nether too)
   - `/gt edit`
 - Arguments tab-complete, and leaving one out shows clickable choices.
 - Permissions are unchanged: `gianttrees.create` (default: op) and `gianttrees.grow` (default: everyone).
@@ -119,8 +122,8 @@ Large leaf clusters get hidden wood inside them, so leaves far from the branches
   - The plugin warns at startup while they are still in your `config.yml`, and uses the defaults until you move them.
   - The easiest way: delete `config.yml`, restart to get the new one, and copy your changes back in.
 - **Old tree files.** `tree.*.xml` and `biome.*.xml` files in the plugin folder are no longer read.
-  - The plugin warns at startup and names the ones that differ from the bundled trees.
-  - Move the ones you want to keep into `plugins/GiantTrees/tree/`. Rename `biome.BIOME-NAME.xml` to `tree.NAME.xml` and list `NAME` under its biome in `natural.trees`.
+  - The plugin warns at startup. Most of them are just outdated copies of the bundled trees, which have changed; it names the ones that aren't bundled trees at all, which are probably your own.
+  - Move only trees you edited or added yourself into `plugins/GiantTrees/tree/`; a file there replaces the bundled tree of the same name. Rename `biome.BIOME-NAME.xml` to `tree.NAME.xml` and list `NAME` under its biome in `natural.trees`.
   - Delete the rest.
 - **Commands.** Replace `tree-create` and `tree-edit` with `/gt grow` and `/gt edit` in any scripts.
 - **Existing trees.** Trees grown before the update keep their old leaves, which never decay.

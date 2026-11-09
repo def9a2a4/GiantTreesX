@@ -22,7 +22,7 @@
   <groupId>io.github.def9a2a4</groupId>
   <artifactId>GiantTrees</artifactId>
   <name>GiantTrees</name>
-  <version>4.0</version>
+  <version>4.0.0</version>
   <description>Grows enormous trees</description>
 
   <properties>

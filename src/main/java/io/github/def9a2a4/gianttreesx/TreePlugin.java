@@ -19,7 +19,6 @@ package io.github.def9a2a4.gianttreesx;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 

@@ -132,3 +132,8 @@ tree-shots:
 	[ -d $(VIEWER)/node_modules/playwright ] || npm install --prefix $(VIEWER) --no-audit --no-fund
 	cd $(VIEWER) && npx playwright install chromium
 	node scripts/tree-shots.mjs $(if $(SEEDS),--seeds '$(SEEDS)') $(if $(VIEWS),--views '$(VIEWS)') --sheet .temp/shots/sheet.jpg '$(TREES)'
+
+# README.md with absolute links and images, printed to the console (for Modrinth's description)
+.PHONY: readme-absolute
+readme-absolute:
+	@node scripts/readme-absolute.mjs

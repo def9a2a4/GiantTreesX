@@ -22,6 +22,8 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -157,15 +159,26 @@ public class TreeCommand implements TabExecutor {
     }
     final String treeFile = treeFile(type, size, false);
     final World world = target.getWorld();
-    final TreeGround ground = TreeGround.at(world, target.getBlockX(), target.getBlockZ());
-    // asked for explicitly, so the tree grows anyway, on the ground below any water
-    final String groundName = ground.block().getType().name().toLowerCase(Locale.ROOT);
-    if (ground.underFluid()) {
-      sender.sendMessage(Component.text("Growing under water, on " + groundName, NamedTextColor.YELLOW));
-    } else if (!ground.soil()) {
-      sender.sendMessage(Component.text("No soil here: growing on " + groundName, NamedTextColor.YELLOW));
+    // a player standing on solid ground grows it at their feet (in the Nether, in a cave);
+    // otherwise, and for x z, the top of the column, below any water
+    final Block feet = args.length == 3 ? target.getBlock().getRelative(BlockFace.DOWN) : null;
+    final Block baseBlock;
+    if (feet != null && feet.getType().isSolid()) {
+      baseBlock = feet;
+    } else {
+      final TreeGround ground = TreeGround.at(world, target.getBlockX(), target.getBlockZ());
+      baseBlock = ground.block();
+      if (ground.underFluid()) {
+        sender.sendMessage(Component.text("Growing under water, on "
+                                          + baseBlock.getType().name().toLowerCase(Locale.ROOT), NamedTextColor.YELLOW));
+      }
     }
-    final Location base = ground.block().getLocation();
+    // asked for explicitly, so the tree grows anyway
+    if (!TreeGround.isSoil(baseBlock.getType())) {
+      sender.sendMessage(Component.text("No soil here: growing on "
+                                        + baseBlock.getType().name().toLowerCase(Locale.ROOT), NamedTextColor.YELLOW));
+    }
+    final Location base = baseBlock.getLocation();
     sender.sendMessage(Component.text("Growing " + treeFile.replace(".xml", "") + " at "
                                       + world.getName() + " " + base.getBlockX() + " " + base.getBlockY()
                                       + " " + base.getBlockZ() + ". Stand back!", NamedTextColor.GREEN));

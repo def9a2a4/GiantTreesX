@@ -179,6 +179,16 @@ public class PlantTreeEventHandler implements Listener {
 		}
 		recipes.sort(Comparator.comparingInt(PhysicalCraftingRecipe::getSize).reversed()
 				.thenComparingInt(PhysicalCraftingRecipe::getWildcards));
+		// e.g. one core block for every size: each big ring is then its huge ring, which wins
+		for (int i = 0; i < recipes.size(); i++) {
+			for (int j = i + 1; j < recipes.size(); j++) {
+				if (recipes.get(i).samePattern(recipes.get(j))) {
+					plugin.getLogger().warning("Planting patterns " + recipes.get(i).getTreeName() + " and "
+							+ recipes.get(j).getTreeName() + " are the same blocks, so " + recipes.get(j).getTreeName()
+							+ " never grows; give each size its own core block in planting.core, or change its saplings");
+				}
+			}
+		}
 	}
 
 	/**

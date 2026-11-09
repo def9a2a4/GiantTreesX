@@ -76,3 +76,10 @@ names: add `NEW` to a biome there to have it spawn.
 
 After changing files in `src/main/resources/tree/`, run `make docs-trees` so the website's copies in
 `docs/trees/` match (CI checks this), and `make gallery` to re-render the gallery.
+
+## readme-absolute.mjs: README with absolute links
+
+`make readme-absolute` (or `node scripts/readme-absolute.mjs [FILE]`) prints `README.md` with every
+relative link and image made absolute, for pasting into Modrinth's description. Images under `docs/`
+point at the GitHub Pages site (raw.githubusercontent.com serves SVGs as plain text, which `<img>`
+won't show), other images at raw.githubusercontent.com, and other links at the file on GitHub.
