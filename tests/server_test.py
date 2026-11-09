@@ -162,9 +162,9 @@ def phase_natural(args) -> list[str]:
           f"{placed} placed")
     if placed == 0:
         failures.append("natural: no trees were placed")
-    # natural.sizes makes huge trees 2x and big trees 4x as likely as giants, so 6 in 7
-    # trees are huge or big (2 in 3 for jungle and spruce, which have no big tree); with 10+
-    # trees, none is at worst a ~2e-5 fluke, so it means the sizes or the natural.trees expansion
+    # natural.sizes makes huge trees 4x and big trees 16x as likely as giants, so 20 in 21
+    # trees are huge or big (4 in 5 for jungle and spruce, which have no big tree); with 10+
+    # trees, none is at worst a ~1e-7 fluke, so it means the sizes or the natural.trees expansion
     # to tree.*_HUGE / *_BIG files are not working
     if rendered >= 10 and smaller == 0:
         failures.append(f"natural: {rendered} trees rendered but none was a huge or big variant")

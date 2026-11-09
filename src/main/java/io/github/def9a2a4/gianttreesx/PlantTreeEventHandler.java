@@ -227,7 +227,8 @@ public class PlantTreeEventHandler implements Listener {
 		return patternmaterials;
 	}
 
-    @EventHandler
+    // ignoreCancelled: a protection plugin that denies the click (a claim, a region) stops the tree
+    @EventHandler(ignoreCancelled = true)
 	public void onPlayerInteract(final PlayerInteractEvent event) {
 		// the event fires once per hand; only handle the main hand so nothing runs twice
 		if (event.getHand() != EquipmentSlot.HAND) {
@@ -270,6 +271,10 @@ public class PlantTreeEventHandler implements Listener {
 			break;
 		}
 		if (recipe == null) {
+			// a core block with no saplings around it (a bone block used as decoration) says nothing
+			if (missingTree == null && !hasSaplingsAround(clickedBlock)) {
+				return;
+			}
 			event.getPlayer().sendMessage(missingTree == null ? "Unable to match this pattern"
 					: "There is no tree for this pattern (" + missingTree + " is missing)");
 			return;
@@ -299,6 +304,18 @@ public class PlantTreeEventHandler implements Listener {
     /** The tree file a pattern grows: oak_big grows tree.OAK_BIG.xml. */
     private static String treeFile(final PhysicalCraftingRecipe recipe) {
 		return "tree." + recipe.getTreeName().toUpperCase(Locale.ROOT) + ".xml";
+    }
+
+    /** Whether any of the 8 blocks around the core is a block patterns are made of (a sapling, ...). */
+    private static boolean hasSaplingsAround(final Block core) {
+		for (int x = -1; x <= 1; x++) {
+			for (int z = -1; z <= 1; z++) {
+				if ((x != 0 || z != 0) && patternMaterialMap.containsValue(core.getRelative(x, 0, z).getType())) {
+					return true;
+				}
+			}
+		}
+		return false;
     }
 
     /*

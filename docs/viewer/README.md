@@ -73,7 +73,7 @@ or changing `natural.trees`.
   solid and you can see inside trunks, including hollow ones. *View cut* hides every block
   between the camera and a vertical plane facing it, shown as a faint yellow sheet; the slider
   moves the plane nearer or farther, and it turns with the camera when you stop orbiting.
-- **Wood style.** Style (`all_log` / `mixed` / `mixed_stripped`), hollow chance, *Force hollow*
+- **Wood style.** Style (`all_log` / `mixed` / `mixed_log`), hollow chance, *Force hollow*
   (a preview switch that is not written to the config), wall thickness and a weighted leaf mix.
   Changing these re-runs only the material pass, not the geometry. *Copy config snippet* gives the
   matching `config.yml` YAML. Settings that differ from the plugin defaults go under

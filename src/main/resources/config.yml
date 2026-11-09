@@ -9,7 +9,7 @@ natural:
   chance: 4
   # How often each size is picked, relative to each other. Trees come in three sizes: giant
   # (tree.OAK.xml, 40-60 blocks tall), huge (tree.OAK_HUGE.xml, 25-40) and big (tree.OAK_BIG.xml,
-  # about 14-24). With these, a biome grows 2 huge and 4 big trees for every giant (jungle and
+  # about 14-24). With these, a biome grows 4 huge and 16 big trees for every giant (jungle and
   # spruce have no big tree). 0 stops a size spawning; sizes left out keep these values.
   sizes:
     giant: 1

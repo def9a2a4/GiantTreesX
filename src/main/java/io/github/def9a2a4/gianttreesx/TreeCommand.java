@@ -235,7 +235,7 @@ public class TreeCommand implements TabExecutor {
                                           NamedTextColor.RED));
         return;
       }
-      try (InputStream in = source.openStream()) {
+      try (InputStream in = TreeFiles.open(source)) {
         Files.createDirectories(toOpen.toPath().getParent());
         Files.copy(in, toOpen.toPath());
       } catch (final IOException e) {

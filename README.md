@@ -23,6 +23,7 @@ GiantTreesX is maintained by [def9a2a4](https://github.com/def9a2a4). It is a fo
 - **Three sizes of each**: giant (40 to 60 blocks tall), huge (25 to 40) and big (about 14 to 24). Jungle and spruce have no big tree; vanilla's 2x2 trees fill that size.
 - **Decorations**: vines on jungle trunks and on mangrove and swamp oak leaves, pale moss under pale oaks, weeping vines under crimson fungi, muddy mangrove roots, and vanilla-style rooted dirt and hanging roots under azaleas.
 - **Wood styles**: build trunks from logs only, or with bark on the outside and plain or stripped logs in the core. Trunks can be hollow. Any wood type can get its own style and a weighted mix of leaf blocks.
+- **Leaves decay like vanilla**: chop a tree's wood and its leaves fall away. Hidden wood inside large leaf clusters keeps the canopy alive until then.
 - **Natural spawning**, configured per biome: which trees, how often, and in which sizes. Azaleas spawn above lush caves, like vanilla.
 - **Gentle on the server**: trees are worked out off the main thread and placed from the bottom up in small batches.
 - **Safe**: trees never replace chests, spawners or other block entities, or any block you list in `protected_blocks`.
@@ -33,8 +34,8 @@ GiantTreesX is maintained by [def9a2a4](https://github.com/def9a2a4). It is a fo
 1. Clear a 5x5 area of dirt or grass.
 2. Put the core block in the middle: an emerald block for a giant or huge tree, a bone block for a big one.
 3. Plant saplings around it in the tree's pattern.
-4. Right-click the core block with bone meal in your inventory.
-5. Stand back: the tree starts growing after 3 seconds.
+4. Right-click the core block holding bone meal. The bone meal it costs is taken from your inventory.
+5. Stand back: particles spread out to the width of the trunk, and the tree appears after 3 seconds.
 
 | Size  | Core block    | Saplings around it   | Bone meal | Tree file              |
 | ----- | ------------- | -------------------- | --------- | ---------------------- |
@@ -42,7 +43,7 @@ GiantTreesX is maintained by [def9a2a4](https://github.com/def9a2a4). It is a fo
 | huge  | emerald block | one full ring (3x3)  | 32        | `tree.<NAME>_HUGE.xml` |
 | big   | bone block    | one full ring (3x3)  | 16        | `tree.<NAME>_BIG.xml`  |
 
-Most trees use their own sapling all round. Mixed patterns (mesa puzzle: acacia and oak; cottonwood: birch and oak; swamp oak: oak with blue orchids; azalea: azalea and flowering azalea), the mushrooms and the fungi are listed with every pattern in [`config.yml`](src/main/resources/config.yml). Patterns match in any rotation. Server owners can change the bone meal costs (0 makes a size free), turn a size off (a 5x5 ring then grows the huge tree of its inner ring), or turn growing from saplings off altogether, in the `planting:` section of `config.yml`.
+Most trees use their own sapling all round. Mixed patterns (mesa puzzle: acacia and oak; cottonwood: birch and oak; swamp oak: oak with blue orchids; azalea: azalea and flowering azalea), the mushrooms and the fungi are listed with every pattern in [`config.yml`](src/main/resources/config.yml). Patterns match in any rotation. Mushrooms follow vanilla's placement rules: dim light, or mycelium, podzol or nylium underneath. Server owners can change the bone meal costs (0 makes a size free), turn a size off (a 5x5 ring then grows the huge tree of its inner ring), or turn growing from saplings off altogether, in the `planting:` section of `config.yml`.
 
 ![Planting a giant tree](doc/planting.png)
 
@@ -54,8 +55,8 @@ Trees spawn in newly generated chunks. The `natural:` section of `config.yml` se
 natural:
   enabled: true
   worlds: [world]
-  chance: 0.5                     # percent of new chunks that grow a tree
-  sizes: {giant: 1, huge: 2, big: 4}
+  chance: 4                       # percent of new chunks that grow a tree
+  sizes: {giant: 1, huge: 4, big: 16}
   trees:
     FOREST: [OAK, COTTONWOOD]
     PALE_GARDEN: [PALE_OAK]
@@ -66,7 +67,7 @@ natural:
       sizes: {giant: 0}           # no giant trees here
 ```
 
-By default each biome grows 4 big and 2 huge trees for every giant. Natural trees grow only on soil, never on or in another tree, and in water only in swamps. Biome variants share their biome's entry (`FOREST` also covers flower and windswept forests) unless you give them their own. Unknown tree or biome names are logged at startup.
+By default each biome grows 16 big and 4 huge trees for every giant. Natural trees grow only on soil, never on or in another tree, and in water only in swamps. Biome variants share their biome's entry (`FOREST` also covers flower and windswept forests) unless you give them their own. Unknown tree or biome names are logged at startup.
 
 ## Commands
 
@@ -112,6 +113,8 @@ The plugin folder is `plugins/GiantTrees/`: `config.yml`, and a `tree/` folder f
 ## Upgrading from GiantTrees
 
 The config has a new layout: natural spawning settings are in a `natural:` section and planting settings in a `planting:` section. Old settings (`naturallyGrowTrees`, `worlds`, `treeGrowthPercentChance`, `planting-patterns`, `core`, `bone-meal-consumed`, ...) are no longer read, and the plugin warns at startup while they are in your `config.yml`; until you move them, the defaults apply. The easiest way is to delete `config.yml`, restart to get the new one, and copy your changes back in.
+
+Trees grown before the update keep their old leaves, which never decay.
 
 Tree files are no longer unpacked into the plugin folder, and the old `tree.*.xml` and `biome.*.xml` files there are no longer read. The plugin warns at startup while they are there, naming the ones that differ from the bundled trees. Move those you want to keep into `plugins/GiantTrees/tree/` (rename a `biome.BIOME-NAME.xml` to `tree.NAME.xml` and list `NAME` under its biome in `natural.trees`), then delete the rest.
 

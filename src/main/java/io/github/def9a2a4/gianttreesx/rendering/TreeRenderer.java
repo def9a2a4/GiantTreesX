@@ -311,7 +311,7 @@ public class TreeRenderer {
   private static Tree loadTree(final URL file, final int seed) throws Exception {
     final Tree tree = new Tree();
     tree.setOutputType(Tree.CONES);
-    try (InputStream in = file.openStream()) {
+    try (InputStream in = TreeFiles.open(file)) {
       tree.readFromXML(in);
     }
     tree.params.Seed = seed;

@@ -2,8 +2,10 @@ package io.github.def9a2a4.gianttreesx.rendering;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.TreeSet;
@@ -64,6 +66,16 @@ public final class TreeFiles {
   /** The bundled tree file called {@code name}, or null. */
   public URL bundled(final String name) {
     return this.bundled.contains(name) ? this.loader.getResource(JAR_DIR + name) : null;
+  }
+
+  /**
+   * Opens a tree file from {@link #find} or {@link #bundled}. Without the JDK's jar cache, which
+   * would keep reading (and, on Windows, locking) an old plugin jar after a reload swapped it.
+   */
+  public static InputStream open(final URL url) throws IOException {
+    final URLConnection connection = url.openConnection();
+    connection.setUseCaches(false);
+    return connection.getInputStream();
   }
 
   public boolean exists(final String name) {

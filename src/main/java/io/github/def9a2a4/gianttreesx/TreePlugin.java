@@ -19,9 +19,6 @@ package io.github.def9a2a4.gianttreesx;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -83,8 +80,9 @@ public class TreePlugin extends JavaPlugin {
 
   /**
    * Tree files older versions unpacked into the plugin folder (tree.*.xml, biome.*.xml): no longer
-   * read, so an edited or added one would otherwise stop working without a word. Names the ones
-   * that differ from the bundled trees, which are the ones worth moving into tree/.
+   * read, so an edited or added one would otherwise stop working without a word. Most are just
+   * outdated copies of bundled trees (which have changed since), so only those with no bundled
+   * tree of that name, which must be custom, are named.
    */
   private void warnAboutOldTreeFiles() {
     final String[] old = this.getDataFolder().list(
@@ -93,32 +91,14 @@ public class TreePlugin extends JavaPlugin {
       return;
     }
     Arrays.sort(old);
-    final List<String> changed = new ArrayList<>();
-    for (final String name : old) {
-      if (!this.sameAsBundled(name)) {
-        changed.add(name);
-      }
-    }
-    this.getLogger().warning(old.length + " tree files in " + this.getDataFolder() + " are left from an"
-                             + " older version and are no longer read: the bundled trees come from the"
-                             + " plugin jar, and added or replaced trees go in the tree/ subfolder"
-                             + (changed.isEmpty() ? ". They can all be deleted."
-                                : ". These differ from the bundled trees; move the ones you want into tree/"
-                                  + " (rename biome.BIOME-NAME.xml to tree.NAME.xml and list it in"
-                                  + " natural.trees), then delete the rest: " + String.join(", ", changed)));
-  }
-
-  /** Whether data folder file {@code name} is byte for byte a bundled tree file. */
-  private boolean sameAsBundled(final String name) {
-    final URL bundled = this.trees.bundled(name);
-    if (bundled == null) {
-      return false;
-    }
-    try (InputStream in = bundled.openStream()) {
-      return Arrays.equals(in.readAllBytes(), Files.readAllBytes(new File(this.getDataFolder(), name).toPath()));
-    } catch (final IOException e) {
-      return false;
-    }
+    final List<String> custom = Arrays.stream(old).filter(name -> this.trees.bundled(name) == null).toList();
+    this.getLogger().warning(old.length + " tree files in " + this.getDataFolder() + " were left by an older"
+                             + " version and are no longer read: the bundled trees now come from the plugin"
+                             + " jar, and those files are probably outdated copies of them. If you edited or"
+                             + " added a tree yourself, move it into the tree/ subfolder (a biome.BIOME-NAME.xml"
+                             + " becomes tree.NAME.xml, listed under its biome in natural.trees); a file there"
+                             + " replaces the bundled tree of the same name. Delete the rest."
+                             + (custom.isEmpty() ? "" : " Not bundled, so probably your own: " + String.join(", ", custom)));
   }
 
   /** Top-level settings from before the natural: and planting: sections, no longer read. */
