@@ -108,7 +108,7 @@ Anonymous usage stats go to [bStats](https://bstats.org/plugin/bukkit/GiantTrees
 
 ## Upgrading from GiantTrees
 
-- **Config**: settings moved into `natural:` and `planting:`; old keys are ignored, with a warning. Easiest: delete `config.yml`, restart, copy your changes back.
+- **Config**: settings moved into `natural:` and `planting:`; old keys are ignored, with a warning. Easiest: delete `config.yml`, restart, manually copy your changes back.
 - **Tree files**: old `tree.*.xml` and `biome.*.xml` in the plugin folder are ignored, with a warning naming changed ones. Move keepers to `plugins/GiantTrees/tree/` (`biome.BIOME-NAME.xml` becomes `tree.NAME.xml`, listed under its biome in `natural.trees`).
 - **Old trees** keep their old leaves, which never decay.
 
