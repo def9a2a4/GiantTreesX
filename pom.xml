@@ -26,7 +26,7 @@
   <description>Grows enormous trees</description>
 
   <properties>
-    <api-version>1.21</api-version>
+    <api-version>1.21.4</api-version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
