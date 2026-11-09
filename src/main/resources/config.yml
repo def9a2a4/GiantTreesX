@@ -69,6 +69,8 @@ planting:
     giant: true
     huge: true
     big: true
+  # particles spreading out to the trunk's width while the tree is on its way (generation-delay)
+  particles: true
   # bone meal each size takes from the player's inventory; 0 makes it free
   bone-meal:
     giant: 64

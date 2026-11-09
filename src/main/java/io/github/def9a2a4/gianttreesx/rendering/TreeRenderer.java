@@ -78,6 +78,15 @@ public class TreeRenderer {
   /** Grows tree file X.xml at the point, with its root system X.root.xml if there is one. */
   public void renderTree(final Location requestedRefPoint, final File treeFile, final int seed,
                          final boolean withDelay) {
+    renderTree(requestedRefPoint, treeFile, seed, withDelay, false);
+  }
+
+  /**
+   * As {@link #renderTree(Location, File, int, boolean)}; {@code growEffect} also plays
+   * {@link GrowEffect} at the planting point until the tree appears (trees grown from saplings).
+   */
+  public void renderTree(final Location requestedRefPoint, final File treeFile, final int seed,
+                         final boolean withDelay, final boolean growEffect) {
     final String name = treeFile.getName();
     final File rootFile = new File(treeFile.getParentFile(),
                                    name.substring(0, name.length() - ".xml".length()) + ".root.xml");
@@ -87,6 +96,7 @@ public class TreeRenderer {
     // our own copy: the async task must not read a Location the caller may still change, nor
     // change the caller's (the mangrove offset below used to move it)
     final Location refPoint = requestedRefPoint.clone();
+    final Location ground = requestedRefPoint.clone();
     // mangrove trees stand on exposed stilt roots: raise the refpoint by the tier's root height
     refPoint.add(0, mangroveRaise(treeFile.getName()), 0);
     final Logger logger = plugin.getLogger();
@@ -109,6 +119,11 @@ public class TreeRenderer {
           return;
         }
         final long generationDelay = withDelay ? plugin.getConfig().getInt("generation-delay", 0) * 20 : 0;
+        if (growEffect) {
+          final double radius = GrowEffect.trunkRadius(tracker);
+          plugin.getServer().getScheduler().runTask(plugin,
+              () -> GrowEffect.play(plugin, ground, radius, generationDelay));
+        }
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
           try {
             settleRoots(tracker, refPoint, generated.rootType());

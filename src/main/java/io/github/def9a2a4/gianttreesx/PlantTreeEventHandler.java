@@ -291,7 +291,8 @@ public class PlantTreeEventHandler implements Listener {
 		event.getPlayer().sendMessage("Stand back! Generating " + tier.article + treeType + " tree!");
 		clearBlocks(clickedBlock, matched);
 		renderer.renderTree(clickedBlock.getLocation(), treeFile,
-				TreeRenderer.positionSeed(clickedBlock.getLocation()), true);
+				TreeRenderer.positionSeed(clickedBlock.getLocation()), true,
+				plugin.getConfig().getBoolean("planting.particles", true));
 	}
 
     /** The tree file a pattern grows: oak_big grows tree.OAK_BIG.xml in the data folder. */
