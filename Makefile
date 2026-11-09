@@ -20,6 +20,9 @@ SERVER_JAR      := $(CACHE_DIR)/paper-$(MINECRAFT_VERSION).jar
 .PHONY: build
 build:
 	mvn -B -q clean package
+	mkdir -p bin
+	rm -f bin/GiantTrees-*.jar
+	cp $$(ls target/GiantTrees-*.jar | grep -v original) bin/
 
 $(SERVER_JAR):
 	mkdir -p $(CACHE_DIR)
